@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   );
 
   const headerSearchInput = document.getElementById('headerSearchInput');
-  const headerSearchBox = document.getElementById('headerSearchBox);
+  const headerSearchBox = document.getElementById('headerSearchBox');
   if (headerSearchInput) {
     headerSearchInput.addEventListener('focus', () => {
       headerSearchInput.blur();
