@@ -176,14 +176,19 @@
         <!-- Profile Pill -->
         <div id="headerProfilePill" class="flex items-center gap-space-sm pl-space-xs cursor-pointer hover:opacity-90 transition-opacity" title="Student Settings">
           <div class="relative flex-shrink-0">
-            <img alt="Sophia Chen" class="w-8 h-8 rounded-full object-cover ring-1 ring-surface-container-high" src="assets/avatars/student.svg"/>
+            <img id="headerAvatar" alt="Student" class="w-8 h-8 rounded-full object-cover ring-1 ring-surface-container-high" src="assets/avatars/student.svg"/>
             <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-surface"></span>
           </div>
           <div class="hidden xl:flex flex-col text-left">
-            <span class="font-label-md text-label-md font-semibold text-on-surface leading-tight">Sophia Chen</span>
-            <span class="font-label-sm text-label-sm text-on-surface-variant">#CS-2024-884</span>
+            <span class="font-label-md text-label-md font-semibold text-on-surface leading-tight">Student</span>
+            <span class="font-label-sm text-label-sm text-on-surface-variant">Loading...</span>
           </div>
         </div>
+
+        <!-- Sign Out Button -->
+        <button id="signOutBtn" class="hidden sm:flex items-center gap-1 p-2 rounded-full text-on-surface-variant hover:text-error hover:bg-error-container transition-colors" title="Sign out" type="button">
+          <span class="material-symbols-outlined text-[20px]">logout</span>
+        </button>
       </div>
 
     </div>

@@ -2,6 +2,93 @@
 import { campusData } from './data.js';
 import { showToast } from './components/toast.js';
 import { initCommandPalette } from './components/command-palette.js';
+import {
+  auth,
+  db,
+  onAuthStateChanged,
+  signOut,
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+  serverTimestamp,
+  onSnapshot,
+  query,
+  orderBy
+} from './firebase.js';
+
+// ─── Firebase Auth Guard ───────────────────────────────────────────────────
+// Redirect to login if not authenticated
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+  currentUser = user;
+
+  // Update header with real user name
+  const namePill = document.querySelector('#headerProfilePill .font-label-md');
+  const emailPill = document.querySelector('#headerProfilePill .font-label-sm');
+  const avatarImg = document.getElementById('headerAvatar');
+  if (namePill) namePill.textContent = user.displayName || user.email.split('@')[0];
+  if (emailPill) emailPill.textContent = user.email;
+  if (avatarImg && user.photoURL) avatarImg.src = user.photoURL;
+
+  // Update campus data with Firebase user info
+  campusData.student.name = user.displayName || user.email.split('@')[0];
+  campusData.student.email = user.email;
+  if (user.photoURL) campusData.student.avatar = user.photoURL;
+
+  // Wire sign-out button
+  const signOutBtn = document.getElementById('signOutBtn');
+  if (signOutBtn) {
+    signOutBtn.onclick = async () => {
+      if (confirm('Sign out of AI Campus Copilot?')) {
+        await signOut(auth);
+        window.location.href = 'login.html';
+      }
+    };
+  }
+
+  updateSidebarBadges();
+});
+
+// ─── Firebase Firestore: Real-time Tasks ──────────────────────────────────
+export async function addTaskToFirestore(task) {
+  if (!currentUser) return;
+  await addDoc(collection(db, 'students', currentUser.uid, 'tasks'), {
+    ...task,
+    createdAt: serverTimestamp()
+  });
+}
+
+export async function deleteTaskFromFirestore(taskId) {
+  if (!currentUser) return;
+  await deleteDoc(doc(db, 'students', currentUser.uid, 'tasks', taskId));
+}
+
+export async function toggleTaskInFirestore(taskId, status) {
+  if (!currentUser) return;
+  await updateDoc(doc(db, 'students', currentUser.uid, 'tasks', taskId), { status });
+}
+
+export function listenToTasks(callback) {
+  if (!currentUser) return;
+  const q = query(
+    collection(db, 'students', currentUser.uid, 'tasks'),
+    orderBy('createdAt', 'desc')
+  );
+  return onSnapshot(q, (snap) => {
+    const tasks = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
+    callback(tasks);
+  });
+}
+
+export { currentUser };
 
 import { renderDashboard } from './pages/dashboard.js';
 import { renderAiAssistant } from './pages/ai-assistant.js';
