@@ -2,9 +2,14 @@
 import { supabase } from './supabase.js';
 // ─── Supabase Auth Guard ───────────────────────────────────────────────────
 let currentUser = null;
+let authInitialized = false;
 
-supabase.auth.onAuthStateChange(async (event, session) => {
-  if (!session?.user) { window.location.href='login.html'; return; }
+async function handleAuthSession(session) {
+  if (!session?.user) {
+    if (authInitialized) window.location.href='login.html';
+    return;
+  }
+  authInitialized = true;
   currentUser=session.user;
   const {data:profile}=await supabase.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
   const name=profile?.name||currentUser.user_metadata?.name||currentUser.email?.split('@')[0]||'Student';
@@ -18,6 +23,23 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   const signOutBtn=document.getElementById('signOutBtn');
   if(signOutBtn)signOutBtn.onclick=async()=>{if(confirm('Sign out of AI Campus Copilot?')){await supabase.auth.signOut();window.location.href='login.html';}};
   updateSidebarBadges();
+});
+
+// Restore the existing session before the app starts enforcing the auth guard.
+// This prevents a brief session-restoration gap from redirecting users back to login.
+(async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  await handleAuthSession(session);
+  if (!session) authInitialized = true;
+})();
+
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    window.location.href = 'login.html';
+    return;
+  }
+  if (session?.user) handleAuthSession(session);
 });
 
 export async function addTaskToFirestore(task){
