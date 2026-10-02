@@ -168,8 +168,18 @@
   <script type="module">
     import { supabase } from './js/supabase.js';
 
+    // Restore an existing session once. Avoid redirecting during a transient auth event.
+    (async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (!error && data.session?.user) {
+        window.location.replace('index.html');
+      }
+    })();
+
     supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) window.location.href = 'index.html';
+      if (event === 'SIGNED_IN' && session?.user) {
+        window.location.replace('index.html');
+      }
     });
 
     const showLoading = (text='Signing you in...') => {
