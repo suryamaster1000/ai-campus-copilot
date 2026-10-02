@@ -1,93 +1,48 @@
 // AI Campus Copilot - Main Application Controller & Router
-import { campusData } from './data.js';
-import { showToast } from './components/toast.js';
-import { initCommandPalette } from './components/command-palette.js';
-import {
-  auth,
-  db,
-  onAuthStateChanged,
-  signOut,
-  collection,
-  addDoc,
-  getDocs,
-  deleteDoc,
-  doc,
-  updateDoc,
-  serverTimestamp,
-  onSnapshot,
-  query,
-  orderBy
-} from './firebase.js';
-
-// ─── Firebase Auth Guard ───────────────────────────────────────────────────
-// Redirect to login if not authenticated
+import { supabase } from './supabase.js';
+// ─── Supabase Auth Guard ───────────────────────────────────────────────────
 let currentUser = null;
 
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    window.location.href = 'login.html';
-    return;
-  }
-  currentUser = user;
-
-  // Update header with real user name
-  const namePill = document.querySelector('#headerProfilePill .font-label-md');
-  const emailPill = document.querySelector('#headerProfilePill .font-label-sm');
-  const avatarImg = document.getElementById('headerAvatar');
-  if (namePill) namePill.textContent = user.displayName || user.email.split('@')[0];
-  if (emailPill) emailPill.textContent = user.email;
-  if (avatarImg && user.photoURL) avatarImg.src = user.photoURL;
-
-  // Update campus data with Firebase user info
-  campusData.student.name = user.displayName || user.email.split('@')[0];
-  campusData.student.email = user.email;
-  if (user.photoURL) campusData.student.avatar = user.photoURL;
-
-  // Wire sign-out button
-  const signOutBtn = document.getElementById('signOutBtn');
-  if (signOutBtn) {
-    signOutBtn.onclick = async () => {
-      if (confirm('Sign out of AI Campus Copilot?')) {
-        await signOut(auth);
-        window.location.href = 'login.html';
-      }
-    };
-  }
-
+supabase.auth.onAuthStateChange(async (event, session) => {
+  if (!session?.user) { window.location.href='login.html'; return; }
+  currentUser=session.user;
+  const {data:profile}=await supabase.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
+  const name=profile?.name||currentUser.user_metadata?.name||currentUser.email?.split('@')[0]||'Student';
+  const namePill=document.querySelector('#headerProfilePill .font-label-md');
+  const emailPill=document.querySelector('#headerProfilePill .font-label-sm');
+  const avatarImg=document.getElementById('headerAvatar');
+  if(namePill)namePill.textContent=name;
+  if(emailPill)emailPill.textContent=currentUser.email||'';
+  if(avatarImg&&currentUser.user_metadata?.avatar_url)avatarImg.src=currentUser.user_metadata.avatar_url;
+  campusData.student.name=name; campusData.student.email=currentUser.email||'';
+  const signOutBtn=document.getElementById('signOutBtn');
+  if(signOutBtn)signOutBtn.onclick=async()=>{if(confirm('Sign out of AI Campus Copilot?')){await supabase.auth.signOut();window.location.href='login.html';}};
   updateSidebarBadges();
 });
 
-// ─── Firebase Firestore: Real-time Tasks ──────────────────────────────────
-export async function addTaskToFirestore(task) {
-  if (!currentUser) return;
-  await addDoc(collection(db, 'students', currentUser.uid, 'tasks'), {
-    ...task,
-    createdAt: serverTimestamp()
-  });
+export async function addTaskToFirestore(task){
+  if(!currentUser)return;
+  const {error}=await supabase.from('tasks').insert({...task,user_id:currentUser.id});
+  if(error)throw error;
 }
-
-export async function deleteTaskFromFirestore(taskId) {
-  if (!currentUser) return;
-  await deleteDoc(doc(db, 'students', currentUser.uid, 'tasks', taskId));
+export async function deleteTaskFromFirestore(taskId){
+  if(!currentUser)return;
+  const {error}=await supabase.from('tasks').delete().eq('id',taskId).eq('user_id',currentUser.id);
+  if(error)throw error;
 }
-
-export async function toggleTaskInFirestore(taskId, status) {
-  if (!currentUser) return;
-  await updateDoc(doc(db, 'students', currentUser.uid, 'tasks', taskId), { status });
+export async function toggleTaskInFirestore(taskId,status){
+  if(!currentUser)return;
+  const {error}=await supabase.from('tasks').update({status}).eq('id',taskId).eq('user_id',currentUser.id);
+  if(error)throw error;
 }
-
-export function listenToTasks(callback) {
-  if (!currentUser) return;
-  const q = query(
-    collection(db, 'students', currentUser.uid, 'tasks'),
-    orderBy('createdAt', 'desc')
-  );
-  return onSnapshot(q, (snap) => {
-    const tasks = snap.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
-    callback(tasks);
-  });
+export function listenToTasks(callback){
+  if(!currentUser)return;
+  const load=async()=>{const {data,error}=await supabase.from('tasks').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});if(!error)callback((data||[]).map(t=>({firestoreId:t.id,...t})));};
+  load();
+  const channel=supabase.channel('tasks-'+currentUser.id).on('postgres_changes',
+    {event:'*',schema:'public',table:'tasks',filter:'user_id=eq.'+currentUser.id},load).subscribe();
+  return ()=>supabase.removeChannel(channel);
 }
-
 export { currentUser };
 
 import { renderDashboard } from './pages/dashboard.js';
