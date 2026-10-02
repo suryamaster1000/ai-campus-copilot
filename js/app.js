@@ -1,46 +1,102 @@
 // AI Campus Copilot - Main Application Controller & Router
 import { supabase } from './supabase.js';
+
 // ─── Supabase Auth Guard ───────────────────────────────────────────────────
 let currentUser = null;
-let authInitialized = false;
+let authReady = false;
+let authInitPromise = null;
 
 async function handleAuthSession(session) {
   if (!session?.user) {
-    if (authInitialized) window.location.href='login.html';
-    return;
+    currentUser = null;
+    if (authReady) window.location.replace('login.html');
+    return false;
   }
-  authInitialized = true;
-  currentUser=session.user;
-  const {data:profile}=await supabase.from('profiles').select('*').eq('id',currentUser.id).maybeSingle();
-  const name=profile?.name||currentUser.user_metadata?.name||currentUser.email?.split('@')[0]||'Student';
-  const namePill=document.querySelector('#headerProfilePill .font-label-md');
-  const emailPill=document.querySelector('#headerProfilePill .font-label-sm');
-  const avatarImg=document.getElementById('headerAvatar');
-  if(namePill)namePill.textContent=name;
-  if(emailPill)emailPill.textContent=currentUser.email||'';
-  if(avatarImg&&currentUser.user_metadata?.avatar_url)avatarImg.src=currentUser.user_metadata.avatar_url;
-  campusData.student.name=name; campusData.student.email=currentUser.email||'';
-  const signOutBtn=document.getElementById('signOutBtn');
-  if(signOutBtn)signOutBtn.onclick=async()=>{if(confirm('Sign out of AI Campus Copilot?')){await supabase.auth.signOut();window.location.href='login.html';}};
+
+  currentUser = session.user;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', currentUser.id)
+    .maybeSingle();
+
+  const name = profile?.name ||
+    currentUser.user_metadata?.name ||
+    currentUser.email?.split('@')[0] ||
+    'Student';
+
+  const namePill = document.querySelector('#headerProfilePill .font-label-md');
+  const emailPill = document.querySelector('#headerProfilePill .font-label-sm');
+  const avatarImg = document.getElementById('headerAvatar');
+
+  if (namePill) namePill.textContent = name;
+  if (emailPill) emailPill.textContent = currentUser.email || '';
+  if (avatarImg && currentUser.user_metadata?.avatar_url) {
+    avatarImg.src = currentUser.user_metadata.avatar_url;
+  }
+
+  campusData.student.name = name;
+  campusData.student.email = currentUser.email || '';
+
+  const signOutBtn = document.getElementById('signOutBtn');
+  if (signOutBtn) {
+    signOutBtn.onclick = async () => {
+      if (confirm('Sign out of AI Campus Copilot?')) {
+        await supabase.auth.signOut();
+      }
+    };
+  }
+
   updateSidebarBadges();
-});
+  return true;
+}
 
-// Restore the existing session before the app starts enforcing the auth guard.
-// This prevents a brief session-restoration gap from redirecting users back to login.
-(async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  await handleAuthSession(session);
-  if (!session) authInitialized = true;
-})();
+// Initialize authentication exactly once before enforcing the guard.
+async function initializeAuth() {
+  if (authInitPromise) return authInitPromise;
 
+  authInitPromise = (async () => {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.error('Supabase session restore failed:', error);
+      authReady = true;
+      window.location.replace('login.html');
+      return false;
+    }
+
+    const hasSession = await handleAuthSession(data.session);
+    authReady = true;
+
+    if (!hasSession) {
+      window.location.replace('login.html');
+      return false;
+    }
+
+    return true;
+  })();
+
+  return authInitPromise;
+}
+
+// Handle later auth changes without creating an initialization race.
 supabase.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_OUT') {
     currentUser = null;
-    window.location.href = 'login.html';
+    if (window.location.pathname.endsWith('/index.html') ||
+        window.location.pathname.endsWith('/ai-campus-copilot/')) {
+      window.location.replace('login.html');
+    }
     return;
   }
-  if (session?.user) handleAuthSession(session);
+
+  if (event === 'TOKEN_REFRESHED' && session?.user) {
+    handleAuthSession(session);
+  }
 });
+
+initializeAuth();
 
 export async function addTaskToFirestore(task){
   if(!currentUser)return;
@@ -110,9 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   );
 
-  // Search input in header opens command palette
   const headerSearchInput = document.getElementById('headerSearchInput');
-  const headerSearchBox = document.getElementById('headerSearchBox');
+  const headerSearchBox = document.getElementById('headerSearchBox);
   if (headerSearchInput) {
     headerSearchInput.addEventListener('focus', () => {
       headerSearchInput.blur();
@@ -125,7 +180,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Listen for global custom events
   window.addEventListener('campus:askAi', (e) => {
     pendingAiQuery = e.detail?.query || null;
     navigateTo('ai-assistant');
@@ -146,7 +200,6 @@ function initRouter() {
 function handleRoute() {
   let hash = window.location.hash.replace('#', '').trim();
   if (!hash || !routes[hash]) {
-    // Default to dashboard or ai-assistant (Stitch prototype default was ai-assistant)
     hash = 'ai-assistant';
     window.location.hash = '#' + hash;
     return;
@@ -159,7 +212,6 @@ function handleRoute() {
   const mainContainer = document.getElementById('mainContentArea');
   if (!mainContainer) return;
 
-  // Render the page
   const query = pendingAiQuery;
   pendingAiQuery = null;
 
@@ -203,7 +255,6 @@ function updateSidebarBadges() {
 }
 
 function initSidebar() {
-  // Mobile drawer elements
   const mobileToggleBtn = document.getElementById('mobileMenuBtn');
   const mobileDrawer = document.getElementById('mobileDrawer');
   const mobileDrawerBackdrop = document.getElementById('mobileDrawerBackdrop');
@@ -223,17 +274,10 @@ function initSidebar() {
     }
   }
 
-  if (mobileToggleBtn) {
-    mobileToggleBtn.addEventListener('click', openDrawer);
-  }
-  if (closeMobileDrawerBtn) {
-    closeMobileDrawerBtn.addEventListener('click', closeDrawer);
-  }
-  if (mobileDrawerBackdrop) {
-    mobileDrawerBackdrop.addEventListener('click', closeDrawer);
-  }
+  if (mobileToggleBtn) mobileToggleBtn.addEventListener('click', openDrawer);
+  if (closeMobileDrawerBtn) closeMobileDrawerBtn.addEventListener('click', closeDrawer);
+  if (mobileDrawerBackdrop) mobileDrawerBackdrop.addEventListener('click', closeDrawer);
 
-  // Attach navigation clicks to all sidebar links
   document.querySelectorAll('nav a[data-path]').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
@@ -245,7 +289,6 @@ function initSidebar() {
 }
 
 function initHeaderActions() {
-  // Ask AI button in header
   const askAiHeaderBtn = document.getElementById('headerAskAiBtn');
   if (askAiHeaderBtn) {
     askAiHeaderBtn.addEventListener('click', () => {
@@ -257,7 +300,6 @@ function initHeaderActions() {
     });
   }
 
-  // Profile click in header
   const userProfileBtn = document.getElementById('headerProfilePill');
   if (userProfileBtn) {
     userProfileBtn.addEventListener('click', () => {
