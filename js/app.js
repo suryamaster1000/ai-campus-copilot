@@ -23,10 +23,44 @@ async function handleAuthSession(session) {
     .eq('id', currentUser.id)
     .maybeSingle();
 
+  // Keep the existing UI, but hydrate the student-facing values from Supabase.
   const name = profile?.name ||
     currentUser.user_metadata?.name ||
     currentUser.email?.split('@')[0] ||
     'Student';
+
+  if (profile) {
+    campusData.student.name = profile.name || name;
+    campusData.student.email = profile.email || currentUser.email || '';
+    campusData.student.rollNumber = profile.roll_number || campusData.student.rollNumber;
+    campusData.student.program = profile.program || campusData.student.program;
+    campusData.student.term = profile.term || campusData.student.term;
+    campusData.student.cgpa = profile.cgpa || campusData.student.cgpa;
+  }
+
+  const { data: userTasks, error: tasksError } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false });
+
+  if (!tasksError && Array.isArray(userTasks) && userTasks.length) {
+    campusData.tasks = userTasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      description: task.description || '',
+      course: task.category || 'General',
+      dueDate: task.due_date || 'No due date',
+      dueBadge: task.status === 'completed' ? 'Completed' : 'Pending',
+      priority: task.priority || 'Medium',
+      priorityClass: task.priority === 'High'
+        ? 'bg-error-container text-on-error-container'
+        : task.priority === 'Low'
+          ? 'bg-surface-container text-on-surface-variant'
+          : 'bg-secondary-container text-on-secondary-container',
+      status: task.status === 'completed' ? 'completed' : 'todo'
+    }));
+  }
 
   const namePill = document.querySelector('#headerProfilePill .font-label-md');
   const emailPill = document.querySelector('#headerProfilePill .font-label-sm');
@@ -39,7 +73,7 @@ async function handleAuthSession(session) {
   }
 
   campusData.student.name = name;
-  campusData.student.email = currentUser.email || '';
+  campusData.student.email = currentUser.email || campusData.student.email || '';
 
   const signOutBtn = document.getElementById('signOutBtn');
   if (signOutBtn) {
