@@ -96,8 +96,6 @@ supabase.auth.onAuthStateChange((event, session) => {
   }
 });
 
-initializeAuth();
-
 export async function addTaskToFirestore(task){
   if(!currentUser)return;
   const {error}=await supabase.from('tasks').insert({...task,user_id:currentUser.id});
@@ -151,7 +149,12 @@ let currentRoute = '';
 let pendingAiQuery = null;
 
 // Initialize App
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // OAuth may return access tokens in the URL fragment. Let Supabase restore
+  // that session before the hash router touches window.location.hash.
+  const authenticated = await initializeAuth();
+  if (!authenticated) return;
+
   initRouter();
   initSidebar();
   initHeaderActions();
