@@ -1,6 +1,7 @@
 // Tasks & Deadlines Page
 import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
+import { addTaskToFirestore, deleteTaskFromFirestore, toggleTaskInFirestore } from '../app.js';
 
 export function renderTasks(container) {
   let activeTab = "All"; // "All", "todo", "in-progress", "completed"
@@ -141,29 +142,40 @@ export function renderTasks(container) {
 
     // Checkbox toggle
     container.querySelectorAll('.task-chk-toggle').forEach(chk => {
-      chk.onchange = () => {
+      chk.onchange = async () => {
         const id = chk.getAttribute('data-id');
         const target = campusData.tasks.find(t => t.id === id);
-        if (target) {
-          target.status = chk.checked ? 'completed' : 'todo';
+        if (!target) return;
+        const nextStatus = chk.checked ? 'completed' : 'todo';
+        try {
+          await toggleTaskInFirestore(id, nextStatus);
+          target.status = nextStatus;
           showToast(chk.checked ? `Task marked completed!` : `Task reopened`, 'success');
-          // Dispatch event to update sidebar badge
           window.dispatchEvent(new CustomEvent('campus:tasksUpdated'));
           render();
+        } catch (error) {
+          chk.checked = !chk.checked;
+          console.error('Task update failed:', error);
+          showToast('Could not update task', 'error');
         }
       };
     });
 
     // Delete task
     container.querySelectorAll('.task-delete-btn').forEach(btn => {
-      btn.onclick = () => {
+      btn.onclick = async () => {
         const id = btn.getAttribute('data-id');
         const idx = campusData.tasks.findIndex(t => t.id === id);
-        if (idx !== -1) {
+        if (idx === -1) return;
+        try {
+          await deleteTaskFromFirestore(id);
           campusData.tasks.splice(idx, 1);
           showToast("Task deleted", "info");
           window.dispatchEvent(new CustomEvent('campus:tasksUpdated'));
           render();
+        } catch (error) {
+          console.error('Task deletion failed:', error);
+          showToast('Could not delete task', 'error');
         }
       };
     });
@@ -207,20 +219,48 @@ export function renderTasks(container) {
         const date = document.getElementById('taskDateInput').value;
         const priority = document.getElementById('taskPrioritySelect').value;
 
-        campusData.tasks.unshift({
-          id: 'T-' + Date.now(),
-          title,
-          course,
-          dueDate: date || 'Soon',
-          dueBadge: 'Pending',
-          priority,
-          priorityClass: priority === 'High' ? 'bg-error-container text-on-error-container' : 'bg-secondary-container text-on-secondary-container',
-          status: 'todo'
-        });
+        try {
+          await addTaskToFirestore({
+            title,
+            description: '',
+            status: 'todo',
+            due_date: date || null,
+            priority,
+            category: course
+          });
 
-        showToast("New task created!", "success");
-        window.dispatchEvent(new CustomEvent('campus:tasksUpdated'));
-        render();
+          // Reload from Supabase so the generated UUID is used by the UI.
+          const { supabase } = await import('../supabase.js');
+          const { data: freshTasks, error } = await supabase
+            .from('tasks')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          campusData.tasks = (freshTasks || []).map(task => ({
+            id: task.id,
+            title: task.title,
+            description: task.description || '',
+            course: task.category || 'General',
+            dueDate: task.due_date || 'No due date',
+            dueBadge: task.status === 'completed' ? 'Completed' : 'Pending',
+            priority: task.priority || 'Medium',
+            priorityClass: task.priority === 'High'
+              ? 'bg-error-container text-on-error-container'
+              : task.priority === 'Low'
+                ? 'bg-surface-container text-on-surface-variant'
+                : 'bg-secondary-container text-on-secondary-container',
+            status: task.status === 'completed' ? 'completed' : 'todo'
+          }));
+
+          showToast("New task created!", "success");
+          window.dispatchEvent(new CustomEvent('campus:tasksUpdated'));
+          render();
+        } catch (error) {
+          console.error('Task creation failed:', error);
+          showToast('Could not create task', 'error');
+        }
       };
     }
   }
