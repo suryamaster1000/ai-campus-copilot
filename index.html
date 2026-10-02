@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta content="web_dashboard" name="shell-type"/>
+  <title>AI Campus Copilot</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+  </style>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-secondary-fixed": "#001b3b",
+            "on-tertiary-fixed": "#001a41",
+            "on-tertiary-fixed-variant": "#004494",
+            "secondary-container": "#bed5ff",
+            "secondary-fixed": "#d5e3ff",
+            "surface-container-high": "#e5e8ee",
+            "on-error": "#ffffff",
+            "primary-fixed-dim": "#adc7ff",
+            "on-secondary": "#ffffff",
+            "secondary": "#485f83",
+            "surface": "#f7f9ff",
+            "error": "#ba1a1a",
+            "surface-container-low": "#f1f4fa",
+            "on-error-container": "#93000a",
+            "secondary-fixed-dim": "#b0c8f1",
+            "on-primary": "#ffffff",
+            "surface-container-highest": "#dfe3e8",
+            "on-surface": "#181c20",
+            "on-tertiary-container": "#ffffff",
+            "primary-fixed": "#d8e2ff",
+            "on-background": "#181c20",
+            "inverse-primary": "#adc7ff",
+            "on-secondary-fixed-variant": "#30476a",
+            "primary": "#005bbf",
+            "background": "#f7f9ff",
+            "error-container": "#ffdad6",
+            "inverse-on-surface": "#eef1f7",
+            "on-primary-fixed": "#001a41",
+            "on-tertiary": "#ffffff",
+            "tertiary": "#005ac0",
+            "surface-bright": "#f7f9ff",
+            "on-primary-container": "#ffffff",
+            "outline-variant": "#c1c6d6",
+            "surface-tint": "#005bc0",
+            "on-primary-fixed-variant": "#004493",
+            "surface-dim": "#d7dae0",
+            "primary-container": "#1a73e8",
+            "surface-container": "#ebeef4",
+            "inverse-surface": "#2d3135",
+            "on-secondary-container": "#455c80",
+            "tertiary-fixed-dim": "#adc6ff",
+            "outline": "#727785",
+            "tertiary-fixed": "#d8e2ff",
+            "on-surface-variant": "#414754",
+            "surface-container-lowest": "#ffffff",
+            "tertiary-container": "#2a73e1",
+            "surface-variant": "#dfe3e8"
+          },
+          borderRadius: {
+            DEFAULT: "0.25rem",
+            lg: "0.5rem",
+            xl: "0.75rem",
+            full: "9999px"
+          },
+          spacing: {
+            gutter: "1.5rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2.5rem",
+            "space-md": "1rem",
+            margin: "2rem",
+            "gutter-sm": "1rem",
+            "margin-sm": "1rem"
+          },
+          fontFamily: {
+            display: ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "label-lg": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "headline-lg-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "display-mobile": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"]
+          },
+          fontSize: {
+            display: ["3rem", { lineHeight: "3.5rem", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-sm": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "400" }],
+            "label-lg": ["0.875rem", { lineHeight: "1.25rem", letterSpacing: "0.01em", fontWeight: "600" }],
+            "body-md": ["1rem", { lineHeight: "1.5rem", letterSpacing: "0em", fontWeight: "400" }],
+            "headline-lg-mobile": ["1.5rem", { lineHeight: "2rem", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "label-md": ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.02em", fontWeight: "500" }],
+            "display-mobile": ["2.25rem", { lineHeight: "2.75rem", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "body-lg": ["1.125rem", { lineHeight: "1.75rem", letterSpacing: "0em", fontWeight: "400" }],
+            "headline-md": ["1.25rem", { lineHeight: "1.75rem", letterSpacing: "0em", fontWeight: "600" }],
+            "label-sm": ["0.6875rem", { lineHeight: "0.875rem", letterSpacing: "0.04em", fontWeight: "600" }],
+            "headline-lg": ["2rem", { lineHeight: "2.5rem", letterSpacing: "-0.01em", fontWeight: "600" }]
+          }
+        }
+      }
+    };
+  </script>
+
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+
+<body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+    <div class="h-16 w-full px-gutter flex items-center justify-between gap-gutter">
+      
+      <!-- Brand & Mobile Menu Button -->
+      <div class="flex items-center gap-space-md min-w-[280px]">
+        <button id="mobileMenuBtn" aria-label="Open mobile menu" class="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors" type="button">
+          <span class="material-symbols-outlined text-[24px]">menu</span>
+        </button>
+        <div class="flex items-center gap-space-sm cursor-pointer" onclick="window.location.hash='#dashboard'">
+          <img alt="AI Campus Copilot Logo" class="h-8 w-8 object-contain" src="assets/logo.svg"/>
+          <div class="flex flex-col">
+            <div class="flex items-center gap-space-xs">
+              <span class="font-headline-md text-headline-md font-bold tracking-tight text-on-surface">AI Campus Copilot</span>
+            </div>
+            <span class="font-label-sm text-label-sm text-on-surface-variant font-medium">B.Tech Computer Science • Term 4</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Omnisearch / Command Palette Trigger -->
+      <div class="hidden md:flex flex-1 max-w-2xl mx-auto items-center">
+        <div id="headerSearchBox" class="w-full flex items-center bg-surface-container-low hover:bg-surface-container transition-colors rounded-full px-space-md py-space-xs shadow-[0_1px_3px_rgba(60,64,67,0.06)] cursor-pointer">
+          <span class="material-symbols-outlined text-outline text-[20px] mr-space-sm">search</span>
+          <input id="headerSearchInput" class="w-full bg-transparent border-none outline-none font-body-sm text-body-sm text-on-surface placeholder:text-outline cursor-pointer" placeholder="Ask Copilot or search campus info..." type="text" readonly/>
+          <kbd class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container-highest px-space-xs py-0.5 rounded text-[11px] font-semibold tracking-wide ml-space-sm shadow-[0_1px_2px_rgba(60,64,67,0.08)]">⌘K</kbd>
+        </div>
+      </div>
+
+      <!-- Header Actions: Ask AI, Notifications, User Profile -->
+      <div class="flex items-center gap-space-md">
+        <button id="headerAskAiBtn" class="hidden sm:inline-flex items-center gap-space-xs bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary font-label-lg text-label-lg px-space-md py-space-xs rounded-full transition-all shadow-[0_1px_3px_rgba(60,64,67,0.08)]" type="button">
+          <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+          <span>Ask AI</span>
+        </button>
+        
+        <!-- Notification Bell -->
+        <button id="headerNotifBtn" class="relative p-space-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-full transition-colors" type="button" aria-label="View notifications">
+          <span class="material-symbols-outlined text-[24px]">notifications</span>
+          <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-error rounded-full ring-2 ring-surface"></span>
+        </button>
+
+        <!-- Profile Pill -->
+        <div id="headerProfilePill" class="flex items-center gap-space-sm pl-space-xs cursor-pointer hover:opacity-90 transition-opacity" title="Student Settings">
+          <div class="relative flex-shrink-0">
+            <img alt="Sophia Chen" class="w-8 h-8 rounded-full object-cover ring-1 ring-surface-container-high" src="assets/avatars/student.svg"/>
+            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-surface"></span>
+          </div>
+          <div class="hidden xl:flex flex-col text-left">
+            <span class="font-label-md text-label-md font-semibold text-on-surface leading-tight">Sophia Chen</span>
+            <span class="font-label-sm text-label-sm text-on-surface-variant">#CS-2024-884</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== DESKTOP SIDEBAR ==================== -->
+  <aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest z-40 hidden lg:flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.03)] select-none">
+    <div class="flex-1 overflow-y-auto px-space-sm custom-scrollbar">
+      
+      <!-- Primary Navigation -->
+      <nav class="space-y-1">
+        <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="dashboard" href="#dashboard">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">dashboard</span>
+            <span>Dashboard</span>
+          </div>
+        </a>
+
+        <a class="flex items-center justify-between px-space-md py-space-sm transition-colors bg-secondary-container text-on-secondary-container font-semibold rounded-xl" data-path="ai-assistant" href="#ai-assistant">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+            <span>AI Assistant</span>
+          </div>
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded-full font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold text-[10px]">
+            <span class="material-symbols-outlined text-[12px] mr-0.5">arrow_back_ios_new</span>AI
+          </span>
+        </a>
+
+        <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="timetable" href="#timetable">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+            <span>Timetable</span>
+          </div>
+        </a>
+
+        <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="notices" href="#notices">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">campaign</span>
+            <span>Notices</span>
+          </div>
+          <span class="sidebar-notices-badge font-label-sm text-label-sm px-2 py-0.5 bg-error-container text-on-error-container rounded-full text-[11px] font-semibold">3</span>
+        </a>
+
+        <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="study-assistant" href="#study-assistant">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">menu_book</span>
+            <span>Study Assistant</span>
+          </div>
+        </a>
+
+        <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="campus-guide" href="#campus-guide">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">map</span>
+            <span>Campus Guide</span>
+          </div>
+        </a>
+
+        <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="events" href="#events">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">event</span>
+            <span>Events</span>
+          </div>
+        </a>
+
+        <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="my-tasks" href="#my-tasks">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">task_alt</span>
+            <span>My Tasks</span>
+          </div>
+          <span class="sidebar-tasks-badge font-label-sm text-label-sm px-2 py-0.5 bg-surface-container-high text-on-surface-variant rounded-full text-[11px] font-semibold">4</span>
+        </a>
+      </nav>
+
+      <!-- Divider -->
+      <div class="my-space-md px-space-md">
+        <div class="h-px bg-surface-container-highest"></div>
+      </div>
+
+      <!-- Secondary Links -->
+      <nav class="space-y-1">
+        <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="admin-panel" href="#admin-panel">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+            <span>Admin Panel</span>
+          </div>
+          <span class="material-symbols-outlined text-outline text-[16px]">open_in_new</span>
+        </a>
+
+        <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors" data-path="settings" href="#settings">
+          <div class="flex items-center gap-space-md">
+            <span class="material-symbols-outlined text-[20px]">settings</span>
+            <span>Settings</span>
+          </div>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Academic Gateway Footer Footprint -->
+    <div class="px-space-md pt-space-sm">
+      <div class="bg-surface-container-low rounded-xl p-space-sm flex items-center gap-space-sm">
+        <span class="material-symbols-outlined text-primary text-[20px]">school</span>
+        <div class="flex flex-col">
+          <span class="font-label-sm text-label-sm text-on-surface font-semibold">Academic Gateway</span>
+          <span class="font-label-sm text-label-sm text-on-surface-variant text-[11px]">Connected: Canvas &amp; SIS</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== MOBILE DRAWER ==================== -->
+  <div id="mobileDrawer" class="fixed inset-0 z-50 hidden lg:hidden">
+    <!-- Backdrop -->
+    <div id="mobileDrawerBackdrop" class="fixed inset-0 drawer-backdrop"></div>
+    
+    <!-- Drawer Panel -->
+    <aside class="relative w-72 max-w-[80vw] h-full bg-surface-container-lowest z-10 flex flex-col justify-between py-space-md shadow-2xl animate-slide-left">
+      <div class="px-space-md pb-space-sm flex items-center justify-between border-b border-surface-container">
+        <div class="flex items-center gap-2">
+          <img src="assets/logo.svg" alt="Logo" class="w-7 h-7"/>
+          <span class="font-headline-md text-base font-bold text-on-surface">Campus Copilot</span>
+        </div>
+        <button id="closeMobileDrawerBtn" class="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto px-space-sm py-space-sm space-y-1 custom-scrollbar">
+        <nav class="space-y-1">
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="dashboard" href="#dashboard">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">dashboard</span>
+              <span>Dashboard</span>
+            </div>
+          </a>
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="ai-assistant" href="#ai-assistant">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+              <span>AI Assistant</span>
+            </div>
+          </a>
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="timetable" href="#timetable">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">calendar_month</span>
+              <span>Timetable</span>
+            </div>
+          </a>
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="notices" href="#notices">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">campaign</span>
+              <span>Notices</span>
+            </div>
+            <span class="sidebar-notices-badge font-label-sm text-label-sm px-2 py-0.5 bg-error-container text-on-error-container rounded-full text-[11px] font-semibold">3</span>
+          </a>
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="study-assistant" href="#study-assistant">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">menu_book</span>
+              <span>Study Assistant</span>
+            </div>
+          </a>
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="campus-guide" href="#campus-guide">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">map</span>
+              <span>Campus Guide</span>
+            </div>
+          </a>
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="events" href="#events">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">event</span>
+              <span>Events</span>
+            </div>
+          </a>
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="my-tasks" href="#my-tasks">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">task_alt</span>
+              <span>My Tasks</span>
+            </div>
+            <span class="sidebar-tasks-badge font-label-sm text-label-sm px-2 py-0.5 bg-surface-container-high text-on-surface-variant rounded-full text-[11px] font-semibold">4</span>
+          </a>
+          <div class="my-space-md px-space-md">
+            <div class="h-px bg-surface-container-highest"></div>
+          </div>
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="admin-panel" href="#admin-panel">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
+              <span>Admin Panel</span>
+            </div>
+          </a>
+          <a class="flex items-center justify-between px-space-md py-space-sm rounded-xl font-label-lg text-label-lg" data-path="settings" href="#settings">
+            <div class="flex items-center gap-space-md">
+              <span class="material-symbols-outlined text-[20px]">settings</span>
+              <span>Settings</span>
+            </div>
+          </a>
+        </nav>
+      </div>
+
+      <div class="px-space-md pt-space-sm border-t border-surface-container">
+        <div class="bg-surface-container-low rounded-xl p-space-sm flex items-center gap-space-sm">
+          <span class="material-symbols-outlined text-primary text-[20px]">school</span>
+          <div class="flex flex-col">
+            <span class="font-label-sm text-label-sm text-on-surface font-semibold">Academic Gateway</span>
+            <span class="font-label-sm text-label-sm text-on-surface-variant text-[11px]">Connected: Canvas &amp; SIS</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+  <div class="lg:pl-64 flex flex-col min-h-screen">
+    <main class="relative pt-16 flex-1 w-full px-space-md lg:px-gutter" id="mainContentArea">
+      <!-- Dynamically Rendered by Router (Default: AI Assistant / Dashboard) -->
+    </main>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Main JavaScript App Entrypoint (ES Module) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

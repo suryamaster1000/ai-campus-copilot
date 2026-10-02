@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#005bbf"/>
+      <stop offset="100%" stop-color="#1a73e8"/>
+    </linearGradient>
+    <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d8e2ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="12" fill="url(#logoGrad)"/>
+  <!-- Graduation Cap / Campus Motif -->
+  <path d="M24 10L9 18L24 26L39 18L24 10Z" fill="url(#starGrad)"/>
+  <path d="M15 22.5V30C15 32.5 19 35 24 35C29 35 33 32.5 33 30V22.5L24 27.5L15 22.5Z" fill="url(#starGrad)" fill-opacity="0.9"/>
+  <circle cx="39" cy="22" r="2" fill="#d8e2ff"/>
+  <path d="M39 24V32" stroke="#d8e2ff" stroke-width="2" stroke-linecap="round"/>
+  <!-- AI Sparkle in bottom center -->
+  <path d="M24 37C24.5 35 26.5 33.5 28.5 33C26.5 32.5 24.5 31 24 29C23.5 31 21.5 32.5 19.5 33C21.5 33.5 23.5 35 24 37Z" fill="#ffd700"/>
+</svg>
