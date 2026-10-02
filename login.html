@@ -153,7 +153,7 @@
 
     <!-- Footer -->
     <p class="text-center text-[11px] text-on-surface-variant mt-4">
-      AI Campus Copilot v2.4 • Powered by Firebase &amp; Gemini
+      AI Campus Copilot v2.4 • Powered by Supabase &amp; Gemini
     </p>
   </div>
 
@@ -166,145 +166,88 @@
   </div>
 
   <script type="module">
-    import {
-      auth,
-      googleProvider,
-      signInWithEmailAndPassword,
-      createUserWithEmailAndPassword,
-      signInWithPopup,
-      onAuthStateChanged,
-      db,
-      doc,
-      setDoc
-    } from './js/firebase.js';
+    import { supabase } from './js/supabase.js';
 
-    // Auto-redirect if already logged in
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        window.location.href = 'index.html';
-      }
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) window.location.href = 'index.html';
     });
 
-    function showLoading(text = 'Signing you in...') {
+    const showLoading = (text='Signing you in...') => {
       document.getElementById('loadingOverlay').classList.remove('hidden');
       document.getElementById('loadingText').textContent = text;
+    };
+    const hideLoading = () => document.getElementById('loadingOverlay').classList.add('hidden');
+    const showError = (message) => {
+      const el=document.getElementById('authError'); el.textContent=message; el.classList.add('show');
+      setTimeout(()=>el.classList.remove('show'),5000);
+    };
+    const hideError = () => document.getElementById('authError').classList.remove('show');
+
+    function friendlyError(error) {
+      const m=error?.message||'';
+      if (/invalid login credentials/i.test(m)) return 'Invalid email or password. Please try again.';
+      if (/already registered/i.test(m)) return 'An account already exists with this email.';
+      if (/password/i.test(m) && /short|characters/i.test(m)) return 'Password does not meet the password requirements.';
+      if (/email/i.test(m) && /valid/i.test(m)) return 'Please enter a valid email address.';
+      return m || 'Something went wrong. Please try again.';
     }
 
-    function hideLoading() {
-      document.getElementById('loadingOverlay').classList.add('hidden');
-    }
-
-    function showError(message) {
-      const el = document.getElementById('authError');
-      el.textContent = message;
-      el.classList.add('show');
-      setTimeout(() => el.classList.remove('show'), 5000);
-    }
-
-    function hideError() {
-      document.getElementById('authError').classList.remove('show');
-    }
-
-    function friendlyError(code) {
-      const map = {
-        'auth/invalid-credential': 'Invalid email or password. Please try again.',
-        'auth/user-not-found': 'No account found with this email.',
-        'auth/wrong-password': 'Incorrect password. Please try again.',
-        'auth/email-already-in-use': 'An account already exists with this email.',
-        'auth/weak-password': 'Password must be at least 6 characters.',
-        'auth/invalid-email': 'Please enter a valid email address.',
-        'auth/popup-closed-by-user': 'Google sign-in was cancelled.',
-        'auth/network-request-failed': 'Network error. Check your internet connection.',
-      };
-      return map[code] || 'Something went wrong. Please try again.';
-    }
-
-    // Tab switching
     window.switchTab = function(tab) {
       hideError();
-      if (tab === 'signin') {
-        document.getElementById('signInForm').classList.remove('hidden');
-        document.getElementById('signUpForm').classList.add('hidden');
-        document.getElementById('tabSignIn').className = 'flex-1 py-1.5 rounded-lg text-xs font-bold bg-white shadow-sm text-primary transition-all';
-        document.getElementById('tabSignUp').className = 'flex-1 py-1.5 rounded-lg text-xs font-bold text-on-surface-variant transition-all';
-      } else {
-        document.getElementById('signInForm').classList.add('hidden');
-        document.getElementById('signUpForm').classList.remove('hidden');
-        document.getElementById('tabSignIn').className = 'flex-1 py-1.5 rounded-lg text-xs font-bold text-on-surface-variant transition-all';
-        document.getElementById('tabSignUp').className = 'flex-1 py-1.5 rounded-lg text-xs font-bold bg-white shadow-sm text-primary transition-all';
-      }
+      const si=document.getElementById('signInForm'), su=document.getElementById('signUpForm');
+      const a=document.getElementById('tabSignIn'), b=document.getElementById('tabSignUp');
+      const active='flex-1 py-1.5 rounded-lg text-xs font-bold bg-white shadow-sm text-primary transition-all';
+      const inactive='flex-1 py-1.5 rounded-lg text-xs font-bold text-on-surface-variant transition-all';
+      si.classList.toggle('hidden',tab!=='signin'); su.classList.toggle('hidden',tab==='signin');
+      a.className=tab==='signin'?active:inactive; b.className=tab==='signup'?active:inactive;
     };
 
-    // Email Sign-In
-    document.getElementById('signInForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      hideError();
-      const email = document.getElementById('siEmail').value.trim();
-      const password = document.getElementById('siPassword').value;
-      if (!email || !password) return;
-      showLoading('Signing you in...');
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        window.location.href = 'index.html';
-      } catch (err) {
-        hideLoading();
-        showError(friendlyError(err.code));
-      }
+    document.getElementById('signInForm').addEventListener('submit',async(e)=>{
+      e.preventDefault(); hideError();
+      const email=document.getElementById('siEmail').value.trim();
+      const password=document.getElementById('siPassword').value;
+      if(!email||!password)return;
+      showLoading();
+      const {error}=await supabase.auth.signInWithPassword({email,password});
+      if(error){hideLoading();showError(friendlyError(error));return;}
+      window.location.href='index.html';
     });
 
-    // Email Sign-Up
-    document.getElementById('signUpForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      hideError();
-      const name = document.getElementById('suName').value.trim();
-      const email = document.getElementById('suEmail').value.trim();
-      const password = document.getElementById('suPassword').value;
-      const roll = document.getElementById('suRoll').value.trim();
-      if (!name || !email || !password) return;
+    document.getElementById('signUpForm').addEventListener('submit',async(e)=>{
+      e.preventDefault(); hideError();
+      const name=document.getElementById('suName').value.trim();
+      const email=document.getElementById('suEmail').value.trim();
+      const password=document.getElementById('suPassword').value;
+      const roll=document.getElementById('suRoll').value.trim();
+      if(!name||!email||!password)return;
       showLoading('Creating your account...');
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        // Save user profile in Firestore
-        await setDoc(doc(db, 'students', cred.user.uid), {
-          name,
-          email,
-          rollNumber: roll || 'N/A',
-          program: 'B.Tech Computer Science',
-          term: 'Term 4 (Fall 2024)',
-          cgpa: '0.00',
-          createdAt: new Date().toISOString()
+      const {data,error}=await supabase.auth.signUp({
+        email,password,options:{data:{name,roll_number:roll||'N/A'}}
+      });
+      if(error){hideLoading();showError(friendlyError(error));return;}
+      if(data.user){
+        const {error:profileError}=await supabase.from('profiles').upsert({
+          id:data.user.id,name,email,roll_number:roll||'N/A',
+          program:'B.Tech Computer Science',term:'Term 4',cgpa:'0.00'
         });
-        window.location.href = 'index.html';
-      } catch (err) {
-        hideLoading();
-        showError(friendlyError(err.code));
+        if(profileError){hideLoading();showError(profileError.message);return;}
       }
+      if(!data.session){
+        hideLoading(); showError('Account created. Check your email to confirm your account, then sign in.');
+        window.switchTab('signin'); return;
+      }
+      window.location.href='index.html';
     });
 
-    // Google Sign-In
-    document.getElementById('googleSignInBtn').addEventListener('click', async () => {
-      hideError();
-      showLoading('Opening Google Sign-In...');
-      try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const user = result.user;
-        // Save profile if first time
-        await setDoc(doc(db, 'students', user.uid), {
-          name: user.displayName || 'Student',
-          email: user.email,
-          rollNumber: 'N/A',
-          program: 'B.Tech Computer Science',
-          term: 'Term 4 (Fall 2024)',
-          cgpa: '0.00',
-          createdAt: new Date().toISOString()
-        }, { merge: true });
-        window.location.href = 'index.html';
-      } catch (err) {
-        hideLoading();
-        showError(friendlyError(err.code));
-      }
+    document.getElementById('googleSignInBtn').addEventListener('click',async()=>{
+      hideError(); showLoading('Opening Google Sign-In...');
+      const {error}=await supabase.auth.signInWithOAuth({
+        provider:'google',
+        options:{redirectTo:new URL('index.html',window.location.href).href}
+      });
+      if(error){hideLoading();showError(friendlyError(error));}
     });
-  </script>
+  </script>t>
 
 </body>
 </html>
