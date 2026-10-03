@@ -50,6 +50,7 @@ export function renderAdminPanel(container) {
       </section>
 
       <div id="adminExtraTools" class="space-y-space-md"></div>
+      <div id="adminContentManagement" class="space-y-space-md"></div>
 
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/30 shadow-sm">
         <div class="flex items-center gap-2">
@@ -91,6 +92,9 @@ export function renderAdminPanel(container) {
     import('./admin-tools.js?v=20261003-live1')
       .then((module) => module.renderAdminTools(document.getElementById('adminExtraTools')))
       .catch((error) => console.error('Admin tools module failed:', error));
+    import('./admin-content.js?v=20261003-live1')
+      .then((module) => module.renderAdminContent(document.getElementById('adminContentManagement')))
+      .catch((error) => console.error('Admin content module failed:', error));
   });
 
   document.getElementById('refreshRegistrationsBtn')?.addEventListener('click', async (event) => {
