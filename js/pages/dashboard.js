@@ -3,7 +3,12 @@ import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 
 export function renderDashboard(container) {
-  const currentClass = campusData.timetable[0]?.classes?.[0] || null;
+  const todayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
+  const todaySchedule = campusData.timetable.find(d => d.day === todayName) || campusData.timetable[0] || { classes: [] };
+  const currentClass = todaySchedule.classes?.[0] || null;
+  const attendanceValue = parseFloat(campusData.student.attendanceOverall) || 0;
+  const primarySubject = campusData.studyModules?.[0];
+  const nextExam = campusData.exams?.[0];
   const upcomingTasks = campusData.tasks.filter(t => t.status !== 'completed').slice(0, 3);
   const urgentNotices = campusData.notices.slice(0, 2);
 
@@ -73,7 +78,7 @@ export function renderDashboard(container) {
               <span class="text-xs text-outline font-medium">min 75% required</span>
             </div>
             <div class="w-full bg-surface-container h-2 rounded-full mt-2 overflow-hidden">
-              <div class="bg-emerald-500 h-full rounded-full" style="width: 0%"></div>
+              <div class="bg-emerald-500 h-full rounded-full" style="width: ${Math.min(100, Math.max(0, attendanceValue))}%"></div>
             </div>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs text-on-surface-variant">
@@ -202,13 +207,13 @@ export function renderDashboard(container) {
                 </div>
               </button>
 
-              <button class="dash-quick-query p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container text-left rounded-xl transition-all group flex items-start gap-3" data-query="What is my attendance percentage in CS-204?">
+              <button class="dash-quick-query p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container text-left rounded-xl transition-all group flex items-start gap-3" data-query="What is my attendance percentage in ${primarySubject?.code || "my subjects"}?">
                 <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-emerald-600 flex-shrink-0 group-hover:scale-105 transition-transform">
                   <span class="material-symbols-outlined text-[18px]">percent</span>
                 </div>
                 <div>
                   <h4 class="font-label-md font-bold text-xs text-on-surface group-hover:text-on-secondary-container">Attendance Audit</h4>
-                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">Check CS-204 safe lecture margin</p>
+                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">Check current connected attendance data</p>
                 </div>
               </button>
 
@@ -218,17 +223,17 @@ export function renderDashboard(container) {
                 </div>
                 <div>
                   <h4 class="font-label-md font-bold text-xs text-on-surface group-hover:text-on-secondary-container">Midterm Schedule</h4>
-                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">Exams start Nov 05, 2024</p>
+                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">${nextExam ? `Next: ${nextExam.exam_type || "Exam"} on ${nextExam.exam_date}` : "No exam data loaded"}</p>
                 </div>
               </button>
 
-              <button class="dash-quick-query p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container text-left rounded-xl transition-all group flex items-start gap-3" data-query="Summarize lecture notes for AVL Trees">
+              <button class="dash-quick-query p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container text-left rounded-xl transition-all group flex items-start gap-3" data-query="Summarize the notes for ${primarySubject?.code || "my current subject"}">
                 <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-secondary flex-shrink-0 group-hover:scale-105 transition-transform">
                   <span class="material-symbols-outlined text-[18px]">auto_stories</span>
                 </div>
                 <div>
-                  <h4 class="font-label-md font-bold text-xs text-on-surface group-hover:text-on-secondary-container">AVL Trees Review</h4>
-                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">Rotations &amp; balance factor formulas</p>
+                  <h4 class="font-label-md font-bold text-xs text-on-surface group-hover:text-on-secondary-container">Study Notes Review</h4>
+                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">Explain topics from my connected subject data</p>
                 </div>
               </button>
             </div>
