@@ -433,7 +433,7 @@ let currentRoute = '';
 let pendingAiQuery = null;
 
 // Initialize App
-document.addEventListener('DOMContentLoaded', async () => {
+async function startApp() {
   // OAuth may return access tokens in the URL fragment. Let Supabase restore
   // that session before the hash router touches window.location.hash.
   const authenticated = await initializeAuth();
@@ -475,7 +475,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.addEventListener('campus:tasksUpdated', () => {
     updateSidebarBadges();
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', startApp, { once: true });
+} else {
+  startApp();
+}
 
 function initRouter() {
   window.addEventListener('hashchange', () => {
