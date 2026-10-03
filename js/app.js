@@ -242,10 +242,14 @@ async function handleAuthSession(session) {
 
     loadLiveCampusData(profile)
       .then(() => {
-        // Live academic data loads asynchronously during authentication.
-        // Re-render the timetable once it arrives so users do not see the
-        // initial empty state that was rendered before the query completed.
-        if (window.location.hash === '#timetable') {
+        // Live campus data loads asynchronously during authentication.
+        // Re-render the current live-data page once the query completes so
+        // users do not see a stale empty state from the initial render.
+        const liveDataRoutes = new Set([
+          '#dashboard', '#timetable', '#notices', '#events',
+          '#study-assistant', '#campus-guide'
+        ]);
+        if (liveDataRoutes.has(window.location.hash)) {
           handleRoute();
         }
       })
