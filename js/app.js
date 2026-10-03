@@ -17,17 +17,39 @@ async function handleAuthSession(session) {
 
   currentUser = session.user;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', currentUser.id)
     .maybeSingle();
+
+  if (profileError) {
+    console.error('Supabase profile load failed:', profileError);
+  }
 
   // Keep the existing UI, but hydrate the student-facing values from Supabase.
   const name = profile?.name ||
     currentUser.user_metadata?.name ||
     currentUser.email?.split('@')[0] ||
     'Student';
+
+  // Google OAuth users may not have a profile row yet. Create one after
+  // authentication so personal fields do not fall back to demo data.
+  if (!profile && !profileError) {
+    const { error: profileCreateError } = await supabase.from('profiles').upsert({
+      id: currentUser.id,
+      name,
+      email: currentUser.email || '',
+      roll_number: currentUser.user_metadata?.roll_number || 'N/A',
+      program: 'B.Tech Computer Science',
+      term: 'Term 4',
+      cgpa: '0.00'
+    });
+
+    if (profileCreateError) {
+      console.error('Supabase profile create failed:', profileCreateError);
+    }
+  }
 
   if (profile) {
     campusData.student.name = profile.name || name;
@@ -36,6 +58,9 @@ async function handleAuthSession(session) {
     campusData.student.program = profile.program || campusData.student.program;
     campusData.student.term = profile.term || campusData.student.term;
     campusData.student.cgpa = profile.cgpa || campusData.student.cgpa;
+  } else {
+    campusData.student.name = name;
+    campusData.student.email = currentUser.email || '';
   }
 
   const { data: userTasks, error: tasksError } = await supabase
@@ -44,8 +69,12 @@ async function handleAuthSession(session) {
     .eq('user_id', currentUser.id)
     .order('created_at', { ascending: false });
 
-  if (!tasksError && Array.isArray(userTasks) && userTasks.length) {
-    campusData.tasks = userTasks.map((task) => ({
+  // Personal task data must never fall back to the bundled demo tasks.
+  if (tasksError) {
+    console.error('Supabase task load failed:', tasksError);
+    campusData.tasks = [];
+  } else {
+    campusData.tasks = (userTasks || []).map((task) => ({
       id: task.id,
       title: task.title,
       description: task.description || '',
