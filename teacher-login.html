@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Faculty Login — AI Campus Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+body{font-family:Inter,sans-serif}.display{font-family:'Plus Jakarta Sans',sans-serif}
+.card{box-shadow:0 20px 60px rgba(15,23,42,.12)}
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-blue-800 flex items-center justify-center p-5">
+<main class="w-full max-w-md">
+  <div class="text-center text-white mb-7">
+    <div class="w-16 h-16 mx-auto rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mb-4">
+      <span class="text-3xl">🎓</span>
+    </div>
+    <h1 class="display text-2xl font-extrabold">AI Campus Copilot</h1>
+    <p class="text-blue-100 mt-1 text-sm">Faculty & Teacher Portal</p>
+  </div>
+
+  <section class="card bg-white rounded-3xl p-7">
+    <div class="mb-6">
+      <h2 class="display text-xl font-extrabold text-slate-900">Teacher Login</h2>
+      <p class="text-sm text-slate-500 mt-1">For authorized faculty accounts only.</p>
+    </div>
+
+    <div id="msg" class="hidden mb-4 rounded-xl px-4 py-3 text-sm"></div>
+
+    <form id="form" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5">Faculty Email</label>
+        <input id="email" type="email" required autocomplete="email"
+          class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-blue-600"
+          placeholder="teacher@college.edu">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1.5">Password</label>
+        <input id="password" type="password" required autocomplete="current-password"
+          class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-blue-600"
+          placeholder="••••••••">
+      </div>
+      <button id="btn" class="w-full rounded-xl bg-blue-700 hover:bg-blue-800 text-white py-3 font-bold transition" type="submit">
+        Sign in to Faculty Portal
+      </button>
+    </form>
+
+    <div class="flex items-center gap-3 my-6">
+      <div class="h-px bg-slate-200 flex-1"></div><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Demo-ready access</span><div class="h-px bg-slate-200 flex-1"></div>
+    </div>
+
+    <a href="login.html" class="block text-center text-sm font-bold text-blue-700 hover:underline">← Student / Admin Login</a>
+  </section>
+
+  <p class="text-center text-xs text-blue-100/70 mt-5">AI Campus Copilot • Faculty access is controlled by Supabase</p>
+</main>
+
+<script type="module">
+import { supabase } from './js/supabase.js';
+
+const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
+const form = document.getElementById('form');
+const btn = document.getElementById('btn');
+const msg = document.getElementById('msg');
+
+function message(text, ok=false){
+  msg.textContent=text;
+  msg.className='mb-4 rounded-xl px-4 py-3 text-sm ' + (ok ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200');
+}
+async function teacherAllowed(user){
+  if(!user?.id) return false;
+  if(user.id === OWNER_USER_ID) return true;
+  const {data,error}=await supabase.from('admin_users').select('user_id,role').eq('user_id',user.id).maybeSingle();
+  if(error){ console.error(error); return false; }
+  const role=String(data?.role||'').toLowerCase();
+  return ['teacher','faculty','instructor'].includes(role);
+}
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  btn.disabled=true; btn.textContent='Signing in...';
+  const {data,error}=await supabase.auth.signInWithPassword({
+    email: document.getElementById('email').value.trim(),
+    password: document.getElementById('password').value
+  });
+  if(error){ message(error.message || 'Unable to sign in.'); btn.disabled=false; btn.textContent='Sign in to Faculty Portal'; return; }
+  if(!(await teacherAllowed(data.user))){
+    await supabase.auth.signOut();
+    message('This account is not authorized for the Faculty Portal.');
+    btn.disabled=false; btn.textContent='Sign in to Faculty Portal'; return;
+  }
+  message('Faculty account verified. Opening portal...', true);
+  setTimeout(()=>{ window.location.href='index.html#admin'; }, 400);
+});
+</script>
+</body>
+</html>
