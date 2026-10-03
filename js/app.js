@@ -240,9 +240,18 @@ async function handleAuthSession(session) {
     campusData.student.section = profile.section || '';
     campusData.student.cgpa = profile.cgpa || campusData.student.cgpa;
 
-    loadLiveCampusData(profile).catch((error) => {
-      console.error('Live campus data load failed:', error);
-    });
+    loadLiveCampusData(profile)
+      .then(() => {
+        // Live academic data loads asynchronously during authentication.
+        // Re-render the timetable once it arrives so users do not see the
+        // initial empty state that was rendered before the query completed.
+        if (window.location.hash === '#timetable') {
+          handleRoute();
+        }
+      })
+      .catch((error) => {
+        console.error('Live campus data load failed:', error);
+      });
   } else {
     campusData.student.name = name;
     campusData.student.email = currentUser.email || '';
