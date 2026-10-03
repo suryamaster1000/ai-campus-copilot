@@ -3,7 +3,7 @@ import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 
 export function renderDashboard(container) {
-  const currentClass = campusData.timetable[0].classes[1]; // CS-204
+  const currentClass = campusData.timetable[0]?.classes?.[0] || null;
   const upcomingTasks = campusData.tasks.filter(t => t.status !== 'completed').slice(0, 3);
   const urgentNotices = campusData.notices.slice(0, 2);
 
@@ -15,13 +15,13 @@ export function renderDashboard(container) {
         <div class="space-y-1">
           <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold backdrop-blur-md">
             <span class="material-symbols-outlined text-[15px] material-symbols-filled text-amber-300">verified</span>
-            <span>Fall 2024 Academic Term Active</span>
+            <span>Academic data will appear here</span>
           </div>
           <h1 class="font-headline-lg text-2xl lg:text-3xl font-extrabold tracking-tight">
-            Welcome back, Sophia! 👋
+            Welcome to AI Campus Copilot 👋
           </h1>
           <p class="font-body-md text-sm text-white/90">
-            You have <span class="font-semibold underline decoration-white/50">3 lectures</span> remaining today. Your next class is in <span class="font-bold">25 minutes</span> in Turing Hall.
+            Your dashboard will populate automatically when your student and academic data is connected.
           </p>
         </div>
         <div class="flex items-center gap-2 self-stretch sm:self-auto flex-wrap">
@@ -47,14 +47,14 @@ export function renderDashboard(container) {
             </span>
           </div>
           <div class="my-2">
-            <h3 class="font-headline-md text-lg font-bold text-on-surface">${currentClass.code} - ${currentClass.name}</h3>
+            <h3 class="font-headline-md text-lg font-bold text-on-surface">${currentClass ? `${currentClass.code} - ${currentClass.name}` : 'No timetable data yet'}</h3>
             <p class="text-xs text-on-surface-variant flex items-center gap-1 mt-1">
               <span class="material-symbols-outlined text-[16px] text-outline">room</span>
-              ${currentClass.room}
+              ${currentClass?.room || 'Add timetable data'}
             </p>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs">
-            <span class="text-on-surface-variant font-medium">${currentClass.faculty}</span>
+            <span class="text-on-surface-variant font-medium">${currentClass?.faculty || 'Not assigned'}</span>
             <button class="text-primary font-bold hover:underline flex items-center gap-0.5" onclick="window.location.hash='#timetable'">
               Timetable <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
             </button>
@@ -77,8 +77,8 @@ export function renderDashboard(container) {
             </div>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs text-on-surface-variant">
-            <span>6 Courses Tracked</span>
-            <span class="text-amber-600 font-semibold">MA-202 at 80.7%</span>
+            <span>No courses loaded</span>
+            <span class="text-amber-600 font-semibold">Add attendance data</span>
           </div>
         </div>
 
@@ -86,19 +86,19 @@ export function renderDashboard(container) {
         <div class="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-surface-container-high hover:border-primary/40 transition-all flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-outline uppercase tracking-wider">Pending Tasks</span>
-            <span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container text-[11px] font-bold">2 Urgent</span>
+            <span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container text-[11px] font-bold">No urgent tasks</span>
           </div>
           <div class="my-2">
             <div class="flex items-baseline gap-2">
-              <span class="font-headline-lg text-3xl font-extrabold text-on-surface">4</span>
+              <span class="font-headline-lg text-3xl font-extrabold text-on-surface" >${upcomingTasks.length}</span>
               <span class="text-xs text-outline font-medium">assignments &amp; duties</span>
             </div>
             <p class="text-xs text-on-surface-variant mt-2 truncate">
-              Next: AVL Tree lab due in 4 days
+              Add tasks to see upcoming work
             </p>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs">
-            <span class="text-outline">Term 4</span>
+            <span class="text-outline">No term data</span>
             <button class="text-primary font-bold hover:underline flex items-center gap-0.5" onclick="window.location.hash='#my-tasks'">
               View Tasks <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
             </button>
@@ -109,7 +109,7 @@ export function renderDashboard(container) {
         <div class="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-surface-container-high hover:border-primary/40 transition-all flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-outline uppercase tracking-wider">Current CGPA</span>
-            <span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[11px] font-bold">Top 5%</span>
+            <span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-[11px] font-bold">No ranking data</span>
           </div>
           <div class="my-2">
             <div class="flex items-baseline gap-2">
@@ -121,8 +121,8 @@ export function renderDashboard(container) {
             </p>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs text-outline">
-            <span>Dean's List Honoree</span>
-            <span class="text-primary font-semibold">Fall 2024</span>
+            <span>Academic record</span>
+            <span class="text-primary font-semibold">Live data</span>
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@ export function renderDashboard(container) {
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary text-[22px]">calendar_today</span>
                 <h2 class="font-headline-md font-bold text-on-surface text-lg">Today's Class Schedule</h2>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-surface-container text-outline">Monday</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-surface-container text-outline">Schedule</span>
               </div>
               <button class="text-primary text-xs font-bold hover:underline" onclick="window.location.hash='#timetable'">
                 Full Timetable →
@@ -147,7 +147,7 @@ export function renderDashboard(container) {
             </div>
 
             <div class="space-y-3">
-              ${campusData.timetable[0].classes.map((cls, idx) => `
+              ${(campusData.timetable[0]?.classes || []).map((cls, idx) => `
                 <div class="p-3.5 rounded-xl border ${cls.isCurrent ? 'bg-primary-fixed/20 border-primary shadow-sm ring-1 ring-primary/30' : 'bg-surface-container-low border-surface-container-high'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div class="flex items-start gap-3">
                     <div class="w-12 h-12 rounded-xl ${cls.isCurrent ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface'} flex flex-col items-center justify-center flex-shrink-0 font-bold">
