@@ -5,6 +5,7 @@ import { showToast } from '../components/toast.js';
 const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
 
 export function renderAdminPanel(container) {
+  if (!container) return;
   container.innerHTML = `
     <div class="max-w-[1200px] mx-auto py-space-md space-y-space-md">
       <div class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
@@ -76,8 +77,16 @@ export function renderAdminPanel(container) {
     </div>
   `;
 
-  loadAdminAccessControl();
-  loadStudentRegistrations();
+  // Defer data loading until the DOM has been painted so the panel itself
+  // is visible even when a Supabase query is slow or fails.
+  queueMicrotask(() => {
+    loadAdminAccessControl().catch((error) => {
+      console.error('Admin access control failed:', error);
+    });
+    loadStudentRegistrations().catch((error) => {
+      console.error('Student registrations failed:', error);
+    });
+  });
 
   document.getElementById('refreshRegistrationsBtn')?.addEventListener('click', async (event) => {
     const button = event.currentTarget;
