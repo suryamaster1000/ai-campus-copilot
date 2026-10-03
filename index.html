@@ -408,6 +408,33 @@
   <div id="toast-container"></div>
 
   <!-- Main JavaScript App Entrypoint (ES Module) -->
-  <script type="module" src="js/app.js?v=20261003-live5"></script>
+  <script>
+    // Show a diagnostic instead of a blank page if the ES module or one of its
+    // dependencies fails to load in GitHub Pages/browser cache.
+    window.__showStartupError = function (message) {
+      const main = document.getElementById('mainContentArea');
+      if (!main) return;
+      main.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:48px 20px;font-family:Inter,system-ui,sans-serif">' +
+        '<div style="border:1px solid #f1b5b5;border-radius:16px;padding:24px;background:#fff5f5">' +
+        '<h1 style="margin:0 0 10px;font-size:22px;color:#93000a">AI Campus Copilot could not start</h1>' +
+        '<p style="margin:0;color:#5f6368">The page loaded, but a JavaScript module failed to start.</p>' +
+        '<pre style="white-space:pre-wrap;margin-top:16px;padding:12px;border-radius:10px;background:#fff;font-size:12px;color:#333;overflow:auto"></pre>' +
+        '<button onclick="location.reload()" style="margin-top:16px;padding:10px 16px;border:0;border-radius:10px;background:#005bbf;color:white;cursor:pointer">Reload</button>' +
+        '</div></div>';
+      const pre = main.querySelector('pre');
+      if (pre) pre.textContent = message || 'Unknown startup error';
+    };
+    window.addEventListener('error', function (event) {
+      if (event && event.error) window.__showStartupError(event.error.stack || event.error.message);
+      else if (event && event.message) window.__showStartupError(event.message);
+    });
+    window.addEventListener('unhandledrejection', function (event) {
+      const reason = event && event.reason;
+      window.__showStartupError(reason && (reason.stack || reason.message) || String(reason || 'Unhandled promise rejection'));
+    });
+    import('./js/app.js?v=20261003-live6').catch(function (error) {
+      window.__showStartupError(error && (error.stack || error.message) || String(error));
+    });
+  </script>
 </body>
 </html>
