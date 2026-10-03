@@ -112,7 +112,7 @@ export function renderAiAssistant(container, initialQuery = null) {
                   <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 </span>
                 <span class="font-body-sm text-[11px] leading-tight text-on-surface-variant mt-0.5">
-                  Synced with Fall 2024 Syllabus, SIS Feed &amp; Student Handbook
+                  Synced with Connected campus sources
                 </span>
                 <div class="mt-2 flex items-center justify-between text-[11px] text-outline font-label-sm">
                   <span>Sync status: 100%</span>
@@ -174,10 +174,10 @@ export function renderAiAssistant(container, initialQuery = null) {
                     What is my next class and what topics are being covered according to the syllabus?
                   </p>
                 </div>
-                <span class="font-label-sm text-[11px] text-outline mt-1 pr-1">09:42 AM • Sophia Chen</span>
+                <span class="font-label-sm text-[11px] text-outline mt-1 pr-1">09:42 AM • Student</span>
               </div>
               <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 ring-2 ring-primary-container shadow-sm">
-                <img class="w-full h-full object-cover" alt="Sophia Chen" src="assets/avatars/student.svg"/>
+                <img class="w-full h-full object-cover" alt="Student" src="assets/avatars/student.svg"/>
               </div>
             </div>
 
@@ -192,7 +192,7 @@ export function renderAiAssistant(container, initialQuery = null) {
                   <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md">
                     <div class="flex items-start gap-space-sm">
                       <div class="w-12 h-12 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex flex-col items-center justify-center flex-shrink-0">
-                        <span class="font-label-sm text-[11px] uppercase tracking-wide font-bold">10:15</span>
+                        <span class="font-label-sm text-[11px] uppercase tracking-wide font-bold">Scheduled time</span>
                         <span class="font-label-sm text-[10px] text-on-secondary-fixed-variant">AM</span>
                       </div>
                       <div>
@@ -202,16 +202,16 @@ export function renderAiAssistant(container, initialQuery = null) {
                         </div>
                         <p class="font-body-sm text-body-sm text-on-surface-variant mt-1 flex items-center gap-2 flex-wrap">
                           <span class="inline-flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[16px] text-outline">room</span> Room 302, Turing Hall
+                            <span class="material-symbols-outlined text-[16px] text-outline">room</span> Assigned room
                           </span>
                           <span class="inline-flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[16px] text-outline">person</span> Prof. Dr. Alan Vance
+                            <span class="material-symbols-outlined text-[16px] text-outline">person</span> Assigned faculty
                           </span>
                         </p>
                       </div>
                     </div>
                     <div class="flex items-center gap-2 self-start md:self-center">
-                      <button class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-lg font-label-md text-label-md transition-colors route-btn" data-room="Room 302, Turing Hall" type="button">
+                      <button class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-lg font-label-md text-label-md transition-colors route-btn" data-room="Assigned room" type="button">
                         <span class="material-symbols-outlined text-[16px] text-primary">navigation</span>
                         <span>Route</span>
                       </button>
@@ -254,11 +254,11 @@ export function renderAiAssistant(container, initialQuery = null) {
                           <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
                         </div>
                         <div class="flex flex-col min-w-0">
-                          <span class="font-label-sm text-label-sm font-semibold text-on-surface truncate">CS204_Syllabus_Fall2024.pdf</span>
+                          <span class="font-label-sm text-label-sm font-semibold text-on-surface truncate">Course_Syllabus_Fall2024.pdf</span>
                           <span class="text-[11px] text-on-surface-variant">Page 4, Section 3.2 • Registrar Schedule Feed API #2411</span>
                         </div>
                       </div>
-                      <button class="inspect-doc-btn inline-flex items-center gap-1 px-2.5 py-1 bg-surface-container-high hover:bg-secondary-container text-on-secondary-container rounded-md font-label-sm text-label-sm transition-colors self-start sm:self-center" data-doc="CS204_Syllabus_Fall2024.pdf" type="button">
+                      <button class="inspect-doc-btn inline-flex items-center gap-1 px-2.5 py-1 bg-surface-container-high hover:bg-secondary-container text-on-secondary-container rounded-md font-label-sm text-label-sm transition-colors self-start sm:self-center" data-doc="Course_Syllabus_Fall2024.pdf" type="button">
                         <span class="material-symbols-outlined text-[15px]">visibility</span>
                         <span>Inspect Document</span>
                       </button>
@@ -292,10 +292,10 @@ export function renderAiAssistant(container, initialQuery = null) {
                     Where can I submit my medical leave certificate?
                   </p>
                 </div>
-                <span class="font-label-sm text-[11px] text-outline mt-1 pr-1">09:45 AM • Sophia Chen</span>
+                <span class="font-label-sm text-[11px] text-outline mt-1 pr-1">09:45 AM • Student</span>
               </div>
               <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 ring-2 ring-primary-container shadow-sm">
-                <img class="w-full h-full object-cover" alt="Sophia Chen" src="assets/avatars/student.svg"/>
+                <img class="w-full h-full object-cover" alt="Student" src="assets/avatars/student.svg"/>
               </div>
             </div>
 
@@ -683,7 +683,7 @@ function initAiAssistantEvents(initialQuery) {
   const exportBtn = document.getElementById('exportNotesBtn');
   if (exportBtn) {
     exportBtn.addEventListener('click', () => {
-      showToast("Notes exported to Markdown file: Campus_Notes_CS204.md", "success");
+      showToast("Notes exported to Markdown file: Campus_Notes_Course.md", "success");
     });
   }
 
@@ -722,10 +722,10 @@ function initAiAssistantEvents(initialQuery) {
         <div class="bg-primary text-on-primary px-space-md py-space-sm rounded-2xl rounded-tr-none shadow-sm">
           <p class="font-body-md text-body-md leading-relaxed">${escapeHtml(query)}</p>
         </div>
-        <span class="font-label-sm text-[11px] text-outline mt-1 pr-1">${now} • Sophia Chen</span>
+        <span class="font-label-sm text-[11px] text-outline mt-1 pr-1">${now} • Student</span>
       </div>
       <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 ring-2 ring-primary-container shadow-sm">
-        <img src="assets/avatars/student.svg" alt="Sophia Chen" class="w-full h-full object-cover">
+        <img src="assets/avatars/student.svg" alt="Student" class="w-full h-full object-cover">
       </div>
     `;
     chatStream.appendChild(userWrapper);
