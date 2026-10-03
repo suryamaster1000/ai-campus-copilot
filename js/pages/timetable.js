@@ -22,10 +22,10 @@ export function renderTimetable(container) {
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-[24px]">calendar_month</span>
               <h1 class="font-headline-md text-xl lg:text-2xl font-bold text-on-surface">Academic Timetable</h1>
-              <span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">Fall 2024</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">Live schedule</span>
             </div>
             <p class="text-xs text-on-surface-variant mt-1">
-              B.Tech Computer Science • Term 4 • Department of CSE
+              Your program • Current term • Department
             </p>
           </div>
           <div class="flex items-center gap-2 flex-wrap">
