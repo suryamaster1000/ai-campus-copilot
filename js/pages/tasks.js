@@ -1,7 +1,7 @@
 // Tasks & Deadlines Page
 import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
-import { addTaskToFirestore, deleteTaskFromFirestore, toggleTaskInFirestore } from '../app.js';
+import { addTaskToSupabase, deleteTaskFromSupabase, toggleTaskInSupabase } from '../app.js';
 
 export function renderTasks(container) {
   let activeTab = "All"; // "All", "todo", "in-progress", "completed"
@@ -148,7 +148,7 @@ export function renderTasks(container) {
         if (!target) return;
         const nextStatus = chk.checked ? 'completed' : 'todo';
         try {
-          await toggleTaskInFirestore(id, nextStatus);
+          await toggleTaskInSupabase(id, nextStatus);
           target.status = nextStatus;
           showToast(chk.checked ? `Task marked completed!` : `Task reopened`, 'success');
           window.dispatchEvent(new CustomEvent('campus:tasksUpdated'));
@@ -168,7 +168,7 @@ export function renderTasks(container) {
         const idx = campusData.tasks.findIndex(t => t.id === id);
         if (idx === -1) return;
         try {
-          await deleteTaskFromFirestore(id);
+          await deleteTaskFromSupabase(id);
           campusData.tasks.splice(idx, 1);
           showToast("Task deleted", "info");
           window.dispatchEvent(new CustomEvent('campus:tasksUpdated'));
@@ -220,7 +220,7 @@ export function renderTasks(container) {
         const priority = document.getElementById('taskPrioritySelect').value;
 
         try {
-          await addTaskToFirestore({
+          await addTaskToSupabase({
             title,
             description: '',
             status: 'todo',
