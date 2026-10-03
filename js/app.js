@@ -11,6 +11,116 @@ let authInitPromise = null;
 let isAdmin = false;
 let isOwner = false;
 
+async function loadLiveCampusData(profile) {
+  const section = profile?.section || '';
+  const term = profile?.term || '';
+
+  const [noticesRes, eventsRes, timetableRes, examsRes, assignmentsRes, attendanceRes, subjectsRes, facultyRes, locationsRes, rulesRes] = await Promise.all([
+    supabase.from('notices').select('id,title,body,category,published_at,source_url').eq('is_published', true).order('published_at', { ascending: false }).limit(50),
+    supabase.from('events').select('id,title,description,event_type,starts_at,ends_at,venue,source_url').eq('is_published', true).order('starts_at', { ascending: true }).limit(50),
+    supabase.from('timetable').select('id,subject_id,faculty_id,program_id,term,section,day_of_week,start_time,end_time,room,notes,subjects(name,code),faculty(name,designation)').eq('term', term).limit(200),
+    supabase.from('exams').select('id,subject_id,program_id,term,section,exam_type,exam_date,start_time,end_time,room,instructions,subjects(name,code)').eq('term', term).limit(100),
+    supabase.from('academic_assignments').select('id,subject_id,program_id,term,title,description,due_date,submission_info,subjects(name,code)').eq('term', term).limit(100),
+    supabase.from('attendance').select('id,subject_id,classes_held,classes_attended,updated_at,subjects(name,code)').eq('user_id', currentUser.id).limit(100),
+    supabase.from('subjects').select('id,program_id,code,name,description,credits,term').eq('term', term).limit(100),
+    supabase.from('faculty').select('id,name,department,designation,email,office').limit(200),
+    supabase.from('campus_locations').select('id,name,category,description,building,floor,room,latitude,longitude,opening_hours,contact_info').limit(200),
+    supabase.from('academic_rules').select('id,title,category,content,program_id,term,source_url').eq('is_published', true).limit(100)
+  ]);
+
+  const results = [noticesRes, eventsRes, timetableRes, examsRes, assignmentsRes, attendanceRes, subjectsRes, facultyRes, locationsRes, rulesRes];
+  results.forEach((r, i) => { if (r.error) console.error('Live campus dataset failed', i, r.error); });
+
+  const facultyById = new Map((facultyRes.data || []).map(f => [f.id, f]));
+  const days = new Map();
+  for (const row of (timetableRes.data || [])) {
+    if (section && row.section && row.section !== section) continue;
+    const day = row.day_of_week || 'Unscheduled';
+    if (!days.has(day)) days.set(day, []);
+    const subject = Array.isArray(row.subjects) ? row.subjects[0] : row.subjects;
+    const faculty = Array.isArray(row.faculty) ? row.faculty[0] : row.faculty;
+    days.get(day).push({
+      id: row.id,
+      code: subject?.code || 'Course',
+      name: subject?.name || 'Class',
+      type: row.notes?.toLowerCase().includes('lab') ? 'Lab' : 'Lecture',
+      room: row.room || 'Room not assigned',
+      faculty: faculty?.name || 'Faculty not assigned',
+      time: row.start_time && row.end_time ? row.start_time.slice(0,5) + ' - ' + row.end_time.slice(0,5) : 'Time not assigned',
+      isCurrent: false
+    });
+  }
+  const orderedDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  campusData.timetable = [...days.entries()]
+    .sort((a,b) => orderedDays.indexOf(a[0]) - orderedDays.indexOf(b[0]))
+    .map(([day, classes]) => ({ day, classes: classes.sort((a,b) => a.time.localeCompare(b.time)) }));
+
+  campusData.notices = (noticesRes.data || []).map(n => ({
+    id: n.id,
+    title: n.title,
+    category: n.category || 'Notice',
+    date: n.published_at ? new Date(n.published_at).toLocaleDateString() : 'Recently published',
+    summary: n.body || '',
+    body: n.body || '',
+    sourceUrl: n.source_url || '',
+    read: false,
+    badgeClass: 'bg-secondary-container text-on-secondary-container'
+  }));
+
+  campusData.events = (eventsRes.data || []).map(e => ({
+    id: e.id,
+    title: e.title,
+    description: e.description || '',
+    type: e.event_type || 'Campus Event',
+    startsAt: e.starts_at,
+    endsAt: e.ends_at,
+    date: e.starts_at ? new Date(e.starts_at).toLocaleString() : 'Date not assigned',
+    venue: e.venue || 'Venue not assigned',
+    sourceUrl: e.source_url || '',
+    registered: false
+  }));
+
+  const attendanceRows = attendanceRes.data || [];
+  campusData.attendance = attendanceRows;
+  const held = attendanceRows.reduce((sum, r) => sum + Number(r.classes_held || 0), 0);
+  const attended = attendanceRows.reduce((sum, r) => sum + Number(r.classes_attended || 0), 0);
+  campusData.student.attendanceOverall = held > 0 ? ((attended / held) * 100).toFixed(1) + '%' : '';
+
+  campusData.studyModules = (subjectsRes.data || []).map(s => ({
+    id: s.id,
+    code: s.code || 'SUBJECT',
+    name: s.name,
+    credits: s.credits || 0,
+    term: s.term || term,
+    description: s.description || '',
+    units: []
+  }));
+
+  campusData.venues = (locationsRes.data || []).map(v => ({
+    id: v.id,
+    name: v.name,
+    category: v.category || 'Campus Location',
+    description: v.description || '',
+    building: v.building || '',
+    floor: v.floor || '',
+    room: v.room || '',
+    latitude: v.latitude,
+    longitude: v.longitude,
+    openingHours: v.opening_hours || '',
+    contactInfo: v.contact_info || ''
+  }));
+  campusData.shuttles = [];
+
+  if (!campusData.studyModules.length) campusData.studyModules = [];
+  campusData.aiResponses = {};
+  campusData.academicAssignments = assignmentsRes.data || [];
+  campusData.exams = (examsRes.data || []).filter(e => !section || !e.section || e.section === section);
+  campusData.academicRules = rulesRes.data || [];
+  campusData.faculty = facultyRes.data || [];
+  campusData.programs = [];
+  campusData.loadedAt = new Date().toISOString();
+}
+
 async function handleAuthSession(session) {
   if (!session?.user) {
     currentUser = null;
@@ -53,6 +163,8 @@ async function handleAuthSession(session) {
       console.error('Supabase profile create failed:', profileCreateError);
     }
   }
+
+  await loadLiveCampusData(profile || campusData.student);
 
   if (profile) {
     campusData.student.name = profile.name || name;
