@@ -169,8 +169,8 @@ export function renderStudyAssistant(container) {
                   <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-error text-[20px]">picture_as_pdf</span>
                     <div>
-                      <span class="text-xs font-bold text-on-surface block">${course.code}_Syllabus_Fall2024.pdf</span>
-                      <span class="text-[10px] text-outline">Fall 2024 Approved Version</span>
+                      <span class="text-xs font-bold text-on-surface block">${course.code}_Syllabus.pdf</span>
+                      <span class="text-[10px] text-outline">Official syllabus version</span>
                     </div>
                   </div>
                   <button class="study-dl-pdf-btn p-1.5 text-outline hover:text-primary transition-colors" data-name="${course.code}_Syllabus.pdf">
