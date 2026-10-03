@@ -3,7 +3,7 @@ import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 
 export function renderStudyAssistant(container) {
-  let selectedCourseCode = "CS-204";
+  let selectedCourseCode = campusData.studyModules[0]?.code || '';
 
   function render() {
     const course = campusData.studyModules.find(c => c.code === selectedCourseCode) || campusData.studyModules[0] || null;
@@ -273,11 +273,14 @@ export function renderStudyAssistant(container) {
     const submitQuizBtn = document.getElementById('submitQuizBtn');
     const quizResult = document.getElementById('quizResult');
 
-    if (quizBtn && quizModal) {
+    if (quizBtn) {
       quizBtn.onclick = () => {
-        quizModal.classList.remove('hidden');
-        quizModal.classList.add('flex');
-        quizResult.classList.add('hidden');
+        window.location.hash = '#ai-assistant';
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('campus:askAi', {
+            detail: { query: `Create a 5-question practice quiz for ${course.code} (${course.name}) using only my connected campus course data. Do not invent syllabus topics.` }
+          }));
+        }, 50);
       };
     }
 
