@@ -21,7 +21,7 @@ export function renderStudyAssistant(container) {
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-[24px]">menu_book</span>
               <h1 class="font-headline-md text-xl lg:text-2xl font-bold text-on-surface">Study Assistant &amp; Course Hub</h1>
-              <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-semibold">Term 4</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-semibold">Current term</span>
             </div>
             <p class="text-xs text-on-surface-variant mt-1">
               Course modules, verified lecture slides, AI flashcards, and concept visualizers.
@@ -103,41 +103,12 @@ export function renderStudyAssistant(container) {
 
             <!-- AI Concept Visualizer Card -->
             <div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm border border-surface-container-high">
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-primary text-[20px]">psychology</span>
-                  <h3 class="font-headline-md text-base font-bold text-on-surface">Interactive Concept Visualizer</h3>
-                </div>
-                <span class="text-xs bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded-full font-bold">Week 7 Focus</span>
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[20px]">psychology</span>
+                <h3 class="font-headline-md text-base font-bold text-on-surface">Interactive Concept Visualizer</h3>
               </div>
-              <div class="p-4 bg-surface-container-low rounded-xl space-y-3">
-                <div class="flex items-center justify-between">
-                  <h4 class="font-label-md font-bold text-sm text-primary">AVL Tree: Single Right Rotation (LL Imbalance)</h4>
-                  <span class="text-xs text-outline font-medium">$\\mathcal{O}(1)$ pointer reassignments</span>
-                </div>
-                <div class="font-mono text-xs bg-surface-container-lowest p-3 rounded-lg text-on-surface overflow-x-auto leading-relaxed border border-surface-container">
-<pre>
-      [z] (BF = +2)                   [y] (BF = 0)
-      /   \                           /   \
-    [y]   T3       ======>          [x]   [z]
-    /  \        (Right Rotation)    /  \  /  \
-  [x]  T2                          T0  T1 T2 T3
-  / \
- T0 T1
-</pre>
-                </div>
-                <p class="text-xs text-on-surface-variant leading-relaxed">
-                  When a node has a balance factor of $+2$ and its left child has balance factor $\ge 0$, a single Right Rotation restores the height balance invariant in constant time.
-                </p>
-                <div class="pt-1 flex items-center gap-2">
-                  <button class="study-ask-ai-deep-btn px-3 py-1.5 bg-primary text-on-primary hover:bg-tertiary-container rounded-lg text-xs font-bold transition-colors" data-topic="AVL tree rotations and balance factors">
-                    Deep Dive with Copilot →
-                  </button>
-                </div>
-              </div>
+              <p class="text-xs text-on-surface-variant mt-2">Course topics will appear here after real course data is connected.</p>
             </div>
-
-          </div>
 
           <!-- Right 1 Col: AI Study Tools & Quick Cheatsheets -->
           <div class="space-y-space-md">
