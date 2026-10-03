@@ -7,6 +7,10 @@ export function renderStudyAssistant(container) {
 
   function render() {
     const course = campusData.studyModules.find(c => c.code === selectedCourseCode) || campusData.studyModules[0] || null;
+    if (!course) {
+      container.innerHTML = '<div class="max-w-[1720px] mx-auto py-space-md"><div class="bg-surface-container-lowest rounded-2xl p-8 text-center border border-surface-container-high"><span class="material-symbols-outlined text-outline text-[44px]">menu_book</span><h1 class="font-headline-md text-xl font-bold text-on-surface mt-3">No course data yet</h1><p class="text-sm text-on-surface-variant mt-2">Course and syllabus information will appear after the live student data is connected.</p></div></div>';
+      return;
+    }
 
     container.innerHTML = `
       <div class="max-w-[1720px] mx-auto py-space-sm space-y-space-md animate-fade-in">
