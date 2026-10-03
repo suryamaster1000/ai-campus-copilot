@@ -28,8 +28,9 @@ async function loadLiveCampusData(profile) {
   const section = profile?.section || '';
   const term = profile?.term || '';
 
-  const examsQuery = supabase.from('exams').select('id,subject_id,program_id,term,section,exam_type,exam_date,start_time,end_time,room,instructions,subjects(name,code)').eq('term', term).limit(100);
+  const examsQuery = supabase.from('exams').select('id,subject_id,program_id,term,section,exam_type,exam_date,start_time,end_time,room,instructions,subjects(name,code)').eq('term', term);
   if (section) examsQuery.eq('section', section);
+  examsQuery.limit(100);
 
   const [noticesRes, eventsRes, timetableRes, examsRes, assignmentsRes, attendanceRes, subjectsRes, facultyRes, locationsRes, rulesRes] = await Promise.all([
     supabase.from('notices').select('id,title,body,category,published_at,source_url').eq('is_published', true).order('published_at', { ascending: false }).limit(50),
@@ -384,7 +385,7 @@ export async function toggleTaskInSupabase(taskId,status){
 }
 export function listenToTasks(callback){
   if(!currentUser)return;
-  const load=async()=>{const {data,error}=await supabase.from('tasks').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});if(!error)callback((data||[]).map(t=>({firestoreId:t.id,...t})));};
+  const load=async()=>{const {data,error}=await supabase.from('tasks').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});if(!error)callback((data||[]).map(t=>({supabaseId:t.id,...t})));};
   load();
   const channel=supabase.channel('tasks-'+currentUser.id).on('postgres_changes',
     {event:'*',schema:'public',table:'tasks',filter:'user_id=eq.'+currentUser.id},load).subscribe();
