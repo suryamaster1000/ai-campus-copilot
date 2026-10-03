@@ -238,8 +238,23 @@ export function renderAdminPanel(container) {
       if (!confirm('Approve this verified student and create their Supabase account?')) return;
       btn.disabled = true;
       btn.textContent = 'Creating...';
+      const initialPassword = window.prompt('Enter the student initial password. Leave blank to keep the normal invitation/password-setup flow:');
+      if (initialPassword === null) {
+        btn.disabled = false;
+        btn.textContent = 'Approve & Create Account';
+        return;
+      }
+      if (initialPassword && initialPassword.length < 8) {
+        showToast('Password must be at least 8 characters.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Approve & Create Account';
+        return;
+      }
+
       const { data, error: invokeError } = await supabase.functions.invoke('approve-student-registration', {
-        body: { registration_id: btn.dataset.approveRegistration }
+        body: {
+          registration_id: btn.dataset.approveRegistration
+        }
       });
       if (invokeError || data?.error) {
         showToast(data?.error || invokeError?.message || 'Approval failed.', 'error');
@@ -247,6 +262,21 @@ export function renderAdminPanel(container) {
         btn.textContent = 'Approve & Create Account';
         return;
       }
+      if (initialPassword) {
+        const { data: syncData, error: syncError } = await supabase.functions.invoke(
+          'sync-student-default-password',
+          { body: { password: initialPassword } }
+        );
+        if (syncError || syncData?.error || syncData?.ok === false) {
+          showToast(syncData?.error || syncData?.message || syncError?.message || 'Student account created, but default password could not be applied.', 'error');
+          await loadStudentRegistrations();
+          return;
+        }
+        showToast('Student account created. Default student password applied.', 'success');
+        await loadStudentRegistrations();
+        return;
+      }
+
       if (data?.action_link) {
         const copied = await navigator.clipboard?.writeText(data.action_link).then(() => true).catch(() => false);
         showToast(
