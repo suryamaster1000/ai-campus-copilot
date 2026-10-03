@@ -65,15 +65,15 @@ export function renderDashboard(container) {
         <div class="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-surface-container-high hover:border-primary/40 transition-all flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-outline uppercase tracking-wider">Attendance Status</span>
-            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">Good Standing</span>
+            <span class="px-2 py-0.5 rounded-full bg-surface-container text-outline text-[11px] font-bold">No data</span>
           </div>
           <div class="my-2">
             <div class="flex items-baseline gap-2">
-              <span class="font-headline-lg text-3xl font-extrabold text-on-surface">${campusData.student.attendanceOverall}</span>
+              <span class="font-headline-lg text-3xl font-extrabold text-on-surface">${campusData.student.attendanceOverall || '—'}</span>
               <span class="text-xs text-outline font-medium">min 75% required</span>
             </div>
             <div class="w-full bg-surface-container h-2 rounded-full mt-2 overflow-hidden">
-              <div class="bg-emerald-500 h-full rounded-full" style="width: 89.4%"></div>
+              <div class="bg-emerald-500 h-full rounded-full" style="width: 0%"></div>
             </div>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs text-on-surface-variant">
