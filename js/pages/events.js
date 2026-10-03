@@ -13,7 +13,7 @@ export function renderEvents(container) {
     const filteredEvents = campusData.events.filter(e => {
       if (activeFilter === "All") return true;
       if (activeFilter === "Registered") return window._registeredEvents.has(e.id);
-      return e.category.toLowerCase() === activeFilter.toLowerCase();
+      return (e.category || e.type || 'Campus Event').toLowerCase() === activeFilter.toLowerCase();
     });
 
     container.innerHTML = `
@@ -61,10 +61,10 @@ export function renderEvents(container) {
               <div class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg shadow-sm border border-surface-container-high flex flex-col justify-between gap-space-md hover:shadow-md transition-all">
                 <div class="space-y-3">
                   <div class="flex items-center justify-between gap-2 flex-wrap">
-                    <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold">${event.category}</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold">${event.category || event.type || 'Campus Event'}</span>
                     <span class="text-xs text-outline font-semibold flex items-center gap-1">
                       <span class="material-symbols-outlined text-[16px]">group</span>
-                      ${event.attendees + (isReg ? 1 : 0)} Attending
+                      ${Number(event.attendees || 0) + (isReg ? 1 : 0)} Attending
                     </span>
                   </div>
 
@@ -78,7 +78,7 @@ export function renderEvents(container) {
                   <div class="p-3 bg-surface-container-low rounded-xl space-y-1.5 text-xs">
                     <div class="flex items-center gap-2 text-on-surface font-semibold">
                       <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
-                      <span>${event.date} • ${event.time}</span>
+                      <span>${event.date || 'Date not assigned'} • ${event.time || 'Time not assigned'}</span>
                     </div>
                     <div class="flex items-center gap-2 text-on-surface-variant">
                       <span class="material-symbols-outlined text-[16px] text-outline">location_on</span>
@@ -87,7 +87,7 @@ export function renderEvents(container) {
                   </div>
 
                   <div class="flex flex-wrap gap-1.5 pt-1">
-                    ${event.tags.map(t => `
+                    ${(event.tags || []).map(t => `
                       <span class="text-[10px] font-semibold bg-surface-container px-2 py-0.5 rounded-md text-outline">#${t}</span>
                     `).join('')}
                   </div>
