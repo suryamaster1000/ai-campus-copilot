@@ -1,6 +1,7 @@
 // AI Assistant Page - Matches Stitch UI 100% with Full Interactivity
 import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
+import { supabase } from '../supabase.js';
 
 export function renderAiAssistant(container, initialQuery = null) {
   container.innerHTML = `
@@ -710,7 +711,7 @@ function initAiAssistantEvents(initialQuery) {
     });
   }
 
-  function submitChatQuery(query) {
+  async function submitChatQuery(query) {
     input.value = '';
     // Append student bubble
     const userWrapper = document.createElement('div');
@@ -751,24 +752,51 @@ function initAiAssistantEvents(initialQuery) {
     chatStream.appendChild(thinkingWrapper);
     chatStream.scrollTop = chatStream.scrollHeight;
 
-    // Simulate smart AI response
-    setTimeout(() => {
+    // Real Supabase Edge Function + Gemini response
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-campus-copilot', {
+        body: { question: query }
+      });
+
       const thinkingEl = document.getElementById(thinkingId);
       if (thinkingEl) thinkingEl.remove();
 
-      const aiResponse = generateAiResponse(query);
+      if (error) throw error;
+      if (!data?.answer) throw new Error(data?.error || 'AI service returned no answer.');
+
       const aiWrapper = document.createElement('div');
       aiWrapper.className = 'flex items-start gap-space-sm max-w-3xl mx-auto animate-fade-in';
+      const sourceHtml = Array.isArray(data.sources) && data.sources.length
+        ? `
+          <div class="pt-2">
+            <div class="p-2.5 bg-surface-container-lowest rounded-xl">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="material-symbols-outlined text-[16px] text-primary">verified</span>
+                <span class="font-label-sm text-xs font-semibold text-on-surface">Retrieved campus sources</span>
+              </div>
+              <div class="space-y-1">
+                ${data.sources.slice(0, 3).map(source => `
+                  <div class="text-[11px] text-on-surface-variant truncate">
+                    ${escapeHtml(source.title || 'Campus document')}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `
+        : '';
+
       aiWrapper.innerHTML = `
         <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
           <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
         </div>
         <div class="flex flex-col flex-1 min-w-0">
           <div class="bg-surface-container-low text-on-surface rounded-2xl rounded-tl-none p-space-md space-y-space-md shadow-sm">
-            ${aiResponse}
+            <p class="font-body-md text-body-md leading-relaxed whitespace-pre-wrap">${escapeHtml(data.answer)}</p>
+            ${sourceHtml}
           </div>
           <div class="flex items-center justify-between mt-1 px-1">
-            <span class="font-label-sm text-[11px] text-outline">${now} • AI Copilot</span>
+            <span class="font-label-sm text-[11px] text-outline">${now} • AI Copilot • Grounded</span>
             <div class="flex items-center gap-1 text-outline">
               <button class="copy-btn p-1 hover:text-on-surface rounded hover:bg-surface-container transition-colors" title="Copy text" type="button">
                 <span class="material-symbols-outlined text-[16px]">content_copy</span>
@@ -786,7 +814,28 @@ function initAiAssistantEvents(initialQuery) {
       chatStream.appendChild(aiWrapper);
       setupDelegatedButtons(aiWrapper);
       chatStream.scrollTop = chatStream.scrollHeight;
-    }, 700);
+    } catch (error) {
+      const thinkingEl = document.getElementById(thinkingId);
+      if (thinkingEl) thinkingEl.remove();
+
+      const message = error?.message || 'Unable to reach the AI Campus Copilot.';
+      const aiWrapper = document.createElement('div');
+      aiWrapper.className = 'flex items-start gap-space-sm max-w-3xl mx-auto animate-fade-in';
+      aiWrapper.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-error-container text-on-error-container flex items-center justify-center flex-shrink-0 mt-0.5">
+          <span class="material-symbols-outlined text-[18px]">error</span>
+        </div>
+        <div class="flex flex-col flex-1 min-w-0">
+          <div class="bg-error-container text-on-error-container rounded-2xl rounded-tl-none p-space-md">
+            <p class="font-body-md text-body-md leading-relaxed">${escapeHtml(message)}</p>
+          </div>
+          <span class="font-label-sm text-[11px] text-outline mt-1 px-1">AI Copilot</span>
+        </div>
+      `;
+      chatStream.appendChild(aiWrapper);
+      chatStream.scrollTop = chatStream.scrollHeight;
+      showToast(message, 'error');
+    }
   }
 
   // If initialQuery passed (e.g. from command palette or dashboard)
