@@ -113,10 +113,13 @@ export function renderAdminPanel(container) {
     }
 
     const owner = user.id === OWNER_USER_ID || (admins || []).some(a => a.user_id === user.id && a.role === 'owner');
+    const adminCanAuthorize = owner || (admins || []).some(a => a.user_id === user.id && a.role === 'admin');
     if (owner) ownerBadge?.classList.remove('hidden');
     subtitle.textContent = owner
-      ? 'Only the owner can authorize or revoke Admin Panel access.'
-      : 'You have Admin Panel access. Only the owner can change permissions.';
+      ? 'You are the owner. You and authorized admins can authorize additional student admins.'
+      : adminCanAuthorize
+        ? 'You are an authorized admin. You can authorize additional student admins.'
+        : 'You have Admin Panel access.';
 
     const adminIds = new Set((admins || []).map(a => a.user_id));
     const ids = [...adminIds];
@@ -138,7 +141,7 @@ export function renderAdminPanel(container) {
     }).join('');
 
     let candidateHtml = '';
-    if (owner) {
+    if (adminCanAuthorize) {
       const { data: profiles, error: profileError } = await supabase.from('profiles').select('id,name,email,section,program').order('name', { ascending: true });
       if (profileError) {
         candidateHtml = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load student accounts. Check the profiles SELECT policy.</div>';
@@ -235,7 +238,6 @@ export function renderAdminPanel(container) {
     });
   }
 
-  // Admin Intelligence AI
   const adminAiForm = document.getElementById('adminAiForm');
   const adminAiInput = document.getElementById('adminAiInput');
   const adminAiAnswer = document.getElementById('adminAiAnswer');
@@ -267,5 +269,4 @@ export function renderAdminPanel(container) {
   document.querySelectorAll('[data-admin-ai-query]').forEach((button) => {
     button.addEventListener('click', () => askAdminAi(button.getAttribute('data-admin-ai-query')));
   });
-
 }
