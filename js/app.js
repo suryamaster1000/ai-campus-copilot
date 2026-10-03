@@ -84,18 +84,28 @@ async function loadLiveCampusData(profile) {
     badgeClass: 'bg-secondary-container text-on-secondary-container'
   }));
 
-  campusData.events = (eventsRes.data || []).map(e => ({
-    id: e.id,
-    title: e.title,
-    description: e.description || '',
-    type: e.event_type || 'Campus Event',
-    startsAt: e.starts_at,
-    endsAt: e.ends_at,
-    date: e.starts_at ? new Date(e.starts_at).toLocaleString() : 'Date not assigned',
-    venue: e.venue || 'Venue not assigned',
-    sourceUrl: e.source_url || '',
-    registered: false
-  }));
+  campusData.events = (eventsRes.data || []).map(e => {
+    const start = e.starts_at ? new Date(e.starts_at) : null;
+    const end = e.ends_at ? new Date(e.ends_at) : null;
+    return {
+      id: e.id,
+      title: e.title,
+      description: e.description || '',
+      type: e.event_type || 'Campus Event',
+      category: e.event_type || 'Campus Event',
+      startsAt: e.starts_at,
+      endsAt: e.ends_at,
+      date: start ? start.toLocaleDateString() : 'Date not assigned',
+      time: start
+        ? (end ? `${start.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})} - ${end.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}` : start.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}))
+        : 'Time not assigned',
+      venue: e.venue || 'Venue not assigned',
+      sourceUrl: e.source_url || '',
+      attendees: 0,
+      tags: e.event_type ? [e.event_type] : [],
+      registered: false
+    };
+  });
 
   const attendanceRows = attendanceRes.data || [];
   campusData.attendance = attendanceRows;
