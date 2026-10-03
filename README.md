@@ -6,7 +6,7 @@ A modern, grounded AI assistant and student dashboard for university campuses, b
 
 1. **Dashboard** (`#dashboard`):
    - Academic greeting banner with enrolled semester status
-   - Quick metrics: Next lecture, Overall attendance (89.4%), Pending assignments, CGPA (3.82)
+   - Quick metrics: next session, attendance, pending tasks, and CGPA from connected student data
    - Today's live schedule timeline with route and AI syllabus actions
    - Instant grounded query shortcuts & recent urgent circulars
    - To-do deadlines checklist & upcoming academic milestones
@@ -39,7 +39,7 @@ A modern, grounded AI assistant and student dashboard for university campuses, b
    - Downloadable syllabus & formula cheat sheet PDFs
 
 6. **Campus Guide** (`#campus-guide`):
-   - Campus venues directory with live occupancy indicators (Turing Hall, Central Library, Shannon Block, Sports Complex, Health Center)
+   - Campus venues directory populated from connected campus location data
    - Live shuttle bus schedule and GPS arrival tracker (Routes 1–4)
    - Building operating hours, amenities, and contact info
 
