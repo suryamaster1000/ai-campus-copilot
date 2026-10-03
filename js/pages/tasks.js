@@ -212,7 +212,7 @@ export function renderTasks(container) {
     }
 
     if (form) {
-      form.onsubmit = (e) => {
+      form.onsubmit = async (e) => {
         e.preventDefault();
         const title = document.getElementById('taskTitleInput').value;
         const course = document.getElementById('taskCourseInput').value;
