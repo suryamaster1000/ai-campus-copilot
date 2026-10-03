@@ -44,8 +44,8 @@ async function handleAuthSession(session) {
       name,
       email: currentUser.email || '',
       roll_number: currentUser.user_metadata?.roll_number || 'N/A',
-      program: 'B.Tech Computer Science',
-      term: 'Term 4',
+      program: '',
+      term: '',
       cgpa: '0.00'
     });
 
