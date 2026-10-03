@@ -20,6 +20,7 @@
       main > :last-child { margin-bottom: 0 !important; }
     }
     ::-webkit-scrollbar { display: none; }
+  @keyframes startupSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   </style>
 
   <!-- Tailwind CSS CDN -->
@@ -390,7 +391,7 @@
           <span class="material-symbols-outlined text-primary text-[20px]">school</span>
           <div class="flex flex-col">
             <span class="font-label-sm text-label-sm text-on-surface font-semibold">Academic Gateway</span>
-            <span class="font-label-sm text-label-sm text-on-surface-variant text-[11px]">Connected: Canvas &amp; SIS</span>
+            <span class="font-label-sm text-label-sm text-on-surface-variant text-[11px]">Connected: Supabase live data</span>
           </div>
         </div>
       </div>
@@ -400,7 +401,13 @@
   <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
   <div class="lg:pl-64 flex flex-col min-h-screen">
     <main class="relative pt-16 flex-1 w-full px-space-md lg:px-gutter" id="mainContentArea">
-      <!-- Dynamically Rendered by Router (Default: AI Assistant / Dashboard) -->
+      <div id="startupStatus" style="max-width:900px;margin:0 auto;padding:48px 20px;font-family:Inter,system-ui,sans-serif;color:#414754">
+        <div style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600">
+          <span style="display:inline-block;width:18px;height:18px;border:2px solid #c1c6d6;border-top-color:#005bbf;border-radius:50%;animation:startupSpin .8s linear infinite"></span>
+          Starting AI Campus Copilot...
+        </div>
+        <div style="margin-top:8px;font-size:12px;opacity:.75">Restoring your secure Supabase session.</div>
+      </div>
     </main>
   </div>
 
@@ -412,7 +419,7 @@
     // Show a diagnostic instead of a blank page if the ES module or one of its
     // dependencies fails to load in GitHub Pages/browser cache.
     window.__showStartupError = function (message) {
-      const main = document.getElementById('mainContentArea');
+      const main = document.getElementById('mainContentArea') || document.body;
       if (!main) return;
       main.innerHTML = '<div style="max-width:900px;margin:0 auto;padding:48px 20px;font-family:Inter,system-ui,sans-serif">' +
         '<div style="border:1px solid #f1b5b5;border-radius:16px;padding:24px;background:#fff5f5">' +
@@ -432,7 +439,13 @@
       const reason = event && event.reason;
       window.__showStartupError(reason && (reason.stack || reason.message) || String(reason || 'Unhandled promise rejection'));
     });
-    import('./js/app.js?v=20261003-live6').catch(function (error) {
+    const startupImport = import('./js/app.js?v=20261003-live7');
+    const startupTimeout = new Promise(function (_, reject) {
+      setTimeout(function () {
+        reject(new Error('The application module did not finish loading within 12 seconds. This usually means a remote JavaScript dependency is blocked or unreachable.'));
+      }, 12000);
+    });
+    Promise.race([startupImport, startupTimeout]).catch(function (error) {
       window.__showStartupError(error && (error.stack || error.message) || String(error));
     });
   </script>
