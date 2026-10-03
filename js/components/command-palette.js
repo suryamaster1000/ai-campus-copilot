@@ -45,10 +45,10 @@ export function initCommandPalette(onNavigate, onAiQuery) {
     { title: "Settings & Preferences", category: "Pages", icon: "settings", route: "settings", desc: "Profile, notifications & grounding" },
     { title: "Admin Panel", category: "Pages", icon: "admin_panel_settings", route: "admin-panel", desc: "RAG index & system telemetry" },
     // Instant queries
-    { title: "Where can I submit medical leave?", category: "Quick AI Answers", icon: "help", query: "Where can I submit my medical leave certificate?", desc: "Admin Block A Room 104 policy" },
-    { title: "What is my attendance in CS-204?", category: "Quick AI Answers", icon: "percent", query: "What is my attendance percentage in CS-204?", desc: "Check current lecture percentage" },
-    { title: "Campus shuttle Route 4 timings", category: "Quick AI Answers", icon: "directions_bus", query: "Campus shuttle Route 4 timings", desc: "View night escort bus route" },
-    { title: "When is the next midterm exam?", category: "Quick AI Answers", icon: "event_available", query: "When is the next midterm exam?", desc: "Nov 05, 2024 date sheet" }
+    { title: "Where can I submit medical leave?", category: "Quick AI Answers", icon: "help", query: "Where can I submit my medical leave certificate?", desc: "Use connected academic rules and notices" },
+    { title: "What is my current attendance?", category: "Quick AI Answers", icon: "percent", query: "What is my current attendance percentage?", desc: "Check your connected attendance records" },
+    { title: "Campus shuttle timings", category: "Quick AI Answers", icon: "directions_bus", query: "What are the campus shuttle timings?", desc: "Only if transport data is connected" },
+    { title: "When is my next exam?", category: "Quick AI Answers", icon: "event_available", query: "When is the next midterm exam?", desc: "Check the connected exam schedule" }
   ];
 
   const input = document.getElementById('palette-input');
