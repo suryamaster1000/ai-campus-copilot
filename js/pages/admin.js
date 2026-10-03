@@ -72,14 +72,15 @@ export function renderAdminPanel(container) {
         </div>
 
         <!-- Admin Access Control -->
+        <!-- OWNER QUICK ACCESS: Manage which student accounts can use the Admin Panel. -->
         <div id="adminAccessControl" class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg shadow-sm border border-surface-container-high space-y-4">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-primary text-[22px]">manage_accounts</span>
-                <h3 class="font-headline-md text-base font-bold text-on-surface">Admin Access Control</h3>
+                <h3 class="font-headline-md text-base font-bold text-on-surface">Admin Access Control — Owner Only</h3>
               </div>
-              <p id="adminAccessSubtitle" class="text-xs text-on-surface-variant mt-1">Loading authorization controls...</p>
+              <p id="adminAccessSubtitle" class="text-xs text-on-surface-variant mt-1">Authorize or revoke Admin Panel access for specific student accounts.</p>
             </div>
             <span id="adminOwnerBadge" class="hidden px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold uppercase tracking-wider">Owner controls</span>
           </div>
