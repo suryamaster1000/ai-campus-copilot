@@ -11,7 +11,7 @@ export function renderNotices(container) {
       const matchCat = activeCategory === "All" || n.category.toLowerCase() === activeCategory.toLowerCase();
       const matchSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           n.summary.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          n.author.toLowerCase().includes(searchQuery.toLowerCase());
+                          (n.author || 'Office of Academic Affairs').toLowerCase().includes(searchQuery.toLowerCase());
       return matchCat && matchSearch;
     });
 
@@ -85,7 +85,7 @@ export function renderNotices(container) {
                   <h3 class="font-headline-md text-base lg:text-lg font-bold text-on-surface">${n.title}</h3>
                   <p class="text-xs text-outline font-medium mt-0.5 flex items-center gap-1">
                     <span class="material-symbols-outlined text-[15px]">corporate_fare</span>
-                    ${n.author}
+                    ${n.author || 'Office of Academic Affairs'}
                   </p>
                 </div>
 
