@@ -97,7 +97,7 @@ async function handleAuthSession(session) {
 
   const { data: adminAccess, error: adminAccessError } = await supabase
     .from('admin_users')
-    .select('user_id')
+    .select('user_id, role')
     .eq('user_id', currentUser.id)
     .maybeSingle();
 
