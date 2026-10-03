@@ -31,6 +31,17 @@ export function renderAdminPanel(container) {
         </div>
       </section>
 
+      <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">how_to_reg</span>
+          <h2 class="font-headline-md text-base font-bold text-on-surface">Student Registration Approvals</h2>
+        </div>
+        <p class="text-xs text-on-surface-variant mt-1">Review verified registrations and create their Supabase student accounts. Only the owner can approve.</p>
+        <div id="registrationApprovalBody" class="mt-4 space-y-2">
+          <div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Loading registrations...</div>
+        </div>
+      </section>
+
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/30 shadow-sm">
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-primary">psychology</span>
@@ -60,6 +71,7 @@ export function renderAdminPanel(container) {
   `;
 
   loadAdminAccessControl();
+  loadStudentRegistrations();
 
   async function loadAdminAccessControl() {
     const body = document.getElementById('adminAccessBody');
@@ -133,6 +145,74 @@ export function renderAdminPanel(container) {
       await loadAdminAccessControl();
     });
   }
+  async function loadStudentRegistrations() {
+    const body = document.getElementById('registrationApprovalBody');
+    if (!body) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: admins } = await supabase.from('admin_users').select('user_id,role').eq('user_id', user.id);
+    const owner = user.id === OWNER_USER_ID || (admins || []).some(a => a.role === 'owner');
+    if (!owner) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Registration approval is restricted to the owner.</div>';
+      return;
+    }
+
+    const { data: registrations, error } = await supabase
+      .from('student_registrations')
+      .select('id,admission_no,student_name,email,section,phone,status,created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      body.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load student registrations.</div>';
+      return;
+    }
+
+    if (!(registrations || []).length) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No student registrations yet.</div>';
+      return;
+    }
+
+    body.innerHTML = registrations.map(r => {
+      const pending = r.status === 'pending';
+      const statusClass = r.status === 'linked'
+        ? 'bg-emerald-100 text-emerald-800'
+        : r.status === 'rejected'
+          ? 'bg-error-container text-on-error-container'
+          : 'bg-amber-100 text-amber-800';
+      return `<div class="p-3 rounded-xl border border-surface-container-high bg-surface-container-low">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-sm font-bold">${r.student_name || 'Student'}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusClass}">${r.status.toUpperCase()}</span>
+            </div>
+            <div class="text-[11px] text-on-surface-variant mt-1">${r.admission_no} • Section ${r.section} • ${r.email}</div>
+            ${r.phone ? `<div class="text-[11px] text-on-surface-variant mt-0.5">${r.phone}</div>` : ''}
+          </div>
+          ${pending ? `<button data-approve-registration="${r.id}" class="px-3 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold">Approve & Create Account</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    body.querySelectorAll('[data-approve-registration]').forEach(btn => btn.onclick = async () => {
+      if (!confirm('Approve this verified student and create their Supabase account?')) return;
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+      const { data, error: invokeError } = await supabase.functions.invoke('approve-student-registration', {
+        body: { registration_id: btn.dataset.approveRegistration }
+      });
+      if (invokeError || data?.error) {
+        showToast(data?.error || invokeError?.message || 'Approval failed.', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Approve & Create Account';
+        return;
+      }
+      showToast('Student account and profile created.', 'success');
+      await loadStudentRegistrations();
+    });
+  }
+
   // Admin Intelligence AI
   const adminAiForm = document.getElementById('adminAiForm');
   const adminAiInput = document.getElementById('adminAiInput');
