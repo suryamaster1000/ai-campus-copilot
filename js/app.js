@@ -10,6 +10,8 @@ let authReady = false;
 let authInitPromise = null;
 let isAdmin = false;
 let isOwner = false;
+const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
+let adminAccessReady = false;
 
 // Never let a slow Supabase request prevent the application shell/router from starting.
 function withTimeout(promise, ms, label) {
@@ -147,6 +149,21 @@ async function handleAuthSession(session) {
 
   currentUser = session.user;
 
+  // Hydrate the visible header immediately from the authenticated session.
+  // The database profile is richer, but it must never block the app shell.
+  const immediateName = currentUser.user_metadata?.name ||
+    currentUser.email?.split('@')[0] || 'Student';
+  const immediateNamePill = document.querySelector('#headerProfilePill .font-label-md');
+  const immediateEmailPill = document.querySelector('#headerProfilePill .font-label-sm');
+  if (immediateNamePill) immediateNamePill.textContent = immediateName;
+  if (immediateEmailPill) immediateEmailPill.textContent = currentUser.email || '';
+
+  // The owner is known locally by the fixed owner UUID; other admin roles are
+  // resolved from Supabase in the background before an admin route is opened.
+  isOwner = currentUser.id === OWNER_USER_ID;
+  isAdmin = isOwner;
+  adminAccessReady = isOwner;
+
   const { data: profile, error: profileError } = await withTimeout(
     supabase
       .from('profiles')
@@ -177,23 +194,22 @@ async function handleAuthSession(session) {
   // Google OAuth users may not have a profile row yet. Create one after
   // authentication so personal fields do not fall back to demo data.
   if (!profile && !profileError) {
-    const { error: profileCreateError } = await withTimeout(
+    // Profile creation is background-only; it must not delay route startup.
+    withTimeout(
       supabase.from('profiles').upsert({
-      id: currentUser.id,
-      name,
-      email: currentUser.email || '',
-      roll_number: currentUser.user_metadata?.roll_number || 'N/A',
-      program: '',
-      term: '',
-      cgpa: '0.00'
+        id: currentUser.id,
+        name,
+        email: currentUser.email || '',
+        roll_number: currentUser.user_metadata?.roll_number || 'N/A',
+        program: '',
+        term: '',
+        cgpa: '0.00'
       }),
       3000,
       'Student profile creation'
-    );
-
-    if (profileCreateError) {
-      console.error('Supabase profile create failed:', profileCreateError);
-    }
+    ).then(({ error: profileCreateError }) => {
+      if (profileCreateError) console.error('Supabase profile create failed:', profileCreateError);
+    });
   }
 
   // Do not block the entire application shell on campus-data queries.
@@ -215,7 +231,8 @@ async function handleAuthSession(session) {
     campusData.student.email = currentUser.email || '';
   }
 
-  const { data: userTasks, error: tasksError } = await withTimeout(
+  // Personal tasks load in the background and cannot delay the router.
+  withTimeout(
     supabase
       .from('tasks')
       .select('*')
@@ -223,13 +240,12 @@ async function handleAuthSession(session) {
       .order('created_at', { ascending: false }),
     3000,
     'Student tasks query'
-  );
-
-  // Personal task data must never fall back to the bundled demo tasks.
-  if (tasksError) {
-    console.error('Supabase task load failed:', tasksError);
-    campusData.tasks = [];
-  } else {
+  ).then(({ data: userTasks, error: tasksError }) => {
+    if (tasksError) {
+      console.error('Supabase task load failed:', tasksError);
+      campusData.tasks = [];
+      return;
+    }
     campusData.tasks = (userTasks || []).map((task) => ({
       id: task.id,
       title: task.title,
@@ -245,27 +261,34 @@ async function handleAuthSession(session) {
           : 'bg-secondary-container text-on-secondary-container',
       status: task.status === 'completed' ? 'completed' : 'todo'
     }));
-  }
-
-  const { data: adminAccess, error: adminAccessError } = await withTimeout(
-    supabase
-      .from('admin_users')
-      .select('user_id, role')
-      .eq('user_id', currentUser.id)
-      .maybeSingle(),
-    3000,
-    'Admin permission query'
-  );
-
-  if (adminAccessError) {
-    console.error('Supabase admin permission check failed:', adminAccessError);
-  }
-  isAdmin = Boolean(adminAccess && adminAccess.user_id === currentUser.id);
-  isOwner = Boolean(adminAccess && adminAccess.user_id === currentUser.id && adminAccess.role === 'owner');
-
-  document.querySelectorAll('a[data-path="admin-panel"]').forEach(link => {
-    link.style.display = isAdmin ? '' : 'none';
+    updateSidebarBadges();
   });
+
+  // Admin authorization resolves in the background. The owner is available immediately.
+  if (!isOwner) {
+    withTimeout(
+      supabase
+        .from('admin_users')
+        .select('user_id, role')
+        .eq('user_id', currentUser.id)
+        .maybeSingle(),
+      3000,
+      'Admin permission query'
+    ).then(({ data: adminAccess, error: adminAccessError }) => {
+      if (adminAccessError) console.error('Supabase admin permission check failed:', adminAccessError);
+      isAdmin = Boolean(adminAccess && adminAccess.user_id === currentUser.id);
+      isOwner = Boolean(adminAccess && adminAccess.user_id === currentUser.id && adminAccess.role === 'owner');
+      adminAccessReady = true;
+      document.querySelectorAll('a[data-path="admin-panel"]').forEach(link => {
+        link.style.display = isAdmin ? '' : 'none';
+      });
+      if (window.location.hash === '#admin-panel') handleRoute();
+    });
+  } else {
+    document.querySelectorAll('a[data-path="admin-panel"]').forEach(link => {
+      link.style.display = '';
+    });
+  }
 
   const namePill = document.querySelector('#headerProfilePill .font-label-md');
   const emailPill = document.querySelector('#headerProfilePill .font-label-sm');
@@ -298,7 +321,11 @@ async function initializeAuth() {
   if (authInitPromise) return authInitPromise;
 
   authInitPromise = (async () => {
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await withTimeout(
+      supabase.auth.getSession(),
+      5000,
+      'Supabase session restore'
+    );
 
     if (error) {
       console.error('Supabase session restore failed:', error);
@@ -462,6 +489,17 @@ function handleRoute() {
   if (!hash || !routes[hash]) {
     hash = 'ai-assistant';
     window.location.hash = '#' + hash;
+    return;
+  }
+
+  if (hash === 'admin-panel' && !adminAccessReady) {
+    currentRoute = hash;
+    document.title = routes[hash].title;
+    updateActiveNav(hash);
+    const mainContainer = document.getElementById('mainContentArea');
+    if (mainContainer) {
+      mainContainer.innerHTML = '<div class="max-w-[900px] mx-auto py-12 text-center"><p class="text-lg font-semibold">Checking admin permissions…</p><p class="mt-2 text-sm opacity-70">Please wait a moment.</p></div>';
+    }
     return;
   }
 
