@@ -28,11 +28,14 @@ async function loadLiveCampusData(profile) {
   const section = profile?.section || '';
   const term = profile?.term || '';
 
+  const examsQuery = supabase.from('exams').select('id,subject_id,program_id,term,section,exam_type,exam_date,start_time,end_time,room,instructions,subjects(name,code)').eq('term', term).limit(100);
+  if (section) examsQuery.eq('section', section);
+
   const [noticesRes, eventsRes, timetableRes, examsRes, assignmentsRes, attendanceRes, subjectsRes, facultyRes, locationsRes, rulesRes] = await Promise.all([
     supabase.from('notices').select('id,title,body,category,published_at,source_url').eq('is_published', true).order('published_at', { ascending: false }).limit(50),
     supabase.from('events').select('id,title,description,event_type,starts_at,ends_at,venue,source_url').eq('is_published', true).order('starts_at', { ascending: true }).limit(50),
     supabase.from('timetable').select('id,subject_id,faculty_id,program_id,term,section,day_of_week,start_time,end_time,room,notes,subjects(name,code),faculty(name,designation)').eq('term', term).limit(200),
-    supabase.from('exams').select('id,subject_id,program_id,term,section,exam_type,exam_date,start_time,end_time,room,instructions,subjects(name,code)').eq('term', term).modify((query) => section ? query.eq('section', section) : query).limit(100),
+    examsQuery,
     supabase.from('academic_assignments').select('id,subject_id,program_id,term,title,description,due_date,submission_info,subjects(name,code)').eq('term', term).limit(100),
     supabase.from('attendance').select('id,subject_id,classes_held,classes_attended,updated_at,subjects(name,code)').eq('user_id', currentUser.id).limit(100),
     supabase.from('subjects').select('id,program_id,code,name,description,credits,term').eq('term', term).limit(100),
