@@ -81,6 +81,18 @@ export async function renderAdminTools(mount) {
     '</section>' +
 
     (owner ? (
+    '<section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/20 shadow-sm">' +
+      '<div class="flex items-center gap-2">' +
+        '<span class="material-symbols-outlined text-primary">key</span>' +
+        '<h2 class="font-headline-md text-base font-bold text-on-surface">Student Login Password</h2>' +
+        '<span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">OWNER ONLY</span>' +
+      '</div>' +
+      '<p class="text-xs text-on-surface-variant mt-1">Set the same initial password for all currently linked student accounts. Student usernames remain their registered email addresses.</p>' +
+      '<div id="studentPasswordSyncBody" class="mt-4"></div>' +
+    '</section>'
+    ) : '') +
+
+    (owner ? (
     '<section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-error/20 shadow-sm">' +
       '<div class="flex items-center gap-2">' +
         '<span class="material-symbols-outlined text-error">edit_note</span>' +
@@ -95,7 +107,10 @@ export async function renderAdminTools(mount) {
   if (owner) await renderAssignments();
   else await renderAssignmentsForAdmin();
   await renderKnowledge();
-  if (owner) await renderCorrections();
+  if (owner) {
+    await renderStudentPasswordSync();
+    await renderCorrections();
+  }
 
   async function renderAssignmentsForAdmin() {
     const el = document.getElementById('classAssignmentBody');
@@ -334,6 +349,69 @@ export async function renderAdminTools(mount) {
       btn.disabled = false;
       input.value = '';
       await refreshKnowledge();
+    });
+  }
+
+  async function renderStudentPasswordSync() {
+    const el = document.getElementById('studentPasswordSyncBody');
+    if (!el) return;
+
+    const { count, error } = await supabase
+      .from('student_registrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'linked');
+
+    if (error) {
+      el.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to read linked student count.</div>';
+      return;
+    }
+
+    const linkedCount = Number(count || 0);
+
+    el.innerHTML =
+      '<div class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high">' +
+        '<div class="text-sm font-bold">' + linkedCount + ' linked student account' + (linkedCount === 1 ? '' : 's') + '</div>' +
+        '<div class="text-[11px] text-on-surface-variant mt-1">This action only targets student registrations already marked linked. It does not change owner or admin accounts.</div>' +
+      '</div>' +
+      '<button id="syncStudentPasswordBtn" type="button" class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold"' + (linkedCount ? '' : ' disabled') + '>' +
+        '<span class="material-symbols-outlined text-[18px]">key</span>Set Default Password for Linked Students' +
+      '</button>' +
+      '<div class="text-[11px] text-on-surface-variant mt-2">Enter the password when prompted. It is sent only to the owner-only Edge Function and is not stored in this page.</div>';
+
+    const btn = document.getElementById('syncStudentPasswordBtn');
+    btn?.addEventListener('click', async () => {
+      if (!linkedCount) return;
+
+      const password = window.prompt('Enter the default student password to apply to all linked student accounts:');
+      if (password === null) return;
+
+      if (password.length < 8) {
+        showToast('Password must be at least 8 characters.', 'error');
+        return;
+      }
+
+      if (!window.confirm('This will reset the password for all ' + linkedCount + ' linked student accounts. Continue?')) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Updating student passwords...';
+
+      try {
+        const { data, error: invokeError } = await supabase.functions.invoke(
+          'sync-student-default-password',
+          { body: { password } }
+        );
+
+        if (invokeError || data?.error || data?.ok === false) {
+          throw new Error(data?.error || data?.message || invokeError?.message || 'Password sync failed.');
+        }
+
+        showToast('Updated ' + Number(data?.updated || 0) + ' student passwords successfully.', 'success');
+      } catch (error) {
+        showToast(error?.message || 'Password sync failed.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">key</span>Set Default Password for Linked Students';
+      }
     });
   }
 
