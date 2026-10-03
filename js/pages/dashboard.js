@@ -203,7 +203,7 @@ export function renderDashboard(container) {
                 </div>
                 <div>
                   <h4 class="font-label-md font-bold text-xs text-on-surface group-hover:text-on-secondary-container">Submit Medical Leave</h4>
-                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">Admin Block A counter &amp; 3-day rule</p>
+                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">Ask Copilot to find the official medical leave procedure from connected academic rules.</p>
                 </div>
               </button>
 
@@ -302,42 +302,12 @@ export function renderDashboard(container) {
           <!-- Academic Calendar Milestones -->
           <div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm border border-surface-container-high">
             <div class="flex items-center justify-between mb-3">
-              <span class="font-label-md font-bold text-sm text-on-surface uppercase tracking-wider text-outline">Upcoming Milestones</span>
-              <span class="text-xs text-outline font-bold">Live calendar</span>
+              <span class="font-label-md font-bold text-sm text-on-surface uppercase tracking-wider text-outline">Upcoming Academic Dates</span>
+              <span class="text-xs text-outline font-bold">Live data</span>
             </div>
-            <div class="space-y-3">
-              <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-xl bg-surface-container text-on-surface flex flex-col items-center justify-center flex-shrink-0 text-xs font-bold">
-                  <span>OCT</span>
-                  <span class="text-sm text-primary font-black">28</span>
-                </div>
-                <div>
-                  <h4 class="font-label-md text-xs font-bold text-on-surface">CS-204 Lab Assignment 3</h4>
-                  <span class="text-[11px] text-error font-semibold">11:59 PM • 4 days remaining</span>
-                </div>
-              </div>
-
-              <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-xl bg-surface-container text-on-surface flex flex-col items-center justify-center flex-shrink-0 text-xs font-bold">
-                  <span>NOV</span>
-                  <span class="text-sm text-primary font-black">05</span>
-                </div>
-                <div>
-                  <h4 class="font-label-md text-xs font-bold text-on-surface">Midterm Examinations Begin</h4>
-                  <span class="text-[11px] text-on-surface-variant">Hall ticket download opens Oct 30</span>
-                </div>
-              </div>
-
-              <div class="flex items-start gap-3">
-                <div class="w-10 h-10 rounded-xl bg-surface-container text-on-surface flex flex-col items-center justify-center flex-shrink-0 text-xs font-bold">
-                  <span>NOV</span>
-                  <span class="text-sm text-primary font-black">10</span>
-                </div>
-                <div>
-                  <h4 class="font-label-md text-xs font-bold text-on-surface">Synapse 2024 Cultural Fest</h4>
-                  <span class="text-[11px] text-on-surface-variant">Annual campus extravaganza</span>
-                </div>
-              </div>
+            <div class="p-3 bg-surface-container-low rounded-xl">
+              <p class="text-xs font-semibold text-on-surface">${campusData.exams?.length ? `${campusData.exams.length} exam record(s) connected for your term.` : "No exam dates are currently connected."}</p>
+              ${campusData.exams?.[0] ? `<p class="text-[11px] text-on-surface-variant mt-1">Next connected exam: ${campusData.exams[0].exam_type || "Examination"} on ${campusData.exams[0].exam_date || "date not assigned"}${campusData.exams[0].room ? " • " + campusData.exams[0].room : ""}</p>` : ""}
             </div>
           </div>
 
@@ -351,7 +321,7 @@ export function renderDashboard(container) {
               <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             </div>
             <p class="text-xs text-on-surface-variant">
-              Campus route information will appear when live location data is connected.
+              Campus transport information will appear here when a transport feed is connected.
             </p>
             <button class="mt-2 text-xs font-bold text-primary hover:underline flex items-center gap-1" onclick="window.location.hash='#campus-guide'">
               Live Shuttle Map &amp; Tracker →
