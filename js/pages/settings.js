@@ -26,12 +26,12 @@ export function renderSettings(container) {
           <!-- Profile Card -->
           <div class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg shadow-sm border border-surface-container-high space-y-4">
             <div class="flex items-center gap-3 border-b border-surface-container pb-3">
-              <img src="assets/avatars/student.svg" alt="Sophia Chen" class="w-16 h-16 rounded-full object-cover ring-2 ring-primary"/>
+              <img src="assets/avatars/student.svg" alt="Student" class="w-16 h-16 rounded-full object-cover ring-2 ring-primary"/>
               <div>
                 <h2 class="font-headline-md text-lg font-bold text-on-surface">${campusData.student.name}</h2>
                 <p class="text-xs text-on-surface-variant">${campusData.student.program} • ${campusData.student.id}</p>
                 <span class="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold mt-0.5">
-                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Enrolled &amp; Active (Fall 2024)
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Student profile from Supabase
                 </span>
               </div>
             </div>
@@ -87,7 +87,7 @@ export function renderSettings(container) {
             <div class="space-y-2 pt-1">
               <label class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl cursor-pointer hover:bg-surface-container transition-colors">
                 <div class="space-y-0.5">
-                  <span class="text-xs font-bold text-on-surface block">Fall 2024 Course Syllabi &amp; Lecture Slidedecks</span>
+                  <span class="text-xs font-bold text-on-surface block">Connected course data</span>
                   <span class="text-[11px] text-outline">Enables deep topic breakdown &amp; Big-O exam hints</span>
                 </div>
                 <input type="checkbox" checked class="h-4 w-4 rounded text-primary focus:ring-primary"/>
