@@ -1,5 +1,6 @@
 // Settings Page - Student Profile & AI Copilot Preferences
 import { campusData } from '../data.js';
+import { supabase } from '../supabase.js';
 import { showToast } from '../components/toast.js';
 
 export function renderSettings(container) {
@@ -147,7 +148,7 @@ export function renderSettings(container) {
           <div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm border border-surface-container-high space-y-3">
             <h3 class="font-headline-md font-bold text-sm text-on-surface uppercase tracking-wider text-outline">Session Management</h3>
             <p class="text-xs text-on-surface-variant">
-              Campus Copilot keeps all conversation history encrypted locally in your browser memory.
+              Conversation history for this session stays in your browser memory and is not written to the campus database.
             </p>
             <button id="clearChatCacheBtn" class="w-full py-2 bg-surface-container hover:bg-error-container hover:text-on-error-container text-on-surface text-xs font-bold rounded-xl transition-colors">
               Clear Conversation History
@@ -171,13 +172,29 @@ export function renderSettings(container) {
   // Profile save
   const profileForm = document.getElementById('profileForm');
   if (profileForm) {
-    profileForm.onsubmit = (e) => {
+    profileForm.onsubmit = async (e) => {
       e.preventDefault();
-      const newName = document.getElementById('profNameInput').value;
-      const newHostel = document.getElementById('profHostelInput').value;
+      const newName = document.getElementById('profNameInput').value.trim();
+      if (!newName) {
+        showToast('Name cannot be empty.', 'warning');
+        return;
+      }
+      const newHostel = document.getElementById('profHostelInput').value.trim();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
+      if (!user) {
+        showToast('Your session has expired. Please sign in again.', 'error');
+        return;
+      }
+      const { error } = await supabase.from('profiles').update({ name: newName }).eq('id', user.id);
+      if (error) {
+        console.error('Profile update failed:', error);
+        showToast('Could not save profile details.', 'error');
+        return;
+      }
       campusData.student.name = newName;
       campusData.student.hostel = newHostel;
-      showToast("Profile settings updated successfully!", "success");
+      showToast('Profile name updated successfully.', 'success');
     };
   }
 
