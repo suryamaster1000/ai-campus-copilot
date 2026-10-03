@@ -9,6 +9,7 @@ let currentUser = null;
 let authReady = false;
 let authInitPromise = null;
 let isAdmin = false;
+let isOwner = false;
 
 async function handleAuthSession(session) {
   if (!session?.user) {
@@ -104,6 +105,7 @@ async function handleAuthSession(session) {
     console.error('Supabase admin permission check failed:', adminAccessError);
   }
   isAdmin = Boolean(adminAccess && adminAccess.user_id === currentUser.id);
+  isOwner = Boolean(adminAccess && adminAccess.user_id === currentUser.id && adminAccess.role === 'owner');
 
   document.querySelectorAll('a[data-path="admin-panel"]').forEach(link => {
     link.style.display = isAdmin ? '' : 'none';
