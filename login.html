@@ -4,112 +4,1001 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sign In — AI Campus Copilot</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
   <script src="https://cdn.tailwindcss.com"></script>
+
   <script>
-    tailwind.config = {theme:{extend:{fontFamily:{sans:['Inter','sans-serif'],display:['Plus Jakarta Sans','sans-serif']},colors:{primary:"#005bbf","primary-container":"#1a73e8","on-primary":"#ffffff","on-primary-container":"#ffffff",surface:"#f7f9ff","surface-container-lowest":"#ffffff","surface-container-low":"#f1f4fa","surface-container":"#ebeef4","on-surface":"#181c20","on-surface-variant":"#414754",outline:"#727785","outline-variant:"#c1c6d6",error:"#ba1a1a","error-container":"#ffdad6","on-error-container":"#93000a","secondary-fixed":"#d5e3ff","on-secondary-fixed":"#001b3b","primary-fixed":"#d8e2ff","on-primary-fixed":"#001a41"}}}};
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif']
+          },
+          colors: {
+            primary: "#005bbf",
+            "primary-container": "#1a73e8",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#ffffff",
+            surface: "#f7f9ff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f1f4fa",
+            "surface-container": "#ebeef4",
+            "on-surface": "#181c20",
+            "on-surface-variant": "#414754",
+            outline: "#727785",
+            "outline-variant": "#c1c6d6",
+            error: "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error-container": "#93000a",
+            "secondary-fixed": "#d5e3ff",
+            "on-secondary-fixed": "#001b3b",
+            "primary-fixed": "#d8e2ff",
+            "on-primary-fixed": "#001a41"
+          }
+        }
+      }
+    };
   </script>
+
   <style>
-    body{font-family:'Inter',sans-serif}.material-symbols-outlined{font-family:'Material Symbols Outlined';font-weight:normal;font-style:normal;font-size:24px;display:inline-block;line-height:1}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}.animate-fade-in{animation:fadeIn .35s ease-out forwards}
-    .input-field{width:100%;padding:.625rem 1rem;background:#f1f4fa;border:1.5px solid #c1c6d6;border-radius:.75rem;font-size:.875rem;color:#181c20;outline:none;transition:border-color .2s}.input-field:focus{border-color:#005bbf;background:#fff}
-    .btn-primary{width:100%;padding:.75rem;background:#005bbf;color:#fff;font-weight:700;font-size:.875rem;border-radius:.75rem;border:none;cursor:pointer}.btn-primary:hover{background:#0052ab}.btn-primary:active{transform:scale(.98)}.btn-primary:disabled{background:#c1c6d6;cursor:not-allowed}
-    .btn-google{width:100%;padding:.625rem;background:#fff;border:1.5px solid #c1c6d6;border-radius:.75rem;font-size:.875rem;font-weight:600;color:#181c20;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem}.btn-google:hover{background:#f1f4fa;border-color:#005bbf}
-    .error-msg{color:#ba1a1a;font-size:.75rem;padding:.5rem .75rem;background:#ffdad6;border-radius:.5rem;display:none}.error-msg.show{display:block}.divider{display:flex;align-items:center;gap:.75rem;color:#727785;font-size:.75rem}.divider:before,.divider:after{content:'';flex:1;height:1px;background:#c1c6d6}
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      display: inline-block;
+      line-height: 1;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn .35s ease-out forwards;
+    }
+
+    .input-field {
+      width: 100%;
+      padding: .625rem 1rem;
+      background: #f1f4fa;
+      border: 1.5px solid #c1c6d6;
+      border-radius: .75rem;
+      font-size: .875rem;
+      color: #181c20;
+      outline: none;
+      transition: border-color .2s, background .2s;
+    }
+
+    .input-field:focus {
+      border-color: #005bbf;
+      background: #fff;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: .75rem;
+      background: #005bbf;
+      color: #fff;
+      font-weight: 700;
+      font-size: .875rem;
+      border-radius: .75rem;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-primary:hover {
+      background: #0052ab;
+    }
+
+    .btn-primary:active {
+      transform: scale(.98);
+    }
+
+    .btn-primary:disabled {
+      background: #c1c6d6;
+      cursor: not-allowed;
+    }
+
+    .error-msg {
+      color: #ba1a1a;
+      font-size: .75rem;
+      padding: .5rem .75rem;
+      background: #ffdad6;
+      border-radius: .5rem;
+      display: none;
+    }
+
+    .error-msg.show {
+      display: block;
+    }
+
+    .success-msg {
+      color: #166534;
+      background: #dcfce7;
+    }
   </style>
 </head>
+
 <body class="min-h-screen bg-gradient-to-br from-blue-50 via-surface to-blue-100 flex items-center justify-center p-4">
-<div class="w-full max-w-sm animate-fade-in">
-  <div class="text-center mb-8"><div class="w-16 h-16 mx-auto rounded-2xl bg-primary flex items-center justify-center shadow-lg mb-4"><img src="assets/logo.svg" alt="Logo" class="w-10 h-10 object-contain filter brightness-200"/></div><h1 class="text-2xl font-extrabold text-on-surface" style="font-family:'Plus Jakarta Sans',sans-serif;">AI Campus Copilot</h1><p class="text-sm text-on-surface-variant mt-1">Sign in to your student account</p></div>
-  <div class="bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 p-6 space-y-4">
-    <div class="p-3 rounded-xl bg-blue-50 border border-blue-100 text-[11px] leading-5 text-on-surface-variant">New students must register through the official Student Registration form. After approval, use <b>Forgot password / Set password</b> to create a password.</div>
-    <div class="error-msg" id="authError"></div>
-    <form id="signInForm" class="space-y-3"><div><label class="block text-xs font-semibold text-on-surface mb-1">Campus Email</label><input id="siEmail" class="input-field" type="email" placeholder="student@campus.edu" autocomplete="email" required/></div><div><label class="block text-xs font-semibold text-on-surface mb-1">Password</label><input id="siPassword" class="input-field" type="password" placeholder="••••••••" autocomplete="current-password" required/></div><button type="submit" class="btn-primary mt-1" id="signInBtn">Sign In to Dashboard</button></form>
-        <p class="text-center text-[11px] text-on-surface-variant">By signing in, you agree to the<br/><span class="text-primary font-semibold">University Academic Data Usage Policy</span></p>
+
+  <div class="w-full max-w-sm animate-fade-in">
+
+    <!-- Header -->
+    <div class="text-center mb-8">
+
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-primary flex items-center justify-center shadow-lg mb-4">
+        <img
+          src="assets/logo.svg"
+          alt="AI Campus Copilot Logo"
+          class="w-10 h-10 object-contain filter brightness-200"
+        />
+      </div>
+
+      <h1
+        class="text-2xl font-extrabold text-on-surface"
+        style="font-family:'Plus Jakarta Sans',sans-serif;"
+      >
+        AI Campus Copilot
+      </h1>
+
+      <p class="text-sm text-on-surface-variant mt-1">
+        Sign in to your student account
+      </p>
+
+    </div>
+
+    <!-- Login Card -->
+    <div class="bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/30 p-6 space-y-4">
+
+      <!-- Information -->
+      <div
+        id="loginInfo"
+        class="p-3 rounded-xl bg-blue-50 border border-blue-100 text-[11px] leading-5 text-on-surface-variant"
+      >
+        New students must register through the official Student Registration form.
+        After approval, sign in with the temporary password provided to you and
+        create your own password.
+      </div>
+
+      <!-- Error / Success -->
+      <div id="authError" class="error-msg"></div>
+
+      <!-- Sign In Form -->
+      <form id="signInForm" class="space-y-3">
+
+        <div>
+          <label class="block text-xs font-semibold text-on-surface mb-1">
+            Campus Email
+          </label>
+
+          <input
+            id="siEmail"
+            class="input-field"
+            type="email"
+            placeholder="student@campus.edu"
+            autocomplete="email"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-on-surface mb-1">
+            Password
+          </label>
+
+          <input
+            id="siPassword"
+            class="input-field"
+            type="password"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          class="btn-primary mt-1"
+          id="signInBtn"
+        >
+          Sign In to Dashboard
+        </button>
+
+      </form>
+
+      <!-- Footer -->
+      <p
+        id="policyText"
+        class="text-center text-[11px] text-on-surface-variant"
+      >
+        By signing in, you agree to the<br/>
+        <span class="text-primary font-semibold">
+          University Academic Data Usage Policy
+        </span>
+      </p>
+
+    </div>
+
+    <!-- Version -->
+    <p class="text-center text-[11px] text-on-surface-variant mt-4">
+      AI Campus Copilot v2.4 • Powered by Supabase &amp; Gemini
+    </p>
+
   </div>
-  <p class="text-center text-[11px] text-on-surface-variant mt-4">AI Campus Copilot v2.4 • Powered by Supabase &amp; Gemini</p>
-</div>
-<div id="loadingOverlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 hidden"><div class="flex flex-col items-center gap-3"><span class="material-symbols-outlined text-primary text-[40px] animate-spin">progress_activity</span><span class="text-sm font-semibold text-on-surface" id="loadingText">Signing you in...</span></div></div>
+
+  <!-- Loading Overlay -->
+  <div
+    id="loadingOverlay"
+    class="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50 hidden"
+  >
+    <div class="flex flex-col items-center gap-3">
+
+      <span class="material-symbols-outlined text-primary text-[40px] animate-spin">
+        progress_activity
+      </span>
+
+      <span
+        class="text-sm font-semibold text-on-surface"
+        id="loadingText"
+      >
+        Signing you in...
+      </span>
+
+    </div>
+  </div>
+
 <script type="module">
+
 import { supabase } from './js/supabase.js';
 
-const OWNER_USER_ID='53d68054-50f2-41b5-a666-5789db48ae02';
-const showLoading=(text='Please wait...')=>{document.getElementById('loadingOverlay').classList.remove('hidden');document.getElementById('loadingText').textContent=text};
-const hideLoading=()=>document.getElementById('loadingOverlay').classList.add('hidden');
-const showError=message=>{const el=document.getElementById('authError');el.textContent=message;el.classList.add('show')};
-const showSuccess=message=>{const el=document.getElementById('authError');el.textContent=message;el.classList.remove('show');el.style.background='#dcfce7';el.style.color='#166534';el.classList.add('show')};
-const friendlyError=error=>error?.message||'Something went wrong. Please try again.';
-let passwordRecovery=window.location.hash.includes('type=recovery');
 
-async function allowUser(user){
-  if(user.id===OWNER_USER_ID)return true;
-  const {data:admin}=await supabase.from('admin_users').select('user_id').eq('user_id',user.id).maybeSingle();
-  if(admin)return true;
-  const {data:registration}=await supabase.from('student_registrations').select('id').eq('auth_user_id',user.id).eq('status','linked').maybeSingle();
+/* =========================================================
+   CONFIGURATION
+========================================================= */
+
+const OWNER_USER_ID =
+  '53d68054-50f2-41b5-a666-5789db48ae02';
+
+
+/* =========================================================
+   UI HELPERS
+========================================================= */
+
+const showLoading = (text = 'Please wait...') => {
+
+  document
+    .getElementById('loadingOverlay')
+    .classList
+    .remove('hidden');
+
+  document
+    .getElementById('loadingText')
+    .textContent = text;
+};
+
+
+const hideLoading = () => {
+
+  document
+    .getElementById('loadingOverlay')
+    .classList
+    .add('hidden');
+
+};
+
+
+const showError = (message) => {
+
+  const el = document.getElementById('authError');
+
+  el.textContent = message;
+
+  el.classList.remove('success-msg');
+
+  el.classList.add('show');
+
+};
+
+
+const showSuccess = (message) => {
+
+  const el = document.getElementById('authError');
+
+  el.textContent = message;
+
+  el.classList.add('success-msg');
+
+  el.classList.add('show');
+
+};
+
+
+const friendlyError = (error) => {
+
+  return error?.message ||
+    'Something went wrong. Please try again.';
+
+};
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let passwordRecovery =
+  window.location.hash.includes('type=recovery');
+
+
+/* =========================================================
+   CHECK WHETHER USER IS ALLOWED
+========================================================= */
+
+async function allowUser(user) {
+
+  if (!user?.id) {
+    return false;
+  }
+
+
+  /* OWNER */
+
+  if (user.id === OWNER_USER_ID) {
+    return true;
+  }
+
+
+  /* ADMIN */
+
+  const {
+    data: admin,
+    error: adminError
+  } = await supabase
+    .from('admin_users')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+
+  if (!adminError && admin) {
+    return true;
+  }
+
+
+  /* APPROVED STUDENT */
+
+  const {
+    data: registration,
+    error: registrationError
+  } = await supabase
+    .from('student_registrations')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .eq('status', 'linked')
+    .maybeSingle();
+
+
+  if (registrationError) {
+    console.error(
+      'Student registration check failed:',
+      registrationError
+    );
+
+    return false;
+  }
+
+
   return !!registration;
+
 }
 
-document.getElementById('signInForm').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const email=document.getElementById('siEmail').value.trim(),password=document.getElementById('siPassword').value;
-  showLoading('Signing you in...');
-  const {data,error}=await supabase.auth.signInWithPassword({email,password});
-  if(error){hideLoading();showError(friendlyError(error));return}
-  if(!(await allowUser(data.user))){await supabase.auth.signOut();hideLoading();showError('This account is not an approved campus account. Please complete Student Registration first.');return}
-  window.location.href='index.html';
-});
 
-const forgot=document.createElement('button');
-forgot.type='button';forgot.className='w-full mt-3 text-xs font-semibold text-primary hover:underline';forgot.textContent='Forgot password / Set password';
-document.getElementById('signInForm').after(forgot);
-forgot.addEventListener('click',async()=>{
-  const email=document.getElementById('siEmail').value.trim();
-  if(!email){showError('Enter your registered email first.');return}
-  showLoading('Sending password link...');
-  const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:new URL('login.html',window.location.href).href});
+/* =========================================================
+   SHOW PASSWORD CHANGE SCREEN
+========================================================= */
+
+function showPasswordChangeScreen(message = null) {
+
+  passwordRecovery = true;
+
+  document
+    .getElementById('signInForm')
+    .classList
+    .add('hidden');
+
+  document
+    .getElementById('policyText')
+    .classList
+    .add('hidden');
+
+  forgot.classList.add('hidden');
+
+  recoveryForm.classList.remove('hidden');
+
+  document
+    .getElementById('loginInfo')
+    .classList
+    .add('hidden');
+
+  if (message) {
+    showSuccess(message);
+  }
+
+}
+
+
+/* =========================================================
+   SIGN IN
+========================================================= */
+
+document
+  .getElementById('signInForm')
+  .addEventListener('submit', async (e) => {
+
+    e.preventDefault();
+
+
+    const email =
+      document
+        .getElementById('siEmail')
+        .value
+        .trim();
+
+
+    const password =
+      document
+        .getElementById('siPassword')
+        .value;
+
+
+    showLoading('Signing you in...');
+
+
+    const {
+      data,
+      error
+    } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+
+    if (error) {
+
+      hideLoading();
+
+      showError(friendlyError(error));
+
+      return;
+
+    }
+
+
+    /* APPROVED ACCOUNT CHECK */
+
+    if (!(await allowUser(data.user))) {
+
+      await supabase.auth.signOut();
+
+      hideLoading();
+
+      showError(
+        'This account is not an approved campus account. Please complete Student Registration first.'
+      );
+
+      return;
+
+    }
+
+
+    /* FIRST LOGIN / TEMPORARY PASSWORD */
+
+    if (
+      data.user.user_metadata?.must_change_password === true
+    ) {
+
+      showPasswordChangeScreen(
+        'Please create your own password before entering the campus dashboard.'
+      );
+
+      hideLoading();
+
+      return;
+
+    }
+
+
+    /* NORMAL LOGIN */
+
+    window.location.href = 'index.html';
+
+  });
+
+
+/* =========================================================
+   FORGOT PASSWORD BUTTON
+========================================================= */
+
+const forgot = document.createElement('button');
+
+forgot.type = 'button';
+
+forgot.className =
+  'w-full mt-3 text-xs font-semibold text-primary hover:underline';
+
+forgot.textContent =
+  'Forgot password / Set password';
+
+
+document
+  .getElementById('signInForm')
+  .after(forgot);
+
+
+forgot.addEventListener('click', async () => {
+
+  const email =
+    document
+      .getElementById('siEmail')
+      .value
+      .trim();
+
+
+  if (!email) {
+
+    showError(
+      'Enter your registered email first.'
+    );
+
+    return;
+
+  }
+
+
+  showLoading(
+    'Sending password link...'
+  );
+
+
+  const {
+    error
+  } = await supabase.auth.resetPasswordForEmail(
+    email,
+    {
+      redirectTo:
+        new URL(
+          'login.html',
+          window.location.href
+        ).href
+    }
+  );
+
+
   hideLoading();
-  if(error){showError(friendlyError(error));return}
-  showSuccess('If this email belongs to an approved account, a password link has been sent. Check your inbox.');
+
+
+  if (error) {
+
+    showError(
+      friendlyError(error)
+    );
+
+    return;
+
+  }
+
+
+  showSuccess(
+    'If this email belongs to an approved account, a password link has been sent. Check your inbox.'
+  );
+
 });
 
-const recoveryForm=document.createElement('form');
-recoveryForm.className='space-y-3 hidden';
-recoveryForm.innerHTML='<h2 class="font-bold text-on-surface">Create a new password</h2><input id="newPassword" class="input-field" type="password" minlength="6" placeholder="New password" required><input id="confirmPassword" class="input-field" type="password" minlength="6" placeholder="Confirm password" required><button class="btn-primary" type="submit">Save Password</button>';
-document.querySelector('#signInForm').parentElement.append(recoveryForm);
-recoveryForm.addEventListener('submit',async e=>{
-  e.preventDefault();
-  const p=document.getElementById('newPassword').value,c=document.getElementById('confirmPassword').value;
-  if(p.length<6){showError('Password must be at least 6 characters.');return}
-  if(p!==c){showError('Passwords do not match.');return}
-  showLoading('Saving your password...');
-  const {error}=await supabase.auth.updateUser({password:p});
-  if(error){hideLoading();showError(friendlyError(error));return}
-  showSuccess('Password saved. Redirecting...');
-  setTimeout(()=>window.location.href='index.html',700);
-});
 
-supabase.auth.onAuthStateChange(async(event,session)=>{
-  if(event==='PASSWORD_RECOVERY'){
-    passwordRecovery=true;
-    document.getElementById('signInForm').classList.add('hidden');
-    forgot.classList.add('hidden');
-    recoveryForm.classList.remove('hidden');
-    hideLoading();
+/* =========================================================
+   PASSWORD CHANGE FORM
+========================================================= */
+
+const recoveryForm =
+  document.createElement('form');
+
+
+recoveryForm.className =
+  'space-y-3 hidden';
+
+
+recoveryForm.innerHTML = `
+
+  <div class="text-center mb-2">
+
+    <div class="w-12 h-12 mx-auto rounded-xl bg-blue-100 flex items-center justify-center mb-3">
+
+      <span class="material-symbols-outlined text-primary">
+        lock_reset
+      </span>
+
+    </div>
+
+    <h2 class="font-bold text-on-surface text-lg">
+      Create your password
+    </h2>
+
+    <p class="text-xs text-on-surface-variant mt-1">
+      Choose a new password before accessing the campus dashboard.
+    </p>
+
+  </div>
+
+  <div>
+
+    <label class="block text-xs font-semibold text-on-surface mb-1">
+      New Password
+    </label>
+
+    <input
+      id="newPassword"
+      class="input-field"
+      type="password"
+      minlength="8"
+      placeholder="Enter new password"
+      autocomplete="new-password"
+      required
+    />
+
+  </div>
+
+  <div>
+
+    <label class="block text-xs font-semibold text-on-surface mb-1">
+      Confirm Password
+    </label>
+
+    <input
+      id="confirmPassword"
+      class="input-field"
+      type="password"
+      minlength="8"
+      placeholder="Confirm new password"
+      autocomplete="new-password"
+      required
+    />
+
+  </div>
+
+  <p class="text-[11px] text-on-surface-variant">
+    Password must contain at least 8 characters.
+  </p>
+
+  <button
+    class="btn-primary"
+    type="submit"
+  >
+    Save Password
+  </button>
+
+`;
+
+
+document
+  .querySelector('#signInForm')
+  .parentElement
+  .append(recoveryForm);
+
+
+/* =========================================================
+   SAVE NEW PASSWORD
+========================================================= */
+
+recoveryForm.addEventListener(
+  'submit',
+  async (e) => {
+
+    e.preventDefault();
+
+
+    const p =
+      document
+        .getElementById('newPassword')
+        .value;
+
+
+    const c =
+      document
+        .getElementById('confirmPassword')
+        .value;
+
+
+    /* MINIMUM PASSWORD LENGTH */
+
+    if (p.length < 8) {
+
+      showError(
+        'Password must be at least 8 characters.'
+      );
+
+      return;
+
+    }
+
+
+    /* PASSWORD MATCH */
+
+    if (p !== c) {
+
+      showError(
+        'Passwords do not match.'
+      );
+
+      return;
+
+    }
+
+
+    showLoading(
+      'Saving your password...'
+    );
+
+
+    /* GET CURRENT USER */
+
+    const {
+      data: currentSession,
+      error: sessionError
+    } = await supabase.auth.getSession();
+
+
+    if (sessionError) {
+
+      hideLoading();
+
+      showError(
+        friendlyError(sessionError)
+      );
+
+      return;
+
+    }
+
+
+    const currentUser =
+      currentSession?.session?.user;
+
+
+    if (!currentUser) {
+
+      hideLoading();
+
+      showError(
+        'Your password session has expired. Please sign in again.'
+      );
+
+      return;
+
+    }
+
+
+    /* UPDATE PASSWORD + REMOVE FIRST LOGIN FLAG */
+
+    const {
+      error
+    } = await supabase.auth.updateUser({
+
+      password: p,
+
+      data: {
+        ...(currentUser.user_metadata || {}),
+        must_change_password: false
+      }
+
+    });
+
+
+    if (error) {
+
+      hideLoading();
+
+      showError(
+        friendlyError(error)
+      );
+
+      return;
+
+    }
+
+
+    showSuccess(
+      'Password saved successfully. Redirecting to your dashboard...'
+    );
+
+
+    setTimeout(() => {
+
+      window.location.href =
+        'index.html';
+
+    }, 700);
+
+  }
+);
+
+
+/* =========================================================
+   AUTH STATE CHANGES
+========================================================= */
+
+supabase.auth.onAuthStateChange(
+  async (event, session) => {
+
+    /* PASSWORD RECOVERY LINK */
+
+    if (event === 'PASSWORD_RECOVERY') {
+
+      showPasswordChangeScreen();
+
+      hideLoading();
+
+      return;
+
+    }
+
+
+    /* SIGNED IN */
+
+    if (
+      event === 'SIGNED_IN' &&
+      session?.user &&
+      !passwordRecovery
+    ) {
+
+      const allowed =
+        await allowUser(session.user);
+
+
+      if (!allowed) {
+
+        await supabase.auth.signOut();
+
+        hideLoading();
+
+        showError(
+          'This account is not an approved campus account. Please complete Student Registration first.'
+        );
+
+        return;
+
+      }
+
+
+      /* TEMPORARY PASSWORD */
+
+      if (
+        session.user.user_metadata?.must_change_password === true
+      ) {
+
+        showPasswordChangeScreen(
+          'Please create your own password before entering the campus dashboard.'
+        );
+
+        hideLoading();
+
+        return;
+
+      }
+
+
+      /* NORMAL USER */
+
+      window.location.replace(
+        'index.html'
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   INITIAL SESSION CHECK
+========================================================= */
+
+(async () => {
+
+  const {
+    data,
+    error
+  } = await supabase.auth.getSession();
+
+
+  if (error) {
+
+    console.error(
+      'Session check failed:',
+      error
+    );
+
+    return;
+
+  }
+
+
+  const user =
+    data.session?.user;
+
+
+  if (!user) {
     return;
   }
-  if(event==='SIGNED_IN'&&session?.user&&!passwordRecovery&&await allowUser(session.user))window.location.replace('index.html');
-});
-(async()=>{
-  const {data}=await supabase.auth.getSession();
-  if(data.session?.user){
-    if(passwordRecovery){document.getElementById('signInForm').classList.add('hidden');forgot.classList.add('hidden');recoveryForm.classList.remove('hidden')}
-    else if(await allowUser(data.session.user))window.location.replace('index.html');
-    else await supabase.auth.signOut();
+
+
+  /* PASSWORD RECOVERY */
+
+  if (passwordRecovery) {
+
+    showPasswordChangeScreen();
+
+    return;
+
   }
+
+
+  /* USER AUTHORIZATION */
+
+  const allowed =
+    await allowUser(user);
+
+
+  if (!allowed) {
+
+    await supabase.auth.signOut();
+
+    return;
+
+  }
+
+
+  /* FIRST LOGIN */
+
+  if (
+    user.user_metadata?.must_change_password === true
+  ) {
+
+    showPasswordChangeScreen(
+      'Please create your own password before entering the campus dashboard.'
+    );
+
+    return;
+
+  }
+
+
+  /* NORMAL SESSION */
+
+  window.location.replace(
+    'index.html'
+  );
+
 })();
+
 </script>
+
 </body>
 </html>
