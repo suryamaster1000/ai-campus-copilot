@@ -180,8 +180,11 @@ export function renderTimetable(container) {
 
     const dlBtn = document.getElementById('downloadTimetableBtn');
     if (dlBtn) {
-      dlBtn.onclick = () => const rows = campusData.timetable.flatMap(day => day.classes.map(cls =>
-          [day.day, cls.code, cls.name, cls.time, cls.room, cls.faculty].map(v => String(v || '').replaceAll(',', ' ')).join(',')
+      dlBtn.onclick = () => {
+        const rows = campusData.timetable.flatMap(day => day.classes.map(cls =>
+          [day.day, cls.code, cls.name, cls.time, cls.room, cls.faculty]
+            .map(v => String(v || '').replaceAll(',', ' '))
+            .join(',')
         ));
         if (!rows.length) {
           showToast('No timetable data is available to export.', 'info');
