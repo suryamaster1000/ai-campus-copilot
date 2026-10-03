@@ -1,6 +1,6 @@
 // AI Campus Copilot - Main Application Controller & Router
 import { supabase } from './supabase.js';
-import { campusData } from './data.js';
+import { campusData } from './data.js?v=20261003-live1';
 import { initCommandPalette } from './components/command-palette.js';
 import { showToast } from './components/toast.js';
 
@@ -215,7 +215,7 @@ import { renderCampusGuide } from './pages/campus-guide.js';
 import { renderEvents } from './pages/events.js';
 import { renderTasks } from './pages/tasks.js';
 import { renderSettings } from './pages/settings.js';
-import { renderAdminPanel } from './pages/admin.js';
+import { renderAdminPanel } from './pages/admin.js?v=20261003-live1';
 
 const routes = {
   'dashboard': { title: 'Dashboard - AI Campus Copilot', render: renderDashboard },
