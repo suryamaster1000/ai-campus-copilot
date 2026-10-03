@@ -11,6 +11,17 @@ let authInitPromise = null;
 let isAdmin = false;
 let isOwner = false;
 
+// Never let a slow Supabase request prevent the application shell/router from starting.
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => setTimeout(() => {
+      console.warn(label + ' timed out after ' + ms + 'ms; continuing with available data.');
+      resolve({ data: null, error: new Error(label + ' timed out') });
+    }, ms))
+  ]);
+}
+
 async function loadLiveCampusData(profile) {
   const section = profile?.section || '';
   const term = profile?.term || '';
@@ -136,11 +147,15 @@ async function handleAuthSession(session) {
 
   currentUser = session.user;
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', currentUser.id)
-    .maybeSingle();
+  const { data: profile, error: profileError } = await withTimeout(
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .maybeSingle(),
+    3000,
+    'Student profile query'
+  );
 
   if (profileError) {
     console.error('Supabase profile load failed:', profileError);
@@ -162,7 +177,8 @@ async function handleAuthSession(session) {
   // Google OAuth users may not have a profile row yet. Create one after
   // authentication so personal fields do not fall back to demo data.
   if (!profile && !profileError) {
-    const { error: profileCreateError } = await supabase.from('profiles').upsert({
+    const { error: profileCreateError } = await withTimeout(
+      supabase.from('profiles').upsert({
       id: currentUser.id,
       name,
       email: currentUser.email || '',
@@ -170,7 +186,10 @@ async function handleAuthSession(session) {
       program: '',
       term: '',
       cgpa: '0.00'
-    });
+      }),
+      3000,
+      'Student profile creation'
+    );
 
     if (profileCreateError) {
       console.error('Supabase profile create failed:', profileCreateError);
@@ -196,11 +215,15 @@ async function handleAuthSession(session) {
     campusData.student.email = currentUser.email || '';
   }
 
-  const { data: userTasks, error: tasksError } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('user_id', currentUser.id)
-    .order('created_at', { ascending: false });
+  const { data: userTasks, error: tasksError } = await withTimeout(
+    supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false }),
+    3000,
+    'Student tasks query'
+  );
 
   // Personal task data must never fall back to the bundled demo tasks.
   if (tasksError) {
@@ -224,11 +247,15 @@ async function handleAuthSession(session) {
     }));
   }
 
-  const { data: adminAccess, error: adminAccessError } = await supabase
-    .from('admin_users')
-    .select('user_id, role')
-    .eq('user_id', currentUser.id)
-    .maybeSingle();
+  const { data: adminAccess, error: adminAccessError } = await withTimeout(
+    supabase
+      .from('admin_users')
+      .select('user_id, role')
+      .eq('user_id', currentUser.id)
+      .maybeSingle(),
+    3000,
+    'Admin permission query'
+  );
 
   if (adminAccessError) {
     console.error('Supabase admin permission check failed:', adminAccessError);
