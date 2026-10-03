@@ -7,15 +7,21 @@ export function renderNotices(container) {
   let searchQuery = "";
 
   function render() {
-    const filteredNotices = campusData.notices.filter(n => {
-      const matchCat = activeCategory === "All" || n.category.toLowerCase() === activeCategory.toLowerCase();
-      const matchSearch = n.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          n.summary.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (n.author || 'Office of Academic Affairs').toLowerCase().includes(searchQuery.toLowerCase());
+    const sourceNotices = Array.isArray(campusData.notices) ? campusData.notices : [];
+    const filteredNotices = sourceNotices.filter(n => {
+      const category = String(n.category || 'Notice');
+      const title = String(n.title || '');
+      const summary = String(n.summary || n.body || '');
+      const author = String(n.author || 'Office of Academic Affairs');
+      const matchCat = activeCategory === "All" || category.toLowerCase() === activeCategory.toLowerCase();
+      const query = searchQuery.toLowerCase();
+      const matchSearch = title.toLowerCase().includes(query) ||
+                          summary.toLowerCase().includes(query) ||
+                          author.toLowerCase().includes(query);
       return matchCat && matchSearch;
     });
 
-    const unreadCount = campusData.notices.filter(n => !n.read).length;
+    const unreadCount = sourceNotices.filter(n => !n.read).length;
 
     container.innerHTML = `
       <div class="max-w-[1720px] mx-auto py-space-sm space-y-space-md animate-fade-in">
