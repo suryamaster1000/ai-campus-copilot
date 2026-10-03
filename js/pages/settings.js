@@ -61,6 +61,11 @@ export function renderSettings(container) {
                 <label class="block text-xs font-semibold text-on-surface mb-1">Current Term</label>
                 <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${campusData.student.term}" disabled type="text"/>
               </div>
+              <div>
+                <label class="block text-xs font-semibold text-on-surface mb-1">Section</label>
+                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${campusData.student.section || "Not assigned"}" disabled type="text"/>
+              </div>
+
               <div class="sm:col-span-2 pt-2">
                 <button type="submit" class="px-4 py-2 bg-primary text-on-primary font-bold text-xs rounded-xl hover:bg-tertiary-container transition-colors shadow-sm">
                   Save Profile Details
