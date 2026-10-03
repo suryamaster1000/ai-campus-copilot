@@ -1,8 +1,8 @@
 // AI Campus Copilot - Main Application Controller & Router
 import { supabase } from './supabase.js';
-import { campusData } from './data.js?v=20261003-live1';
-import { initCommandPalette } from './components/command-palette.js';
-import { showToast } from './components/toast.js';
+import { campusData } from './data.js?v=20261003-live2';
+import { initCommandPalette } from './components/command-palette.js?v=20261003-live1';
+import { showToast } from './components/toast.js?v=20261003-live1';
 
 // ─── Supabase Auth Guard ───────────────────────────────────────────────────
 let currentUser = null;
@@ -386,15 +386,15 @@ export function listenToTasks(callback){
 }
 export { currentUser };
 
-import { renderDashboard } from './pages/dashboard.js';
-import { renderAiAssistant } from './pages/ai-assistant.js';
-import { renderTimetable } from './pages/timetable.js';
-import { renderNotices } from './pages/notices.js';
-import { renderStudyAssistant } from './pages/study.js';
-import { renderCampusGuide } from './pages/campus-guide.js';
-import { renderEvents } from './pages/events.js';
-import { renderTasks } from './pages/tasks.js';
-import { renderSettings } from './pages/settings.js';
+import { renderDashboard } from './pages/dashboard.js?v=20261003-live1';
+import { renderAiAssistant } from './pages/ai-assistant.js?v=20261003-live3';
+import { renderTimetable } from './pages/timetable.js?v=20261003-live2';
+import { renderNotices } from './pages/notices.js?v=20261003-live1';
+import { renderStudyAssistant } from './pages/study.js?v=20261003-live1';
+import { renderCampusGuide } from './pages/campus-guide.js?v=20261003-live1';
+import { renderEvents } from './pages/events.js?v=20261003-live1';
+import { renderTasks } from './pages/tasks.js?v=20261003-live1';
+import { renderSettings } from './pages/settings.js?v=20261003-live1';
 
 async function renderAdminPanelRoute(container) {
   try {
