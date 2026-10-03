@@ -238,17 +238,24 @@ export function renderAdminPanel(container) {
       if (!confirm('Approve this verified student and create their Supabase account?')) return;
       btn.disabled = true;
       btn.textContent = 'Creating...';
-      const initialPassword = window.prompt('Enter the student initial password. Leave blank to keep the normal invitation/password-setup flow:');
-      if (initialPassword === null) {
-        btn.disabled = false;
-        btn.textContent = 'Approve & Create Account';
-        return;
-      }
-      if (initialPassword && initialPassword.length < 8) {
-        showToast('Password must be at least 8 characters.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Approve & Create Account';
-        return;
+      let initialPassword = '';
+      const { data: currentUserData } = await supabase.auth.getUser();
+      const currentUser = currentUserData?.user;
+
+      if (currentUser?.id === OWNER_USER_ID) {
+        const enteredPassword = window.prompt('Enter the student initial password. Leave blank to keep the normal invitation/password-setup flow:');
+        if (enteredPassword === null) {
+          btn.disabled = false;
+          btn.textContent = 'Approve & Create Account';
+          return;
+        }
+        if (enteredPassword && enteredPassword.length < 8) {
+          showToast('Password must be at least 8 characters.', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Approve & Create Account';
+          return;
+        }
+        initialPassword = enteredPassword;
       }
 
       const { data, error: invokeError } = await supabase.functions.invoke('approve-student-registration', {
