@@ -42,6 +42,7 @@ const hideLoading=()=>document.getElementById('loadingOverlay').classList.add('h
 const showError=message=>{const el=document.getElementById('authError');el.textContent=message;el.classList.add('show')};
 const showSuccess=message=>{const el=document.getElementById('authError');el.textContent=message;el.classList.remove('show');el.style.background='#dcfce7';el.style.color='#166534';el.classList.add('show')};
 const friendlyError=error=>error?.message||'Something went wrong. Please try again.';
+let passwordRecovery=window.location.hash.includes('type=recovery');
 
 async function allowUser(user){
   if(user.id===OWNER_USER_ID)return true;
@@ -91,13 +92,20 @@ recoveryForm.addEventListener('submit',async e=>{
 });
 
 supabase.auth.onAuthStateChange(async(event,session)=>{
-  if(event==='PASSWORD_RECOVERY'){document.getElementById('signInForm').classList.add('hidden');forgot.classList.add('hidden');recoveryForm.classList.remove('hidden');hideLoading();return}
-  if(event==='SIGNED_IN'&&session?.user&&await allowUser(session.user))window.location.replace('index.html');
+  if(event==='PASSWORD_RECOVERY'){
+    passwordRecovery=true;
+    document.getElementById('signInForm').classList.add('hidden');
+    forgot.classList.add('hidden');
+    recoveryForm.classList.remove('hidden');
+    hideLoading();
+    return;
+  }
+  if(event==='SIGNED_IN'&&session?.user&&!passwordRecovery&&await allowUser(session.user))window.location.replace('index.html');
 });
 (async()=>{
   const {data}=await supabase.auth.getSession();
   if(data.session?.user){
-    if(window.location.hash.includes('type=recovery')){document.getElementById('signInForm').classList.add('hidden');forgot.classList.add('hidden');recoveryForm.classList.remove('hidden')}
+    if(passwordRecovery){document.getElementById('signInForm').classList.add('hidden');forgot.classList.add('hidden');recoveryForm.classList.remove('hidden')}
     else if(await allowUser(data.session.user))window.location.replace('index.html');
     else await supabase.auth.signOut();
   }
