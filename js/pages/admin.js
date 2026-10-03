@@ -43,7 +43,7 @@ export function renderAdminPanel(container) {
             Refresh
           </button>
         </div>
-        <p class="text-xs text-on-surface-variant mt-1">Review verified registrations and create their Supabase student accounts. Authorized admins and the owner can approve.</p>
+        <p class="text-xs text-on-surface-variant mt-1">Review verified registrations and create their Supabase student accounts. Authorized admins and the owner can approve. Only the owner can manage administrator accounts.</p>
         <div id="registrationApprovalBody" class="mt-4 space-y-2">
           <div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Loading registrations...</div>
         </div>
@@ -127,12 +127,12 @@ export function renderAdminPanel(container) {
     }
 
     const owner = user.id === OWNER_USER_ID || (admins || []).some(a => a.user_id === user.id && a.role === 'owner');
-    const adminCanAuthorize = owner || (admins || []).some(a => a.user_id === user.id && a.role === 'admin');
+    const adminCanAuthorize = owner;
     if (owner) ownerBadge?.classList.remove('hidden');
     subtitle.textContent = owner
-      ? 'You are the owner. You and authorized admins can authorize additional student admins.'
+      ? 'You are the owner. Only the owner can authorize, revoke, and assign administrator accounts.'
       : adminCanAuthorize
-        ? 'You are an authorized admin. You can authorize additional student admins.'
+        ? 'You are an authorized admin. The owner manages administrator accounts and class assignments.'
         : 'You have Admin Panel access.';
 
     const adminIds = new Set((admins || []).map(a => a.user_id));
