@@ -152,6 +152,13 @@ async function handleAuthSession(session) {
     currentUser.email?.split('@')[0] ||
     'Student';
 
+  // Update the header immediately; do not leave the shell showing “Loading...” while
+  // unrelated campus datasets are still being fetched.
+  const earlyNamePill = document.querySelector('#headerProfilePill .font-label-md');
+  const earlyEmailPill = document.querySelector('#headerProfilePill .font-label-sm');
+  if (earlyNamePill) earlyNamePill.textContent = name;
+  if (earlyEmailPill) earlyEmailPill.textContent = currentUser.email || '';
+
   // Google OAuth users may not have a profile row yet. Create one after
   // authentication so personal fields do not fall back to demo data.
   if (!profile && !profileError) {
@@ -170,7 +177,11 @@ async function handleAuthSession(session) {
     }
   }
 
-  await loadLiveCampusData(profile || campusData.student);
+  // Do not block the entire application shell on campus-data queries.
+  // Profile/header hydration must complete first; the larger live-data feed loads in the background.
+  loadLiveCampusData(profile || campusData.student).catch((error) => {
+    console.error('Live campus data load failed:', error);
+  });
 
   if (profile) {
     campusData.student.name = profile.name || name;
