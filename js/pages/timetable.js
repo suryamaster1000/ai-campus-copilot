@@ -130,9 +130,9 @@ export function renderTimetable(container) {
               <span class="material-symbols-outlined text-[20px]">info</span>
             </div>
             <div>
-              <h4 class="font-label-md text-sm font-bold text-on-surface">Official Attendance Rule &amp; Swapping</h4>
+              <h4 class="font-label-md text-sm font-bold text-on-surface">Official Academic Rules</h4>
               <p class="text-xs text-on-surface-variant">
-                Lab batch changes require prior approval from Course Coordinator 48h in advance. Minimum 75% attendance mandatory.
+                ${campusData.academicRules?.length ? `${campusData.academicRules[0].title}: ${campusData.academicRules[0].content}` : 'No academic rule has been published for your current term.'}
               </p>
             </div>
           </div>
@@ -180,7 +180,22 @@ export function renderTimetable(container) {
 
     const dlBtn = document.getElementById('downloadTimetableBtn');
     if (dlBtn) {
-      dlBtn.onclick = () => showToast("Exported timetable: CS_Term4_Schedule_2024.pdf", "success");
+      dlBtn.onclick = () => const rows = campusData.timetable.flatMap(day => day.classes.map(cls =>
+          [day.day, cls.code, cls.name, cls.time, cls.room, cls.faculty].map(v => String(v || '').replaceAll(',', ' ')).join(',')
+        ));
+        if (!rows.length) {
+          showToast('No timetable data is available to export.', 'info');
+          return;
+        }
+        const csv = ['Day,Code,Subject,Time,Room,Faculty', ...rows].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'campus-timetable.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Timetable exported as CSV.', 'success');
     }
 
     const askAiBtn = document.getElementById('askAiTimetableBtn');
