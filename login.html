@@ -65,7 +65,7 @@ document.getElementById('signUpForm').addEventListener('submit',async e=>{
     return;
   }
   if(data.user){
-    const {error:profileError}=await supabase.from('profiles').upsert({id:data.user.id,name,email,roll_number:roll||'N/A',program:'B.Tech Computer Science',term:'Term 4',cgpa:'0.00'});
+    const {error:profileError}=await supabase.from('profiles').upsert({id:data.user.id,name,email,roll_number:roll||'N/A',program:'',term:'',cgpa:null});
     if(profileError){hideLoading();showError(profileError.message);return}
   }
   window.location.href='index.html';
