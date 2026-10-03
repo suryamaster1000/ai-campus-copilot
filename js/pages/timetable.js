@@ -199,6 +199,7 @@ export function renderTimetable(container) {
         a.click();
         URL.revokeObjectURL(url);
         showToast('Timetable exported as CSV.', 'success');
+      };
     }
 
     const askAiBtn = document.getElementById('askAiTimetableBtn');
