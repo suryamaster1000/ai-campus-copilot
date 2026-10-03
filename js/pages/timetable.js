@@ -7,7 +7,7 @@ export function renderTimetable(container) {
   let activeFilter = "All";
 
   function render() {
-    const dayData = campusData.timetable.find(d => d.day === selectedDay) || campusData.timetable[0];
+    const dayData = campusData.timetable.find(d => d.day === selectedDay) || campusData.timetable[0] || { day: selectedDay, classes: [] };
     const filteredClasses = dayData.classes.filter(cls => {
       if (activeFilter === "All") return true;
       return cls.type.toLowerCase().includes(activeFilter.toLowerCase());
