@@ -43,7 +43,7 @@ export function renderDashboard(container) {
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-outline uppercase tracking-wider">Next Session</span>
             <span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[11px] font-bold flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span> Starts 10:15
+              <span class="w-1.5 h-1.5 rounded-full bg-outline"></span> No schedule loaded
             </span>
           </div>
           <div class="my-2">
@@ -298,7 +298,7 @@ export function renderDashboard(container) {
           <div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm border border-surface-container-high">
             <div class="flex items-center justify-between mb-3">
               <span class="font-label-md font-bold text-sm text-on-surface uppercase tracking-wider text-outline">Upcoming Milestones</span>
-              <span class="text-xs text-primary font-bold">Fall 2024</span>
+              <span class="text-xs text-outline font-bold">Live calendar</span>
             </div>
             <div class="space-y-3">
               <div class="flex items-start gap-3">
@@ -346,7 +346,7 @@ export function renderDashboard(container) {
               <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             </div>
             <p class="text-xs text-on-surface-variant">
-              Route 1 (North Ring) is arriving at <strong>Turing Hall</strong> in <strong>4 mins</strong>.
+              Campus route information will appear when live location data is connected.
             </p>
             <button class="mt-2 text-xs font-bold text-primary hover:underline flex items-center gap-1" onclick="window.location.hash='#campus-guide'">
               Live Shuttle Map &amp; Tracker →
