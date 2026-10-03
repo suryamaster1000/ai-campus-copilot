@@ -175,8 +175,8 @@
         class="p-3 rounded-xl bg-blue-50 border border-blue-100 text-[11px] leading-5 text-on-surface-variant"
       >
         New students must register through the official Student Registration form.
-        After approval, sign in with the temporary password provided to you and
-        create your own password.
+        After approval, you will receive a secure invitation or password link by email.
+        Use it to create your own password before signing in.
       </div>
 
       <!-- Error / Success -->
@@ -383,30 +383,29 @@ async function allowUser(user) {
   }
 
 
-  /* APPROVED STUDENT */
+  /* APPROVED STUDENT
+     student_registrations is admin-only by RLS, so use the profile created
+     by the owner approval flow as the approved-account marker. */
 
   const {
-    data: registration,
-    error: registrationError
+    data: profile,
+    error: profileError
   } = await supabase
-    .from('student_registrations')
+    .from('profiles')
     .select('id')
-    .eq('auth_user_id', user.id)
-    .eq('status', 'linked')
+    .eq('id', user.id)
     .maybeSingle();
 
-
-  if (registrationError) {
+  if (profileError) {
     console.error(
-      'Student registration check failed:',
-      registrationError
+      'Student profile authorization check failed:',
+      profileError
     );
 
     return false;
   }
 
-
-  return !!registration;
+  return !!profile;
 
 }
 
@@ -509,7 +508,7 @@ document
     }
 
 
-    /* FIRST LOGIN / TEMPORARY PASSWORD */
+    /* FIRST LOGIN / INVITATION PASSWORD SETUP */
 
     if (
       data.user.user_metadata?.must_change_password === true
@@ -897,7 +896,7 @@ supabase.auth.onAuthStateChange(
       }
 
 
-      /* TEMPORARY PASSWORD */
+      /* FIRST LOGIN / INVITATION PASSWORD SETUP */
 
       if (
         session.user.user_metadata?.must_change_password === true
