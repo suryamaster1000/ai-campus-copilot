@@ -6,7 +6,7 @@ export function renderStudyAssistant(container) {
   let selectedCourseCode = "CS-204";
 
   function render() {
-    const course = campusData.studyModules.find(c => c.code === selectedCourseCode) || campusData.studyModules[0];
+    const course = campusData.studyModules.find(c => c.code === selectedCourseCode) || campusData.studyModules[0] || null;
 
     container.innerHTML = `
       <div class="max-w-[1720px] mx-auto py-space-sm space-y-space-md animate-fade-in">
