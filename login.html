@@ -226,6 +226,22 @@
 
       </form>
 
+      <div class="flex items-center gap-3 my-4">
+        <div class="h-px flex-1 bg-outline-variant/50"></div>
+        <span class="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Admin login</span>
+        <div class="h-px flex-1 bg-outline-variant/50"></div>
+      </div>
+
+      <button id="googleAdminBtn" type="button"
+        class="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-outline-variant bg-white text-sm font-bold text-on-surface hover:bg-surface-container-low transition-colors">
+        <span class="inline-flex items-center justify-center w-5 h-5 text-base font-black">G</span>
+        Continue with Google as Admin
+      </button>
+
+      <p class="text-[10px] text-center text-on-surface-variant mt-2">
+        Google sign-in is restricted to authorized campus administrators/owner.
+      </p>
+
       <!-- Footer -->
       <p
         id="policyText"
@@ -376,6 +392,7 @@ if (hashParams.get('error_code') === 'otp_expired' ||
 let passwordRecovery =
   window.location.hash.includes('type=recovery');
 let passwordResetCooldownUntil = 0;
+let googleAdminLogin = sessionStorage.getItem('campus_google_admin_login') === '1';
 
 
 /* =========================================================
@@ -437,6 +454,25 @@ async function allowUser(user) {
 
   return !!profile;
 
+}
+
+
+async function allowAdminOnly(user) {
+  if (!user?.id) return false;
+  if (user.id === OWNER_USER_ID) return true;
+
+  const { data: admin, error } = await supabase
+    .from('admin_users')
+    .select('user_id,role')
+    .eq('user_id', user.id)
+    .in('role', ['owner', 'admin'])
+    .maybeSingle();
+
+  if (error) {
+    console.error('Google admin authorization check failed:', error);
+    return false;
+  }
+  return !!admin;
 }
 
 
@@ -644,6 +680,27 @@ forgot.addEventListener('click', async () => {
     'If this email belongs to an approved account, a password link has been sent. Check your inbox.'
   );
 
+});
+
+
+document.getElementById('googleAdminBtn')?.addEventListener('click', async () => {
+  googleAdminLogin = true;
+  sessionStorage.setItem('campus_google_admin_login', '1');
+  showLoading('Opening Google admin sign-in...');
+
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: new URL('login.html', window.location.href).href
+    }
+  });
+
+  if (error) {
+    googleAdminLogin = false;
+    sessionStorage.removeItem('campus_google_admin_login');
+    hideLoading();
+    showError(friendlyError(error));
+  }
 });
 
 
@@ -913,7 +970,9 @@ supabase.auth.onAuthStateChange(
     ) {
 
       const allowed =
-        await allowUser(session.user);
+        googleAdminLogin
+          ? await allowAdminOnly(session.user)
+          : await allowUser(session.user);
 
 
       if (!allowed) {
@@ -923,8 +982,13 @@ supabase.auth.onAuthStateChange(
         hideLoading();
 
         showError(
-          'This account is not an approved campus account. Please complete Student Registration first.'
+          googleAdminLogin
+            ? 'This Google account is not authorized as a campus administrator.'
+            : 'This account is not an approved campus account. Please complete Student Registration first.'
         );
+
+        googleAdminLogin = false;
+        sessionStorage.removeItem('campus_google_admin_login');
 
         return;
 
@@ -949,6 +1013,9 @@ supabase.auth.onAuthStateChange(
 
 
       /* NORMAL USER */
+
+      googleAdminLogin = false;
+      sessionStorage.removeItem('campus_google_admin_login');
 
       window.location.replace(
         'index.html'
@@ -1014,12 +1081,20 @@ supabase.auth.onAuthStateChange(
   /* USER AUTHORIZATION */
 
   const allowed =
-    await allowUser(user);
+    googleAdminLogin
+      ? await allowAdminOnly(user)
+      : await allowUser(user);
 
 
   if (!allowed) {
 
     await supabase.auth.signOut();
+    googleAdminLogin = false;
+    sessionStorage.removeItem('campus_google_admin_login');
+
+    if (window.location.hash.includes('auth')) {
+      showError('This Google account is not authorized as a campus administrator.');
+    }
 
     return;
 
