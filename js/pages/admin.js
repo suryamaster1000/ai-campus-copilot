@@ -31,6 +31,27 @@ export function renderAdminPanel(container) {
         </div>
       </section>
 
+      <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/30 shadow-sm">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">psychology</span>
+          <h2 class="font-headline-md text-base font-bold text-on-surface">Admin Campus Intelligence AI</h2>
+          <span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">ADMIN ONLY</span>
+        </div>
+        <p class="text-xs text-on-surface-variant mt-1">Authorized administrators can query connected campus records across sections and directory data.</p>
+        <div class="mt-4 space-y-3">
+          <div id="adminAiAnswer" class="min-h-24 p-3 rounded-xl bg-surface-container-low text-sm text-on-surface whitespace-pre-wrap">Ask the Admin AI to search or extract information from the connected campus data.</div>
+          <form id="adminAiForm" class="flex gap-2">
+            <input id="adminAiInput" class="flex-1 px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high outline-none focus:ring-2 focus:ring-primary text-sm" placeholder="e.g. Show the complete CSM7 admission directory" autocomplete="off">
+            <button class="px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-bold" type="submit">Ask AI</button>
+          </form>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-admin-ai-query="Show the complete CSM7 admission directory" class="px-3 py-1.5 rounded-full bg-surface-container text-xs font-semibold">CSM7 admissions</button>
+            <button type="button" data-admin-ai-query="Give me a summary of all connected student profiles" class="px-3 py-1.5 rounded-full bg-surface-container text-xs font-semibold">Student summary</button>
+            <button type="button" data-admin-ai-query="List all connected faculty, subjects and programs" class="px-3 py-1.5 rounded-full bg-surface-container text-xs font-semibold">Academic catalog</button>
+          </div>
+        </div>
+      </section>
+
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
         <h2 class="font-headline-md text-base font-bold text-on-surface">Live Campus Data</h2>
         <p class="text-xs text-on-surface-variant mt-1">No sample notices, courses, timetable, events, or student records are stored in the frontend. Add real records through the connected data source.</p>
@@ -112,4 +133,37 @@ export function renderAdminPanel(container) {
       await loadAdminAccessControl();
     });
   }
+  // Admin Intelligence AI
+  const adminAiForm = document.getElementById('adminAiForm');
+  const adminAiInput = document.getElementById('adminAiInput');
+  const adminAiAnswer = document.getElementById('adminAiAnswer');
+
+  async function askAdminAi(query) {
+    const text = String(query || '').trim();
+    if (!text || !adminAiAnswer) return;
+    adminAiAnswer.textContent = 'Searching connected administrative campus data...';
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-campus-copilot', {
+        body: { question: text, admin_mode: true }
+      });
+      if (error) throw error;
+      if (!data?.answer) throw new Error(data?.error || 'Admin AI returned no answer.');
+      adminAiAnswer.textContent = data.answer;
+    } catch (error) {
+      adminAiAnswer.textContent = error?.message || 'Admin AI request failed.';
+      showToast(adminAiAnswer.textContent, 'error');
+    }
+  }
+
+  adminAiForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const query = adminAiInput?.value || '';
+    if (adminAiInput) adminAiInput.value = '';
+    askAdminAi(query);
+  });
+
+  document.querySelectorAll('[data-admin-ai-query]').forEach((button) => {
+    button.addEventListener('click', () => askAdminAi(button.getAttribute('data-admin-ai-query')));
+  });
+
 }
