@@ -28,96 +28,26 @@ export function renderAiAssistant(container, initialQuery = null) {
           
           <!-- Scrollable History List -->
           <div class="flex-1 overflow-y-auto px-space-sm space-y-space-md text-on-surface-variant custom-scrollbar" id="conversationHistoryList">
-            <!-- Pinned / Starred Threads -->
-            <div>
-              <div class="flex items-center justify-between px-space-sm py-1">
-                <div class="flex items-center gap-1.5 text-on-secondary-container font-label-sm text-label-sm uppercase tracking-wider">
-                  <span class="material-symbols-outlined text-[15px] text-tertiary">keep</span>
-                  <span>Pinned Queries</span>
-                </div>
-                <span class="text-[11px] font-label-sm text-outline">2</span>
+            <!-- Live session history -->
+            <div class="p-3 bg-surface-container-low rounded-xl">
+              <div class="flex items-center gap-2 text-on-surface">
+                <span class="material-symbols-outlined text-primary text-[18px]">history</span>
+                <span class="font-label-md text-label-md font-semibold">Current session</span>
               </div>
-              <div class="space-y-0.5 mt-1">
-                <button class="history-thread-btn w-full flex items-center gap-2.5 px-space-sm py-2 rounded-lg hover:bg-surface-container text-left transition-colors group" data-topic="discrete-math" type="button">
-                  <span class="material-symbols-outlined text-[18px] text-primary group-hover:scale-110 transition-transform">functions</span>
-                  <span class="font-body-sm text-body-sm text-on-surface truncate flex-1 font-medium">Exam prep - Discrete Math</span>
-                  <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">more_horiz</span>
-                </button>
-                <button class="history-thread-btn w-full flex items-center gap-2.5 px-space-sm py-2 rounded-lg hover:bg-surface-container text-left transition-colors group" data-topic="wifi" type="button">
-                  <span class="material-symbols-outlined text-[18px] text-secondary group-hover:scale-110 transition-transform">wifi</span>
-                  <span class="font-body-sm text-body-sm text-on-surface truncate flex-1 font-medium">Hostel Wi-Fi setup inquiry</span>
-                  <span class="material-symbols-outlined text-[16px] text-outline opacity-0 group-hover:opacity-100 transition-opacity">more_horiz</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Group: Today -->
-            <div>
-              <span class="block px-space-sm text-outline font-label-sm text-label-sm uppercase tracking-wider mb-1">Today</span>
-              <div class="space-y-0.5">
-                <button class="history-thread-btn w-full flex items-center gap-2.5 px-space-sm py-2 rounded-lg bg-surface-container text-left cursor-pointer" data-topic="current-session" type="button">
-                  <span class="material-symbols-outlined text-[18px] text-primary">chat_bubble</span>
-                  <span class="font-body-sm text-body-sm text-on-surface truncate flex-1 font-semibold">Today's classes schedule</span>
-                  <span class="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0"></span>
-                </button>
-                <button class="history-thread-btn w-full flex items-center gap-2.5 px-space-sm py-2 rounded-lg hover:bg-surface-container text-left transition-colors text-on-surface-variant hover:text-on-surface" data-topic="btree" type="button">
-                  <span class="material-symbols-outlined text-[18px] text-outline">description</span>
-                  <span class="font-body-sm text-body-sm truncate flex-1">Explanation of B-Tree indexing</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Group: Yesterday -->
-            <div>
-              <span class="block px-space-sm text-outline font-label-sm text-label-sm uppercase tracking-wider mb-1">Yesterday</span>
-              <div class="space-y-0.5">
-                <button class="history-thread-btn w-full flex items-center gap-2.5 px-space-sm py-2 rounded-lg hover:bg-surface-container text-left transition-colors text-on-surface-variant hover:text-on-surface" data-topic="library" type="button">
-                  <span class="material-symbols-outlined text-[18px] text-outline">local_library</span>
-                  <span class="font-body-sm text-body-sm truncate flex-1">Library overdue book policy</span>
-                </button>
-                <button class="history-thread-btn w-full flex items-center gap-2.5 px-space-sm py-2 rounded-lg hover:bg-surface-container text-left transition-colors text-on-surface-variant hover:text-on-surface" data-topic="tuition" type="button">
-                  <span class="material-symbols-outlined text-[18px] text-outline">account_balance_wallet</span>
-                  <span class="font-body-sm text-body-sm truncate flex-1">Semester 5 tuition receipt download</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- Group: Previous 7 Days -->
-            <div>
-              <span class="block px-space-sm text-outline font-label-sm text-label-sm uppercase tracking-wider mb-1">Previous 7 Days</span>
-              <div class="space-y-0.5">
-                <button class="history-thread-btn w-full flex items-center gap-2.5 px-space-sm py-2 rounded-lg hover:bg-surface-container text-left transition-colors text-on-surface-variant hover:text-on-surface" data-topic="midterm" type="button">
-                  <span class="material-symbols-outlined text-[18px] text-outline">schedule</span>
-                  <span class="font-body-sm text-body-sm truncate flex-1">Midterm timetable CS dept</span>
-                </button>
-                <button class="history-thread-btn w-full flex items-center gap-2.5 px-space-sm py-2 rounded-lg hover:bg-surface-container text-left transition-colors text-on-surface-variant hover:text-on-surface" data-topic="badminton" type="button">
-                  <span class="material-symbols-outlined text-[18px] text-outline">sports_tennis</span>
-                  <span class="font-body-sm text-body-sm truncate flex-1">Badminton court booking rules</span>
-                </button>
-                <button class="history-thread-btn w-full flex items-center gap-2.5 px-space-sm py-2 rounded-lg hover:bg-surface-container text-left transition-colors text-on-surface-variant hover:text-on-surface" data-topic="shuttle" type="button">
-                  <span class="material-symbols-outlined text-[18px] text-outline">directions_bus</span>
-                  <span class="font-body-sm text-body-sm truncate flex-1">Campus shuttle Route 4 timings</span>
-                </button>
-              </div>
-            </div>
+              <p class="font-body-sm text-[11px] text-on-surface-variant mt-1">
+                New conversations appear here while this page is open.
+              </p>
+            </div>            <!-- Conversation history is intentionally session-only; no demo conversations are shown. -->
           </div>
 
-          <!-- Grounding & Sync Indicator Footprint -->
           <div class="p-space-sm m-space-sm bg-surface-container-low rounded-xl">
             <div class="flex items-start gap-space-sm">
-              <span class="material-symbols-outlined text-primary text-[20px] mt-0.5">sync_saved_locally</span>
+              <span class="material-symbols-outlined text-primary text-[20px] mt-0.5">database</span>
               <div class="flex flex-col min-w-0">
-                <span class="font-label-md text-label-md font-semibold text-on-surface flex items-center gap-1">
-                  Live Campus Context
-                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                </span>
+                <span class="font-label-md text-label-md font-semibold text-on-surface">Live Campus Context</span>
                 <span class="font-body-sm text-[11px] leading-tight text-on-surface-variant mt-0.5">
-                  Synced with Connected campus sources
+                  Answers use connected campus records only.
                 </span>
-                <div class="mt-2 flex items-center justify-between text-[11px] text-outline font-label-sm">
-                  <span>Sync status: 100%</span>
-                  <span class="text-primary font-medium hover:underline cursor-pointer" id="inspectRagBtn">Inspect RAG</span>
-                </div>
               </div>
             </div>
           </div>
@@ -176,6 +106,7 @@ export function renderAiAssistant(container, initialQuery = null) {
                 <button class="query-chip px-3 py-1.5 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface-variant font-label-md text-label-md transition-all" data-query="Show my attendance" type="button">Show my attendance</button>
               </div>
             </div>
+          </div>
 
           <!-- BOTTOM COMPOSER & GROUNDING FOOTER -->
           <div class="px-space-md lg:px-space-xl pb-space-sm pt-space-xs bg-surface-container-lowest">
@@ -236,69 +167,14 @@ export function renderAiAssistant(container, initialQuery = null) {
             <p class="font-body-sm text-body-sm text-on-surface-variant text-[12px]">
               Direct authoritative files currently referenced in this conversation.
             </p>
-          </div>
-
-          <!-- Quick Resource Tiles -->
-          <div class="space-y-2">
-            <div class="resource-tile p-2.5 bg-surface-container-low rounded-xl flex items-center justify-between group hover:bg-surface-container transition-colors cursor-pointer" data-doc="Full Term Timetable">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="material-symbols-outlined text-primary text-[20px]">calendar_today</span>
-                <div class="flex flex-col min-w-0">
-                  <span class="font-label-sm text-label-sm font-semibold text-on-surface truncate">Full Term Timetable</span>
-                  <span class="font-body-sm text-[11px] text-outline">Updated 2 days ago</span>
-                </div>
-              </div>
-              <span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">download</span>
+          </div>          <div class="p-3 bg-surface-container-low rounded-xl">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="material-symbols-outlined text-primary text-[18px]">database</span>
+              <span class="font-label-md text-label-md font-semibold text-on-surface">Connected Data</span>
             </div>
-
-            <div class="resource-tile p-2.5 bg-surface-container-low rounded-xl flex items-center justify-between group hover:bg-surface-container transition-colors cursor-pointer" data-doc="CS-204 Syllabus PDF">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="material-symbols-outlined text-error text-[20px]">menu_book</span>
-                <div class="flex flex-col min-w-0">
-                  <span class="font-label-sm text-label-sm font-semibold text-on-surface truncate">CS-204 Syllabus PDF</span>
-                  <span class="font-body-sm text-[11px] text-outline">Assigned faculty</span>
-                </div>
-              </div>
-              <span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">open_in_new</span>
-            </div>
-
-            <div class="resource-tile p-2.5 bg-surface-container-low rounded-xl flex items-center justify-between group hover:bg-surface-container transition-colors cursor-pointer" data-doc="Handbook & Leave Rules">
-              <div class="flex items-center gap-2.5 min-w-0">
-                <span class="material-symbols-outlined text-secondary text-[20px]">policy</span>
-                <div class="flex flex-col min-w-0">
-                  <span class="font-label-sm text-label-sm font-semibold text-on-surface truncate">Handbook &amp; Leave Rules</span>
-                  <span class="font-body-sm text-[11px] text-outline">Dean Office Official</span>
-                </div>
-              </div>
-              <span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">download</span>
-            </div>
-          </div>
-
-          <!-- Live Academic Calendar Snippet -->
-          <div class="pt-2">
-            <span class="font-label-sm text-label-sm uppercase tracking-wider text-outline block mb-2 font-semibold">Upcoming Milestones</span>
-            <div class="space-y-2.5">
-              <div class="flex items-start gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-surface-container text-on-surface flex flex-col items-center justify-center flex-shrink-0 text-[11px] font-bold">
-                  <span>OCT</span>
-                  <span class="text-[12px] text-primary">28</span>
-                </div>
-                <div>
-                  <span class="font-label-sm text-label-sm font-semibold text-on-surface block">CS-204 Lab Assignment 3</span>
-                  <span class="text-[11px] text-on-surface-variant font-body-sm">Due at 11:59 PM • 4 days left</span>
-                </div>
-              </div>
-              <div class="flex items-start gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-surface-container text-on-surface flex flex-col items-center justify-center flex-shrink-0 text-[11px] font-bold">
-                  <span>NOV</span>
-                  <span class="text-[12px] text-primary">05</span>
-                </div>
-                <div>
-                  <span class="font-label-sm text-label-sm font-semibold text-on-surface block">Midterm Examinations</span>
-                  <span class="text-[11px] text-on-surface-variant font-body-sm">Hall tickets released in SIS</span>
-                </div>
-              </div>
-            </div>
+            <p class="font-body-sm text-[11px] text-on-surface-variant leading-normal">
+              The Copilot currently answers from the live campus records connected to Supabase. Empty records are not replaced with demo content.
+            </p>
           </div>
 
           <!-- Campus Copilot Telemetry Badge -->
@@ -428,14 +304,14 @@ function initAiAssistantEvents(initialQuery) {
   const exportBtn = document.getElementById('exportNotesBtn');
   if (exportBtn) {
     exportBtn.addEventListener('click', () => {
-      showToast("Notes exported to Markdown file: Campus_Notes_Course.md", "success");
+      showToast("Export is not available until a conversation has been created.", "info");
     });
   }
 
   const ragBtn = document.getElementById('inspectRagBtn');
   if (ragBtn) {
     ragBtn.addEventListener('click', () => {
-      window.location.hash = '#admin-panel';
+      showToast("RAG inspection is available to authorized administrators only.", "info");
     });
   }
 
@@ -763,8 +639,15 @@ function renderStructuredAiResponse(data) {
 function setupDelegatedButtons(container) {
   // Copy button
   container.querySelectorAll('.copy-btn').forEach(btn => {
-    btn.onclick = () => {
-      showToast("Copied response to clipboard", "success");
+    btn.onclick = async () => {
+      const message = btn.closest('.flex.flex-col')?.querySelector('.bg-surface-container-low p')?.textContent || '';
+      if (!message) return;
+      try {
+        await navigator.clipboard.writeText(message);
+        showToast("Copied response to clipboard", "success");
+      } catch {
+        showToast("Could not copy the response.", "error");
+      }
     };
   });
 
