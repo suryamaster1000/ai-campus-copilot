@@ -43,7 +43,7 @@ export function renderAdminPanel(container) {
             Refresh
           </button>
         </div>
-        <p class="text-xs text-on-surface-variant mt-1">Review verified registrations and create their Supabase student accounts. Only the owner can approve.</p>
+        <p class="text-xs text-on-surface-variant mt-1">Review verified registrations and create their Supabase student accounts. Authorized admins and the owner can approve.</p>
         <div id="registrationApprovalBody" class="mt-4 space-y-2">
           <div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Loading registrations...</div>
         </div>
@@ -186,9 +186,9 @@ export function renderAdminPanel(container) {
     if (!user) return;
 
     const { data: admins } = await supabase.from('admin_users').select('user_id,role').eq('user_id', user.id);
-    const owner = user.id === OWNER_USER_ID || (admins || []).some(a => a.role === 'owner');
-    if (!owner) {
-      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Registration approval is restricted to the owner.</div>';
+    const canApprove = user.id === OWNER_USER_ID || (admins || []).some(a => a.role === 'owner' || a.role === 'admin');
+    if (!canApprove) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Registration approval is restricted to authorized administrators.</div>';
       return;
     }
 
