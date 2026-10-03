@@ -851,6 +851,16 @@ supabase.auth.onAuthStateChange(
 
     if (event === 'PASSWORD_RECOVERY') {
 
+      const allowed = await allowUser(session?.user);
+
+      if (!allowed) {
+        await supabase.auth.signOut();
+        passwordRecovery = false;
+        hideLoading();
+        showError('This account is not an approved campus account. Please complete Student Registration first.');
+        return;
+      }
+
       showPasswordChangeScreen();
 
       hideLoading();
@@ -952,6 +962,13 @@ supabase.auth.onAuthStateChange(
   /* PASSWORD RECOVERY */
 
   if (passwordRecovery) {
+
+    if (!(await allowUser(user))) {
+      await supabase.auth.signOut();
+      passwordRecovery = false;
+      showError('This account is not an approved campus account. Please complete Student Registration first.');
+      return;
+    }
 
     showPasswordChangeScreen();
 
