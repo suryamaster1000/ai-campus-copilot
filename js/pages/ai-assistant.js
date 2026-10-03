@@ -66,11 +66,11 @@ export function renderAiAssistant(container, initialQuery = null) {
                   <h1 class="font-headline-md text-headline-md font-bold text-on-surface truncate">AI Campus Copilot</h1>
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-[11px] font-semibold">
                     <span class="material-symbols-outlined text-[13px] text-primary material-symbols-filled">verified</span>
-                    Official Campus Model v2.4
+                    Live Campus AI
                   </span>
                 </div>
                 <span class="font-body-sm text-body-sm text-on-surface-variant text-[12px] truncate">
-                  Grounded in Verified College Documents &amp; Academic Registrar APIs
+                  Grounded in connected Supabase campus data and Gemini
                 </span>
               </div>
             </div>
@@ -123,9 +123,9 @@ export function renderAiAssistant(container, initialQuery = null) {
               <!-- Prompt Pill Container -->
               <form class="relative flex items-center bg-surface-container-low rounded-2xl p-1.5 shadow-sm focus-within:ring-2 focus-within:ring-primary focus-within:bg-surface-container-lowest transition-all" id="chatForm">
                 <!-- Attachment action -->
-                <label class="cursor-pointer p-2 rounded-xl text-outline hover:text-primary hover:bg-surface-container transition-colors flex items-center justify-center" title="Upload lecture notes or assignment for AI explanation">
+                <label class="cursor-pointer p-2 rounded-xl text-outline hover:text-primary hover:bg-surface-container transition-colors flex items-center justify-center" title="Attach a TXT or Markdown note for AI context">
                   <span class="material-symbols-outlined text-[22px]">attach_file</span>
-                  <input id="fileInput" class="hidden" type="file"/>
+                  <input id="fileInput" class="hidden" type="file" accept=".txt,.md,text/plain,text/markdown"/>
                 </label>
                 <!-- Text Query Field -->
                 <input autocomplete="off" class="w-full bg-transparent px-space-sm py-2 font-body-md text-body-md text-on-surface placeholder:text-outline outline-none" id="promptInput" placeholder="Ask anything about your timetable, notices, syllabus, or campus venues..." type="text"/>
@@ -142,7 +142,7 @@ export function renderAiAssistant(container, initialQuery = null) {
               <!-- Grounding Disclaimer & Keyboard shortcut metadata -->
               <div class="flex flex-col sm:flex-row items-center justify-between gap-1 mt-2 px-space-xs text-center sm:text-left">
                 <span class="font-body-sm text-[11px] text-outline leading-tight">
-                  AI Campus Copilot answers are verified against official campus publications. For academic disputes, consult the Dean of Academics.
+                  Answers are grounded in the campus records available to the signed-in account. Verify important academic decisions with college staff.
                 </span>
                 <div class="hidden sm:flex items-center gap-1 font-label-sm text-[11px] text-outline flex-shrink-0">
                   <span>Use</span>
@@ -181,10 +181,10 @@ export function renderAiAssistant(container, initialQuery = null) {
           <div class="mt-auto p-3 bg-surface-container-low rounded-xl">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-emerald-600 text-[18px]">verified_user</span>
-              <span class="font-label-sm text-label-sm font-bold text-on-surface">Data Privacy Assured</span>
+              <span class="font-label-sm text-label-sm font-bold text-on-surface">Data Handling</span>
             </div>
             <p class="font-body-sm text-[11px] text-on-surface-variant mt-1 leading-normal">
-              Queries are isolated within university network firewalls. No student personal records are shared with third-party public models.
+              Only the data required for the requested Copilot response is sent to the configured Gemini AI service.
             </p>
           </div>
         </aside>
@@ -207,15 +207,40 @@ function initAiAssistantEvents(initialQuery) {
   const attachmentStrip = document.getElementById('attachmentStrip');
   const attachmentName = document.getElementById('attachmentName');
   const clearAttachBtn = document.getElementById('clearAttachBtn');
+  let attachedText = '';
 
-  // File upload
+  // Text-note attachment
   if (fileInput) {
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files && fileInput.files[0]) {
-        attachmentName.textContent = fileInput.files[0].name;
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      if (!/^(text\/plain|text\/markdown)$/i.test(file.type) &&
+          !/\.(txt|md)$/i.test(file.name)) {
+        fileInput.value = '';
+        showToast('Attach a TXT or Markdown note. PDF upload is not connected to the Copilot yet.', 'error');
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        attachedText = text.slice(0, 16000).trim();
+
+        if (!attachedText) {
+          fileInput.value = '';
+          showToast('The attached note is empty.', 'error');
+          return;
+        }
+
+        attachmentName.textContent = file.name;
         attachmentStrip.classList.remove('hidden');
         attachmentStrip.classList.add('flex');
-        showToast(`Attached file: ${fileInput.files[0].name}`, 'info');
+        showToast('Attached note ready for the next Copilot query.', 'success');
+      } catch (error) {
+        console.error('Attachment read failed:', error);
+        fileInput.value = '';
+        attachedText = '';
+        showToast('Could not read that note.', 'error');
       }
     });
   }
@@ -223,33 +248,63 @@ function initAiAssistantEvents(initialQuery) {
   if (clearAttachBtn) {
     clearAttachBtn.addEventListener('click', () => {
       fileInput.value = '';
+      attachedText = '';
       attachmentStrip.classList.add('hidden');
       attachmentStrip.classList.remove('flex');
     });
   }
 
-  // Mic Toggle
+  // Browser speech recognition
   let isRecording = false;
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+
   if (micButton) {
     micButton.addEventListener('click', () => {
-      isRecording = !isRecording;
-      if (isRecording) {
-        micButton.classList.add('text-error', 'animate-pulse');
-        micButton.title = "Listening... Speak now";
-        showToast("Voice mode active. Speak your campus query...", "info");
-        setTimeout(() => {
-          if (isRecording) {
-            input.value = "";
-            micButton.classList.remove('text-error', 'animate-pulse');
-            isRecording = false;
-            showToast("Transcribed voice query successfully.", "success");
-            input.focus();
-          }
-        }, 2200);
-      } else {
-        micButton.classList.remove('text-error', 'animate-pulse');
-        micButton.title = "Voice query";
+      if (!SpeechRecognition) {
+        showToast('Voice input is not supported by this browser. You can type your query instead.', 'error');
+        return;
       }
+
+      if (isRecording) {
+        recognition?.stop();
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = navigator.language || 'en-IN';
+
+      recognition.onstart = () => {
+        isRecording = true;
+        micButton.classList.add('text-error', 'animate-pulse');
+        micButton.title = 'Listening... Speak now';
+        showToast('Listening… speak your campus query.', 'info');
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results?.[0]?.[0]?.transcript?.trim() || '';
+        if (transcript) {
+          input.value = transcript;
+          input.focus();
+          showToast('Voice query captured.', 'success');
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition failed:', event.error);
+        showToast('Voice input failed. Please try again or type your query.', 'error');
+      };
+
+      recognition.onend = () => {
+        isRecording = false;
+        micButton.classList.remove('text-error', 'animate-pulse');
+        micButton.title = 'Voice query';
+        recognition = null;
+      };
+
+      recognition.start();
     });
   }
 
@@ -267,7 +322,7 @@ function initAiAssistantEvents(initialQuery) {
   // New Chat Button
   if (newChatBtn) {
     newChatBtn.addEventListener('click', () => {
-      const confirmReset = confirm("Start a new AI Copilot conversation? Current query history will be saved.");
+      const confirmReset = confirm("Start a new AI Copilot conversation? This page will clear the current conversation.");
       if (confirmReset) {
         // Keep header and clear messages
         const initialHtml = `
@@ -333,7 +388,21 @@ function initAiAssistantEvents(initialQuery) {
   }
 
   async function submitChatQuery(query) {
+    const cleanQuery = String(query || '').trim();
+    const attachedContext = attachedText.trim();
+    if (!cleanQuery) return;
+
+    const requestQuestion = attachedContext
+      ? cleanQuery + '\n\nAttached note context:\n' + attachedContext
+      : cleanQuery;
+
     input.value = '';
+    attachedText = '';
+    if (fileInput) fileInput.value = '';
+    if (attachmentStrip) {
+      attachmentStrip.classList.add('hidden');
+      attachmentStrip.classList.remove('flex');
+    }
     // Append student bubble
     const userWrapper = document.createElement('div');
     userWrapper.className = 'flex items-start justify-end gap-space-sm max-w-3xl mx-auto animate-fade-in';
@@ -341,7 +410,7 @@ function initAiAssistantEvents(initialQuery) {
     userWrapper.innerHTML = `
       <div class="flex flex-col items-end max-w-[85%] sm:max-w-[75%]">
         <div class="bg-primary text-on-primary px-space-md py-space-sm rounded-2xl rounded-tr-none shadow-sm">
-          <p class="font-body-md text-body-md leading-relaxed">${escapeHtml(query)}</p>
+          <p class="font-body-md text-body-md leading-relaxed">${escapeHtml(cleanQuery)}</p>
         </div>
         <span class="font-label-sm text-[11px] text-outline mt-1 pr-1">${now} • Student</span>
       </div>
@@ -376,7 +445,7 @@ function initAiAssistantEvents(initialQuery) {
     // Real Supabase Edge Function + Gemini response
     try {
       const { data, error } = await supabase.functions.invoke('ai-campus-copilot', {
-        body: { question: query }
+        body: { question: requestQuestion }
       });
 
       const thinkingEl = document.getElementById(thinkingId);
@@ -439,7 +508,10 @@ function initAiAssistantEvents(initialQuery) {
       const thinkingEl = document.getElementById(thinkingId);
       if (thinkingEl) thinkingEl.remove();
 
-      const message = error?.message || 'Unable to reach the AI Campus Copilot.';
+      const status = Number(error?.status || error?.context?.status || 0);
+      const message = (status === 429 || status === 503)
+        ? 'The AI service is temporarily busy. Please wait a moment and try again.'
+        : error?.message || 'Unable to reach the AI Campus Copilot.';
       const aiWrapper = document.createElement('div');
       aiWrapper.className = 'flex items-start gap-space-sm max-w-3xl mx-auto animate-fade-in';
       aiWrapper.innerHTML = `

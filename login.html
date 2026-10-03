@@ -334,11 +334,39 @@ const showSuccess = (message) => {
 
 
 const friendlyError = (error) => {
+  const status = Number(error?.status || error?.code || 0);
+  const message = String(error?.message || '').toLowerCase();
 
-  return error?.message ||
-    'Something went wrong. Please try again.';
+  if (status === 429 || message.includes('rate limit') || message.includes('too many')) {
+    return 'Too many requests right now. Please wait a little and try again.';
+  }
 
+  if (message.includes('invalid login credentials') ||
+      message.includes('invalid credentials') ||
+      message.includes('email not confirmed')) {
+    return 'Incorrect email or password. Use Forgot password / Set password if needed.';
+  }
+
+  if (message.includes('password should be at least')) {
+    return 'Password must be at least 8 characters.';
+  }
+
+  return error?.message || 'Something went wrong. Please try again.';
 };
+
+const startupParams = new URLSearchParams(window.location.search);
+const startupError = startupParams.get('error');
+if (startupError === 'not-approved') {
+  showError('This account is not an approved campus account. Complete Student Registration first.');
+} else if (startupError === 'auth-check') {
+  showError('We could not verify your campus permissions. Please sign in again.');
+}
+
+const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+if (hashParams.get('error_code') === 'otp_expired' ||
+    hashParams.get('error') === 'access_denied') {
+  showError('That password link is expired or invalid. Request a new password link.');
+}
 
 
 /* =========================================================
@@ -347,6 +375,7 @@ const friendlyError = (error) => {
 
 let passwordRecovery =
   window.location.hash.includes('type=recovery');
+let passwordResetCooldownUntil = 0;
 
 
 /* =========================================================
@@ -573,6 +602,12 @@ forgot.addEventListener('click', async () => {
   }
 
 
+  if (Date.now() < passwordResetCooldownUntil) {
+    const seconds = Math.ceil((passwordResetCooldownUntil - Date.now()) / 1000);
+    showError('Please wait ' + seconds + ' seconds before requesting another password link.');
+    return;
+  }
+
   showLoading(
     'Sending password link...'
   );
@@ -596,15 +631,14 @@ forgot.addEventListener('click', async () => {
 
 
   if (error) {
-
-    showError(
-      friendlyError(error)
-    );
-
+    showError(friendlyError(error));
+    if (Number(error.status) === 429) {
+      passwordResetCooldownUntil = Date.now() + 60000;
+    }
     return;
-
   }
 
+  passwordResetCooldownUntil = Date.now() + 30000;
 
   showSuccess(
     'If this email belongs to an approved account, a password link has been sent. Check your inbox.'
