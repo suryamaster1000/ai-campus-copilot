@@ -32,9 +32,15 @@ export function renderAdminPanel(container) {
       </section>
 
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary">how_to_reg</span>
-          <h2 class="font-headline-md text-base font-bold text-on-surface">Student Registration Approvals</h2>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">how_to_reg</span>
+            <h2 class="font-headline-md text-base font-bold text-on-surface">Student Registration Approvals</h2>
+          </div>
+          <button id="refreshRegistrationsBtn" type="button" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">
+            <span class="material-symbols-outlined text-[17px]">refresh</span>
+            Refresh
+          </button>
         </div>
         <p class="text-xs text-on-surface-variant mt-1">Review verified registrations and create their Supabase student accounts. Only the owner can approve.</p>
         <div id="registrationApprovalBody" class="mt-4 space-y-2">
@@ -72,6 +78,22 @@ export function renderAdminPanel(container) {
 
   loadAdminAccessControl();
   loadStudentRegistrations();
+
+  document.getElementById('refreshRegistrationsBtn')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const icon = button.querySelector('.material-symbols-outlined');
+    button.disabled = true;
+    button.classList.add('opacity-70');
+    if (icon) icon.classList.add('animate-spin');
+    try {
+      await loadStudentRegistrations();
+      showToast('Registration list refreshed.', 'success');
+    } finally {
+      button.disabled = false;
+      button.classList.remove('opacity-70');
+      if (icon) icon.classList.remove('animate-spin');
+    }
+  });
 
   async function loadAdminAccessControl() {
     const body = document.getElementById('adminAccessBody');
