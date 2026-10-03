@@ -147,80 +147,89 @@ async function loadLiveCampusData(profile) {
 async function handleAuthSession(session) {
   if (!session?.user) {
     currentUser = null;
+    adminAccessReady = false;
     if (authReady) window.location.replace('login.html');
     return false;
   }
 
   currentUser = session.user;
 
-  // Hydrate the visible header immediately from the authenticated session.
-  // The database profile is richer, but it must never block the app shell.
   const immediateName = currentUser.user_metadata?.name ||
     currentUser.email?.split('@')[0] || 'Student';
-  const immediateNamePill = document.querySelector('#headerProfilePill .font-label-md');
-  const immediateEmailPill = document.querySelector('#headerProfilePill .font-label-sm');
-  if (immediateNamePill) immediateNamePill.textContent = immediateName;
-  if (immediateEmailPill) immediateEmailPill.textContent = currentUser.email || '';
+  const updateHeader = (name) => {
+    const namePill = document.querySelector('#headerProfilePill .font-label-md');
+    const emailPill = document.querySelector('#headerProfilePill .font-label-sm');
+    if (namePill) namePill.textContent = name;
+    if (emailPill) emailPill.textContent = currentUser.email || '';
+  };
+  updateHeader(immediateName);
 
-  // The owner is known locally by the fixed owner UUID; other admin roles are
-  // resolved from Supabase in the background before an admin route is opened.
   isOwner = currentUser.id === OWNER_USER_ID;
-  isAdmin = isOwner;
-  adminAccessReady = isOwner;
+  isAdmin = false;
+  adminAccessReady = false;
 
-  const { data: profile, error: profileError } = await withTimeout(
-    supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', currentUser.id)
-      .maybeSingle(),
-    3000,
-    'Student profile query'
-  );
+  // Authorization must be established before the app/router is released.
+  // A profile row is the approved-student marker; admin_users is the admin marker.
+  const [profileResult, adminResult] = await Promise.all([
+    withTimeout(
+      supabase
+        .from('profiles')
+        .select('id,name,email,roll_number,program,term,cgpa,section')
+        .eq('id', currentUser.id)
+        .maybeSingle(),
+      5000,
+      'Student profile query'
+    ),
+    withTimeout(
+      supabase
+        .from('admin_users')
+        .select('user_id,role')
+        .eq('user_id', currentUser.id)
+        .maybeSingle(),
+      5000,
+      'Admin permission query'
+    )
+  ]);
 
-  if (profileError) {
-    console.error('Supabase profile load failed:', profileError);
+  const profile = profileResult.data;
+  const adminAccess = adminResult.data;
+
+  if (profileResult.error) {
+    console.error('Supabase profile authorization failed:', profileResult.error);
+    await supabase.auth.signOut();
+    adminAccessReady = false;
+    window.location.replace('login.html?error=auth-check');
+    return false;
   }
 
-  // Keep the existing UI, but hydrate the student-facing values from Supabase.
+  if (adminResult.error) {
+    console.error('Supabase admin authorization failed:', adminResult.error);
+    await supabase.auth.signOut();
+    adminAccessReady = false;
+    window.location.replace('login.html?error=auth-check');
+    return false;
+  }
+
+  isOwner = isOwner || adminAccess?.role === 'owner';
+  isAdmin = isOwner || Boolean(adminAccess && adminAccess.user_id === currentUser.id);
+
+  // Never create an approval record here. Only the registration/approval flow
+  // or an authorized administrator should create the student's profile.
+  if (!profile && !isAdmin) {
+    await supabase.auth.signOut();
+    adminAccessReady = false;
+    window.location.replace('login.html?error=not-approved');
+    return false;
+  }
+
+  adminAccessReady = true;
+
   const name = profile?.name ||
     currentUser.user_metadata?.name ||
     currentUser.email?.split('@')[0] ||
     'Student';
 
-  // Update the header immediately; do not leave the shell showing “Loading...” while
-  // unrelated campus datasets are still being fetched.
-  const earlyNamePill = document.querySelector('#headerProfilePill .font-label-md');
-  const earlyEmailPill = document.querySelector('#headerProfilePill .font-label-sm');
-  if (earlyNamePill) earlyNamePill.textContent = name;
-  if (earlyEmailPill) earlyEmailPill.textContent = currentUser.email || '';
-
-  // Google OAuth users may not have a profile row yet. Create one after
-  // authentication so personal fields do not fall back to demo data.
-  if (!profile && !profileError) {
-    // Profile creation is background-only; it must not delay route startup.
-    withTimeout(
-      supabase.from('profiles').upsert({
-        id: currentUser.id,
-        name,
-        email: currentUser.email || '',
-        roll_number: currentUser.user_metadata?.roll_number || 'N/A',
-        program: '',
-        term: '',
-        cgpa: '0.00'
-      }),
-      3000,
-      'Student profile creation'
-    ).then(({ error: profileCreateError }) => {
-      if (profileCreateError) console.error('Supabase profile create failed:', profileCreateError);
-    });
-  }
-
-  // Do not block the entire application shell on campus-data queries.
-  // Profile/header hydration must complete first; the larger live-data feed loads in the background.
-  loadLiveCampusData(profile || campusData.student).catch((error) => {
-    console.error('Live campus data load failed:', error);
-  });
+  updateHeader(name);
 
   if (profile) {
     campusData.student.name = profile.name || name;
@@ -230,12 +239,16 @@ async function handleAuthSession(session) {
     campusData.student.term = profile.term || campusData.student.term;
     campusData.student.section = profile.section || '';
     campusData.student.cgpa = profile.cgpa || campusData.student.cgpa;
+
+    loadLiveCampusData(profile).catch((error) => {
+      console.error('Live campus data load failed:', error);
+    });
   } else {
     campusData.student.name = name;
     campusData.student.email = currentUser.email || '';
+    campusData.student.section = '';
   }
 
-  // Personal tasks load in the background and cannot delay the router.
   withTimeout(
     supabase
       .from('tasks')
@@ -268,44 +281,18 @@ async function handleAuthSession(session) {
     updateSidebarBadges();
   });
 
-  // Admin authorization resolves in the background. The owner is available immediately.
-  if (!isOwner) {
-    withTimeout(
-      supabase
-        .from('admin_users')
-        .select('user_id, role')
-        .eq('user_id', currentUser.id)
-        .maybeSingle(),
-      3000,
-      'Admin permission query'
-    ).then(({ data: adminAccess, error: adminAccessError }) => {
-      if (adminAccessError) console.error('Supabase admin permission check failed:', adminAccessError);
-      isAdmin = Boolean(adminAccess && adminAccess.user_id === currentUser.id);
-      isOwner = Boolean(adminAccess && adminAccess.user_id === currentUser.id && adminAccess.role === 'owner');
-      adminAccessReady = true;
-      document.querySelectorAll('a[data-path="admin-panel"]').forEach(link => {
-        link.style.display = isAdmin ? '' : 'none';
-      });
-      if (window.location.hash === '#admin-panel') handleRoute();
-    });
-  } else {
-    document.querySelectorAll('a[data-path="admin-panel"]').forEach(link => {
-      link.style.display = '';
-    });
-  }
-
-  const namePill = document.querySelector('#headerProfilePill .font-label-md');
-  const emailPill = document.querySelector('#headerProfilePill .font-label-sm');
   const avatarImg = document.getElementById('headerAvatar');
-
-  if (namePill) namePill.textContent = name;
-  if (emailPill) emailPill.textContent = currentUser.email || '';
   if (avatarImg && currentUser.user_metadata?.avatar_url) {
     avatarImg.src = currentUser.user_metadata.avatar_url;
   }
 
-  campusData.student.name = name;
-  campusData.student.email = currentUser.email || campusData.student.email || '';
+  document.querySelectorAll('a[data-path="admin-panel"]').forEach(link => {
+    link.style.display = isAdmin ? '' : 'none';
+  });
+
+  if (window.location.hash === '#admin-panel') {
+    handleRoute();
+  }
 
   const signOutBtn = document.getElementById('signOutBtn');
   if (signOutBtn) {
@@ -363,8 +350,14 @@ supabase.auth.onAuthStateChange((event, session) => {
     return;
   }
 
-  if (event === 'TOKEN_REFRESHED' && session?.user) {
+  if (event === 'SIGNED_IN' && session?.user && authReady) {
     handleAuthSession(session);
+    return;
+  }
+
+  if (event === 'TOKEN_REFRESHED' && session?.user) {
+    // Keep the already-authorized application state during token refreshes.
+    return;
   }
 });
 
