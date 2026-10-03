@@ -2,11 +2,13 @@
 import { supabase } from './supabase.js';
 import { campusData } from './data.js';
 import { initCommandPalette } from './components/command-palette.js';
+import { showToast } from './components/toast.js';
 
 // ─── Supabase Auth Guard ───────────────────────────────────────────────────
 let currentUser = null;
 let authReady = false;
 let authInitPromise = null;
+let isAdmin = false;
 
 async function handleAuthSession(session) {
   if (!session?.user) {
@@ -57,6 +59,7 @@ async function handleAuthSession(session) {
     campusData.student.rollNumber = profile.roll_number || campusData.student.rollNumber;
     campusData.student.program = profile.program || campusData.student.program;
     campusData.student.term = profile.term || campusData.student.term;
+    campusData.student.section = profile.section || '';
     campusData.student.cgpa = profile.cgpa || campusData.student.cgpa;
   } else {
     campusData.student.name = name;
@@ -90,6 +93,21 @@ async function handleAuthSession(session) {
       status: task.status === 'completed' ? 'completed' : 'todo'
     }));
   }
+
+  const { data: adminAccess, error: adminAccessError } = await supabase
+    .from('admin_users')
+    .select('user_id')
+    .eq('user_id', currentUser.id)
+    .maybeSingle();
+
+  if (adminAccessError) {
+    console.error('Supabase admin permission check failed:', adminAccessError);
+  }
+  isAdmin = Boolean(adminAccess && adminAccess.user_id === currentUser.id);
+
+  document.querySelectorAll('a[data-path="admin-panel"]').forEach(link => {
+    link.style.display = isAdmin ? '' : 'none';
+  });
 
   const namePill = document.querySelector('#headerProfilePill .font-label-md');
   const emailPill = document.querySelector('#headerProfilePill .font-label-sm');
@@ -270,6 +288,12 @@ function handleRoute() {
   if (!hash || !routes[hash]) {
     hash = 'ai-assistant';
     window.location.hash = '#' + hash;
+    return;
+  }
+
+  if (hash === 'admin-panel' && !isAdmin) {
+    showToast('Admin access is restricted to authorized students.', 'error');
+    window.location.hash = '#dashboard';
     return;
   }
 
