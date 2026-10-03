@@ -373,6 +373,23 @@ import { renderTasks } from './pages/tasks.js';
 import { renderSettings } from './pages/settings.js';
 import { renderAdminPanel } from './pages/admin.js?v=20261003-live1';
 
+async function renderAdminPanelRoute(container) {
+  try {
+    const module = await import('./pages/admin.js?v=20261003-live2');
+    module.renderAdminPanel(container);
+  } catch (error) {
+    console.error('Admin Panel module failed to load:', error);
+    container.innerHTML = `
+      <div class="max-w-[900px] mx-auto py-10">
+        <div class="rounded-2xl border border-error/30 bg-error-container p-6">
+          <h1 class="text-xl font-bold text-on-error-container">Admin Panel could not load</h1>
+          <p class="mt-2 text-sm text-on-error-container">The student application is still working. Please refresh this page after the latest deployment finishes.</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
 const routes = {
   'dashboard': { title: 'Dashboard - AI Campus Copilot', render: renderDashboard },
   'ai-assistant': { title: 'AI Assistant - AI Campus Copilot', render: renderAiAssistant },
@@ -383,7 +400,7 @@ const routes = {
   'events': { title: 'Events - AI Campus Copilot', render: renderEvents },
   'my-tasks': { title: 'My Tasks - AI Campus Copilot', render: renderTasks },
   'settings': { title: 'Settings - AI Campus Copilot', render: renderSettings },
-  'admin-panel': { title: 'Admin Panel - AI Campus Copilot', render: renderAdminPanel }
+  'admin-panel': { title: 'Admin Panel - AI Campus Copilot', render: renderAdminPanelRoute }
 };
 
 let currentRoute = '';
