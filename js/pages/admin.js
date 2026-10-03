@@ -214,7 +214,7 @@ export function renderAdminPanel(container) {
         : r.status === 'rejected'
           ? 'bg-error-container text-on-error-container'
           : 'bg-amber-100 text-amber-800';
-      return `<div class="p-3 rounded-xl border border-surface-container-high bg-surface-container-low">
+      return `<div data-registration-id="${r.id}" class="p-3 rounded-xl border border-surface-container-high bg-surface-container-low">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
@@ -247,18 +247,22 @@ export function renderAdminPanel(container) {
         showToast(
           copied
             ? 'Account created. Secure password-setup link copied to clipboard.'
-            : 'Account created. Supabase email was rate-limited; use the secure setup link shown below.',
+            : 'Account created. Supabase email was rate-limited.',
           'success'
         );
-        const linkBox = document.createElement('div');
-        linkBox.className = 'mt-3 p-3 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-900';
-        linkBox.innerHTML = '<div class="font-bold mb-1">Secure password-setup link</div><input readonly class="w-full px-2 py-2 rounded-lg border border-amber-200 bg-white text-[11px]" value="' +
-          String(data.action_link).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '">';
-        btn.parentElement?.parentElement?.appendChild(linkBox);
+        await loadStudentRegistrations();
+        const row = document.querySelector(`[data-registration-id="${btn.dataset.approveRegistration}"]`);
+        if (row) {
+          const linkBox = document.createElement('div');
+          linkBox.className = 'mt-3 p-3 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-900';
+          linkBox.innerHTML = '<div class="font-bold mb-1">Secure password-setup link</div><input readonly class="w-full px-2 py-2 rounded-lg border border-amber-200 bg-white text-[11px]" value="' +
+            String(data.action_link).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '">';
+          row.appendChild(linkBox);
+        }
       } else {
         showToast('Student account and profile created. Invitation email sent.', 'success');
+        await loadStudentRegistrations();
       }
-      await loadStudentRegistrations();
     });
   }
 
