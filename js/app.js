@@ -32,7 +32,7 @@ async function loadLiveCampusData(profile) {
     supabase.from('notices').select('id,title,body,category,published_at,source_url').eq('is_published', true).order('published_at', { ascending: false }).limit(50),
     supabase.from('events').select('id,title,description,event_type,starts_at,ends_at,venue,source_url').eq('is_published', true).order('starts_at', { ascending: true }).limit(50),
     supabase.from('timetable').select('id,subject_id,faculty_id,program_id,term,section,day_of_week,start_time,end_time,room,notes,subjects(name,code),faculty(name,designation)').eq('term', term).limit(200),
-    supabase.from('exams').select('id,subject_id,program_id,term,section,exam_type,exam_date,start_time,end_time,room,instructions,subjects(name,code)').eq('term', term).limit(100),
+    supabase.from('exams').select('id,subject_id,program_id,term,section,exam_type,exam_date,start_time,end_time,room,instructions,subjects(name,code)').eq('term', term).modify((query) => section ? query.eq('section', section) : query).limit(100),
     supabase.from('academic_assignments').select('id,subject_id,program_id,term,title,description,due_date,submission_info,subjects(name,code)').eq('term', term).limit(100),
     supabase.from('attendance').select('id,subject_id,classes_held,classes_attended,updated_at,subjects(name,code)').eq('user_id', currentUser.id).limit(100),
     supabase.from('subjects').select('id,program_id,code,name,description,credits,term').eq('term', term).limit(100),
@@ -133,7 +133,7 @@ async function loadLiveCampusData(profile) {
   if (!campusData.studyModules.length) campusData.studyModules = [];
   campusData.aiResponses = {};
   campusData.academicAssignments = assignmentsRes.data || [];
-  campusData.exams = (examsRes.data || []).filter(e => !section || !e.section || e.section === section);
+  campusData.exams = (examsRes.data || []).filter(e => !section || e.section === section);
   campusData.academicRules = rulesRes.data || [];
   campusData.faculty = facultyRes.data || [];
   campusData.programs = [];
@@ -364,17 +364,17 @@ supabase.auth.onAuthStateChange((event, session) => {
   }
 });
 
-export async function addTaskToFirestore(task){
+export async function addTaskToSupabase(task){
   if(!currentUser)return;
   const {error}=await supabase.from('tasks').insert({...task,user_id:currentUser.id});
   if(error)throw error;
 }
-export async function deleteTaskFromFirestore(taskId){
+export async function deleteTaskFromSupabase(taskId){
   if(!currentUser)return;
   const {error}=await supabase.from('tasks').delete().eq('id',taskId).eq('user_id',currentUser.id);
   if(error)throw error;
 }
-export async function toggleTaskInFirestore(taskId,status){
+export async function toggleTaskInSupabase(taskId,status){
   if(!currentUser)return;
   const {error}=await supabase.from('tasks').update({status}).eq('id',taskId).eq('user_id',currentUser.id);
   if(error)throw error;
