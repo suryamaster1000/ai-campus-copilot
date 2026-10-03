@@ -86,15 +86,21 @@ async function loadLiveCampusData(profile) {
   const attended = attendanceRows.reduce((sum, r) => sum + Number(r.classes_attended || 0), 0);
   campusData.student.attendanceOverall = held > 0 ? ((attended / held) * 100).toFixed(1) + '%' : '';
 
-  campusData.studyModules = (subjectsRes.data || []).map(s => ({
-    id: s.id,
-    code: s.code || 'SUBJECT',
-    name: s.name,
-    credits: s.credits || 0,
-    term: s.term || term,
-    description: s.description || '',
-    units: []
-  }));
+  campusData.studyModules = (subjectsRes.data || []).map(s => {
+    const relatedClass = (timetableRes.data || []).find(row => row.subject_id === s.id);
+    const faculty = relatedClass ? (Array.isArray(relatedClass.faculty) ? relatedClass.faculty[0] : relatedClass.faculty) : null;
+    return {
+      id: s.id,
+      code: s.code || 'SUBJECT',
+      name: s.name,
+      credits: s.credits || 0,
+      term: s.term || term,
+      description: s.description || '',
+      faculty: faculty?.name || 'Faculty not assigned',
+      progress: 0,
+      units: []
+    };
+  });
 
   campusData.venues = (locationsRes.data || []).map(v => ({
     id: v.id,
