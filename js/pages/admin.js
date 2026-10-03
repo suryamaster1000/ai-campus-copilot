@@ -49,6 +49,8 @@ export function renderAdminPanel(container) {
         </div>
       </section>
 
+      <div id="adminExtraTools" class="space-y-space-md"></div>
+
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/30 shadow-sm">
         <div class="flex items-center gap-2">
           <span class="material-symbols-outlined text-primary">psychology</span>
@@ -86,6 +88,9 @@ export function renderAdminPanel(container) {
     loadStudentRegistrations().catch((error) => {
       console.error('Student registrations failed:', error);
     });
+    import('./admin-tools.js?v=20261003-live1')
+      .then((module) => module.renderAdminTools(document.getElementById('adminExtraTools')))
+      .catch((error) => console.error('Admin tools module failed:', error));
   });
 
   document.getElementById('refreshRegistrationsBtn')?.addEventListener('click', async (event) => {
