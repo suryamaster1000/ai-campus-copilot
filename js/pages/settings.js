@@ -104,7 +104,7 @@ export function renderSettings(container) {
               <label class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl cursor-pointer hover:bg-surface-container transition-colors">
                 <div class="space-y-0.5">
                   <span class="text-xs font-bold text-on-surface block">Undergraduate Student Handbook &amp; Leave By-Laws</span>
-                  <span class="text-[11px] text-outline">Medical certificate 3-day rule, hostel curfew &amp; grading rubric</span>
+                  <span class="text-[11px] text-outline">Official handbook and policy information</span>
                 </div>
                 <input type="checkbox" checked class="h-4 w-4 rounded text-primary focus:ring-primary"/>
               </label>
@@ -127,7 +127,7 @@ export function renderSettings(container) {
               </label>
 
               <label class="flex items-center justify-between text-xs cursor-pointer">
-                <span class="font-semibold text-on-surface">Attendance Warning (&lt; 75%)</span>
+                <span class="font-semibold text-on-surface">Attendance alerts</span>
                 <input type="checkbox" checked class="h-4 w-4 rounded text-primary focus:ring-primary"/>
               </label>
 
@@ -137,7 +137,7 @@ export function renderSettings(container) {
               </label>
 
               <label class="flex items-center justify-between text-xs cursor-pointer">
-                <span class="font-semibold text-on-surface">Shuttle Bus Arrival Pings</span>
+                <span class="font-semibold text-on-surface">Campus notifications</span>
                 <input type="checkbox" class="h-4 w-4 rounded text-primary focus:ring-primary"/>
               </label>
             </div>
@@ -158,7 +158,7 @@ export function renderSettings(container) {
           <div class="p-3 bg-surface-container-low rounded-2xl text-xs space-y-1 text-on-surface-variant">
             <div class="font-bold text-on-surface">AI Campus Copilot v2.4 (Frontend Prototype)</div>
             <div>Built for University Engineering &amp; Academic Systems</div>
-            <div class="text-[11px] text-outline">Client SHA: #ac34-fall2024</div>
+            <div class="text-[11px] text-outline">Client build: Live data</div>
           </div>
 
         </div>
