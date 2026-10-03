@@ -25,7 +25,7 @@ export function renderEvents(container) {
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-[24px]">event</span>
               <h1 class="font-headline-md text-xl lg:text-2xl font-bold text-on-surface">Campus Events &amp; Opportunities</h1>
-              <span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">Fall 2024</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-xs font-semibold">Live academic calendar</span>
             </div>
             <p class="text-xs text-on-surface-variant mt-1">
               Hackathons, research keynotes, cultural festivals, and career recruitment drives.
