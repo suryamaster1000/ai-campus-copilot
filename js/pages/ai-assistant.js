@@ -158,266 +158,24 @@ export function renderAiAssistant(container, initialQuery = null) {
 
           <!-- Conversation Stream -->
           <div class="flex-1 overflow-y-auto px-space-md lg:px-space-xl py-space-lg space-y-space-lg scroll-smooth custom-scrollbar" id="chatStream">
-            <!-- Academic Advisory Banner / Session Anchor -->
             <div class="max-w-3xl mx-auto flex items-center justify-center">
-              <div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full text-on-surface-variant font-label-sm text-label-sm shadow-sm">
-                <span class="material-symbols-outlined text-[16px] text-tertiary">history_edu</span>
-                <span>Academic Session: CS Semester 4 • Fall 2024 • Timetable &amp; Syllabus Active</span>
+              <div class="inline-flex items-center gap-2 px-3 py-2 bg-surface-container-low rounded-full text-on-surface-variant font-label-sm text-label-sm shadow-sm">
+                <span class="material-symbols-outlined text-[16px] text-primary">auto_awesome</span>
+                <span>No conversation data yet. Ask the Copilot about your connected campus data.</span>
               </div>
             </div>
 
-            <!-- Student Message 1 -->
-            <div class="flex items-start justify-end gap-space-sm max-w-3xl mx-auto">
-              <div class="flex flex-col items-end max-w-[85%] sm:max-w-[75%]">
-                <div class="bg-primary text-on-primary px-space-md py-space-sm rounded-2xl rounded-tr-none shadow-sm">
-                  <p class="font-body-md text-body-md leading-relaxed">
-                    What is my next class and what topics are being covered according to the syllabus?
-                  </p>
-                </div>
-                <span class="font-label-sm text-[11px] text-outline mt-1 pr-1">09:42 AM • Student</span>
-              </div>
-              <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 ring-2 ring-primary-container shadow-sm">
-                <img class="w-full h-full object-cover" alt="Student" src="assets/avatars/student.svg"/>
-              </div>
-            </div>
-
-            <!-- AI Response 1 -->
-            <div class="flex items-start gap-space-sm max-w-3xl mx-auto">
-              <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
-                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
-              </div>
-              <div class="flex flex-col flex-1 min-w-0">
-                <div class="bg-surface-container-low text-on-surface rounded-2xl rounded-tl-none p-space-md space-y-space-md shadow-sm">
-                  <!-- Primary Schedule Snapshot Block -->
-                  <div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-space-md">
-                    <div class="flex items-start gap-space-sm">
-                      <div class="w-12 h-12 rounded-xl bg-secondary-fixed text-on-secondary-fixed flex flex-col items-center justify-center flex-shrink-0">
-                        <span class="font-label-sm text-[11px] uppercase tracking-wide font-bold">Scheduled time</span>
-                        <span class="font-label-sm text-[10px] text-on-secondary-fixed-variant">AM</span>
-                      </div>
-                      <div>
-                        <div class="flex items-center gap-2">
-                          <span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-[11px] font-bold">CS-204</span>
-                          <span class="font-headline-md text-headline-md font-bold text-on-surface">Data Structures &amp; Algorithms</span>
-                        </div>
-                        <p class="font-body-sm text-body-sm text-on-surface-variant mt-1 flex items-center gap-2 flex-wrap">
-                          <span class="inline-flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[16px] text-outline">room</span> Assigned room
-                          </span>
-                          <span class="inline-flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[16px] text-outline">person</span> Assigned faculty
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-2 self-start md:self-center">
-                      <button class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-lg font-label-md text-label-md transition-colors route-btn" data-room="Assigned room" type="button">
-                        <span class="material-symbols-outlined text-[16px] text-primary">navigation</span>
-                        <span>Route</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Syllabus Breakdown -->
-                  <div class="space-y-1.5">
-                    <span class="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-secondary flex items-center gap-1">
-                      <span class="material-symbols-outlined text-[16px]">menu_book</span>
-                      Syllabus Context (Week 7 Module)
-                    </span>
-                    <p class="font-body-md text-body-md leading-relaxed text-on-surface">
-                      According to your Week 7 course schedule, today's lecture begins the advanced balanced search tree module. You will be covering:
-                    </p>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                      <div class="p-2.5 rounded-lg bg-surface-container-lowest">
-                        <div class="font-label-sm text-[11px] text-outline font-semibold">TOPIC 01</div>
-                        <div class="font-label-md text-label-md font-semibold text-on-surface mt-0.5">AVL Tree Rotations</div>
-                        <div class="text-[12px] text-on-surface-variant font-body-sm mt-0.5">Single (LL, RR) &amp; Double (LR, RL) balance mechanics</div>
-                      </div>
-                      <div class="p-2.5 rounded-lg bg-surface-container-lowest">
-                        <div class="font-label-sm text-[11px] text-outline font-semibold">TOPIC 02</div>
-                        <div class="font-label-md text-label-md font-semibold text-on-surface mt-0.5">Balance Factor Calcs</div>
-                        <div class="text-[12px] text-on-surface-variant font-body-sm mt-0.5">Height recalculation criteria: {-1, 0, +1} invariant</div>
-                      </div>
-                      <div class="p-2.5 rounded-lg bg-surface-container-lowest">
-                        <div class="font-label-sm text-[11px] text-outline font-semibold">TOPIC 03</div>
-                        <div class="font-label-md text-label-md font-semibold text-on-surface mt-0.5">Insertion Complexity</div>
-                        <div class="text-[12px] text-on-surface-variant font-body-sm mt-0.5">Logarithmic bounds verification &amp; memory footprint</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Source Citation Card -->
-                  <div class="pt-2">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-surface-container-lowest rounded-xl shadow-sm">
-                      <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded bg-error-container text-on-error-container flex items-center justify-center flex-shrink-0">
-                          <span class="material-symbols-outlined text-[16px]">picture_as_pdf</span>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                          <span class="font-label-sm text-label-sm font-semibold text-on-surface truncate">Course_Syllabus_Fall2024.pdf</span>
-                          <span class="text-[11px] text-on-surface-variant">Page 4, Section 3.2 • Registrar Schedule Feed API #2411</span>
-                        </div>
-                      </div>
-                      <button class="inspect-doc-btn inline-flex items-center gap-1 px-2.5 py-1 bg-surface-container-high hover:bg-secondary-container text-on-secondary-container rounded-md font-label-sm text-label-sm transition-colors self-start sm:self-center" data-doc="Course_Syllabus_Fall2024.pdf" type="button">
-                        <span class="material-symbols-outlined text-[15px]">visibility</span>
-                        <span>Inspect Document</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Reaction & Timestamp -->
-                <div class="flex items-center justify-between mt-1 px-1">
-                  <span class="font-label-sm text-[11px] text-outline">09:42 AM • AI Copilot</span>
-                  <div class="flex items-center gap-1 text-outline">
-                    <button class="copy-btn p-1 hover:text-on-surface rounded hover:bg-surface-container transition-colors" title="Copy text" type="button">
-                      <span class="material-symbols-outlined text-[16px]">content_copy</span>
-                    </button>
-                    <button class="feedback-btn p-1 hover:text-on-surface rounded hover:bg-surface-container transition-colors" title="Helpful response" type="button">
-                      <span class="material-symbols-outlined text-[16px]">thumb_up</span>
-                    </button>
-                    <button class="feedback-btn p-1 hover:text-on-surface rounded hover:bg-surface-container transition-colors" title="Not helpful" type="button">
-                      <span class="material-symbols-outlined text-[16px]">thumb_down</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Student Message 2 -->
-            <div class="flex items-start justify-end gap-space-sm max-w-3xl mx-auto">
-              <div class="flex flex-col items-end max-w-[85%] sm:max-w-[75%]">
-                <div class="bg-primary text-on-primary px-space-md py-space-sm rounded-2xl rounded-tr-none shadow-sm">
-                  <p class="font-body-md text-body-md leading-relaxed">
-                    Where can I submit my medical leave certificate?
-                  </p>
-                </div>
-                <span class="font-label-sm text-[11px] text-outline mt-1 pr-1">09:45 AM • Student</span>
-              </div>
-              <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 ring-2 ring-primary-container shadow-sm">
-                <img class="w-full h-full object-cover" alt="Student" src="assets/avatars/student.svg"/>
-              </div>
-            </div>
-
-            <!-- AI Response 2 -->
-            <div class="flex items-start gap-space-sm max-w-3xl mx-auto">
-              <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
-                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
-              </div>
-              <div class="flex flex-col flex-1 min-w-0">
-                <div class="bg-surface-container-low text-on-surface rounded-2xl rounded-tl-none p-space-md space-y-space-md shadow-sm">
-                  <div class="space-y-2">
-                    <p class="font-body-md text-body-md leading-relaxed text-on-surface">
-                      Medical certificates must be submitted through one of two official university channels within <span class="font-bold text-on-surface underline decoration-primary decoration-2 underline-offset-2">3 working days</span> of returning to campus:
-                    </p>
-                    
-                    <!-- Dual Submission Pathways -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <!-- Option A: Digital -->
-                      <div class="p-3 bg-surface-container-lowest rounded-xl flex flex-col justify-between">
-                        <div>
-                          <div class="flex items-center gap-1.5 text-primary font-label-md text-label-md font-bold">
-                            <span class="material-symbols-outlined text-[18px]">language</span>
-                            Option 1: Digital Upload (Recommended)
-                          </div>
-                          <p class="font-body-sm text-body-sm text-on-surface-variant mt-1.5 leading-normal">
-                            Submit via the <strong>Student Affairs Portal</strong>. Upload scanned hospital doctor stamp and admission slip in PDF format (&lt;10MB).
-                          </p>
-                        </div>
-                        <div class="pt-3">
-                          <button class="portal-link-btn inline-flex items-center gap-1 font-label-sm text-label-sm text-primary font-bold hover:underline" type="button">
-                            <span>Open Student Portal</span>
-                            <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <!-- Option B: Physical -->
-                      <div class="p-3 bg-surface-container-lowest rounded-xl flex flex-col justify-between">
-                        <div>
-                          <div class="flex items-center gap-1.5 text-secondary font-label-md text-label-md font-bold">
-                            <span class="material-symbols-outlined text-[18px]">apartment</span>
-                            Option 2: Physical Submission
-                          </div>
-                          <p class="font-body-sm text-body-sm text-on-surface-variant mt-1.5 leading-normal">
-                            <strong>Admin Block A, Room 104</strong> (Counter 3)<br/>
-                            Operating Hours: Monday – Friday<br/>
-                            <strong>10:00 AM – 4:00 PM</strong>
-                          </p>
-                        </div>
-                        <div class="pt-3">
-                          <span class="inline-flex items-center gap-1 text-[11px] font-label-sm text-outline">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Counter currently open
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Source Citation Card 2 -->
-                  <div class="pt-1">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-surface-container-lowest rounded-xl shadow-sm">
-                      <div class="flex items-center gap-2 min-w-0">
-                        <div class="w-7 h-7 rounded bg-primary-fixed text-on-primary-fixed flex items-center justify-center flex-shrink-0">
-                          <span class="material-symbols-outlined text-[16px]">menu_book</span>
-                        </div>
-                        <div class="flex flex-col min-w-0">
-                          <span class="font-label-sm text-label-sm font-semibold text-on-surface truncate">Student Handbook 2024–25</span>
-                          <span class="text-[11px] text-on-surface-variant">Section 8.4: Attendance Regulations &amp; Medical Leaves</span>
-                        </div>
-                      </div>
-                      <button class="inspect-doc-btn inline-flex items-center gap-1 px-2.5 py-1 bg-surface-container-high hover:bg-secondary-container text-on-secondary-container rounded-md font-label-sm text-label-sm transition-colors self-start sm:self-center" data-doc="Student Handbook 2024–25" type="button">
-                        <span class="material-symbols-outlined text-[15px]">open_in_new</span>
-                        <span>Read Policy</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Reaction & Timestamp -->
-                <div class="flex items-center justify-between mt-1 px-1">
-                  <span class="font-label-sm text-[11px] text-outline">09:45 AM • AI Copilot</span>
-                  <div class="flex items-center gap-1 text-outline">
-                    <button class="copy-btn p-1 hover:text-on-surface rounded hover:bg-surface-container transition-colors" title="Copy text" type="button">
-                      <span class="material-symbols-outlined text-[16px]">content_copy</span>
-                    </button>
-                    <button class="feedback-btn p-1 hover:text-on-surface rounded hover:bg-surface-container transition-colors" title="Helpful" type="button">
-                      <span class="material-symbols-outlined text-[16px]">thumb_up</span>
-                    </button>
-                    <button class="feedback-btn p-1 hover:text-on-surface rounded hover:bg-surface-container transition-colors" title="Not helpful" type="button">
-                      <span class="material-symbols-outlined text-[16px]">thumb_down</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Contextual Follow-up Chips -->
             <div class="max-w-3xl mx-auto pt-space-xs" id="quickChipsContainer">
               <div class="flex items-center gap-1.5 mb-2 text-outline font-label-sm text-label-sm">
                 <span class="material-symbols-outlined text-[16px] text-primary">assistant_navigation</span>
-                <span>Suggested follow-up queries</span>
+                <span>Suggested queries</span>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button class="query-chip px-3 py-1.5 rounded-full bg-surface-container hover:bg-secondary-container hover:text-on-secondary-container text-on-surface-variant font-label-md text-label-md transition-all flex items-center gap-1.5 text-left" data-query="What is my attendance percentage in CS-204?" type="button">
-                  <span>What is my attendance percentage in CS-204?</span>
-                  <span class="material-symbols-outlined text-[14px]">arrow_outward</span>
-                </button>
-                <button class="query-chip px-3 py-1.5 rounded-full bg-surface-container hover:bg-secondary-container hover:text-on-secondary-container text-on-surface-variant font-label-md text-label-md transition-all flex items-center gap-1.5 text-left" data-query="When is the next midterm exam?" type="button">
-                  <span>When is the next midterm exam?</span>
-                  <span class="material-symbols-outlined text-[14px]">arrow_outward</span>
-                </button>
-                <button class="query-chip px-3 py-1.5 rounded-full bg-surface-container hover:bg-secondary-container hover:text-on-secondary-container text-on-surface-variant font-label-md text-label-md transition-all flex items-center gap-1.5 text-left" data-query="Where is the nearest open computer lab right now?" type="button">
-                  <span>Where is the nearest open computer lab right now?</span>
-                  <span class="material-symbols-outlined text-[14px]">arrow_outward</span>
-                </button>
-                <button class="query-chip px-3 py-1.5 rounded-full bg-surface-container hover:bg-secondary-container hover:text-on-secondary-container text-on-surface-variant font-label-md text-label-md transition-all flex items-center gap-1.5 text-left" data-query="Summarize lecture notes for AVL Trees" type="button">
-                  <span>Summarize lecture notes for AVL Trees</span>
-                  <span class="material-symbols-outlined text-[14px]">arrow_outward</span>
-                </button>
+                <button class="query-chip px-3 py-1.5 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface-variant font-label-md text-label-md transition-all" data-query="Show my connected academic information" type="button">Show my academic information</button>
+                <button class="query-chip px-3 py-1.5 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface-variant font-label-md text-label-md transition-all" data-query="What is my timetable?" type="button">What is my timetable?</button>
+                <button class="query-chip px-3 py-1.5 rounded-full bg-surface-container hover:bg-secondary-container text-on-surface-variant font-label-md text-label-md transition-all" data-query="Show my attendance" type="button">Show my attendance</button>
               </div>
             </div>
-          </div>
 
           <!-- BOTTOM COMPOSER & GROUNDING FOOTER -->
           <div class="px-space-md lg:px-space-xl pb-space-sm pt-space-xs bg-surface-container-lowest">
@@ -473,7 +231,7 @@ export function renderAiAssistant(container, initialQuery = null) {
                 <span class="material-symbols-outlined text-[18px] text-primary">auto_stories</span>
                 Quick Resources
               </span>
-              <span class="font-label-sm text-label-sm text-outline">Fall 2024</span>
+              <span class="font-label-sm text-label-sm text-outline">Live academic data</span>
             </div>
             <p class="font-body-sm text-body-sm text-on-surface-variant text-[12px]">
               Direct authoritative files currently referenced in this conversation.
@@ -498,7 +256,7 @@ export function renderAiAssistant(container, initialQuery = null) {
                 <span class="material-symbols-outlined text-error text-[20px]">menu_book</span>
                 <div class="flex flex-col min-w-0">
                   <span class="font-label-sm text-label-sm font-semibold text-on-surface truncate">CS-204 Syllabus PDF</span>
-                  <span class="font-body-sm text-[11px] text-outline">Prof. Alan Vance</span>
+                  <span class="font-body-sm text-[11px] text-outline">Assigned faculty</span>
                 </div>
               </div>
               <span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors">open_in_new</span>
@@ -605,7 +363,7 @@ function initAiAssistantEvents(initialQuery) {
         showToast("Voice mode active. Speak your campus query...", "info");
         setTimeout(() => {
           if (isRecording) {
-            input.value = "What is my next class and what topics are being covered according to the syllabus?";
+            input.value = "";
             micButton.classList.remove('text-error', 'animate-pulse');
             isRecording = false;
             showToast("Transcribed voice query successfully.", "success");
@@ -638,25 +396,12 @@ function initAiAssistantEvents(initialQuery) {
         // Keep header and clear messages
         const initialHtml = `
           <div class="max-w-3xl mx-auto flex items-center justify-center">
-            <div class="inline-flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full text-on-surface-variant font-label-sm text-label-sm shadow-sm">
-              <span class="material-symbols-outlined text-[16px] text-tertiary">history_edu</span>
-              <span>New Academic Session Started • Fall 2024 • Timetable &amp; Syllabus Active</span>
+            <div class="inline-flex items-center gap-2 px-3 py-2 bg-surface-container-low rounded-full text-on-surface-variant font-label-sm text-label-sm shadow-sm">
+              <span class="material-symbols-outlined text-[16px] text-primary">auto_awesome</span>
+              <span>New conversation started. Ask about your connected campus data.</span>
             </div>
           </div>
-          <div class="flex items-start gap-space-sm max-w-3xl mx-auto animate-fade-in">
-            <div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
-              <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
-            </div>
-            <div class="flex flex-col flex-1 min-w-0">
-              <div class="bg-surface-container-low text-on-surface rounded-2xl rounded-tl-none p-space-md space-y-space-sm shadow-sm">
-                <p class="font-body-md text-body-md leading-relaxed">
-                  Hello Sophia! I am your <strong>AI Campus Copilot</strong>. How can I assist you with your classes, timetable, notices, or academic policies today?
-                </p>
-              </div>
-              <span class="font-label-sm text-[11px] text-outline mt-1 px-1">Just now • AI Copilot</span>
-            </div>
-          </div>
-        `;
+        `
         chatStream.innerHTML = initialHtml;
         showToast("New conversation started", "success");
         input.value = '';
@@ -1033,7 +778,7 @@ function setupDelegatedButtons(container) {
   // Route buttons
   container.querySelectorAll('.route-btn').forEach(btn => {
     btn.onclick = () => {
-      const room = btn.getAttribute('data-room') || 'Turing Hall';
+      const room = btn.getAttribute('data-room') || 'Assigned location';
       window.location.hash = '#campus-guide';
       showToast(`Showing route to: ${room}`, 'info');
     };
