@@ -110,3 +110,61 @@ html, body {
   pointer-events: auto;
   animation: fadeIn 0.25s ease-out;
 }
+
+
+/* Demo Theme — Orange & White */
+:root {
+  --demo-orange: #f97316;
+  --demo-orange-dark: #ea580c;
+  --demo-orange-soft: #fff7ed;
+  --demo-border: #e5e7eb;
+}
+
+body {
+  background: #ffffff;
+  color: #1f2937;
+}
+
+a { color: var(--demo-orange-dark); }
+a:hover { color: var(--demo-orange); }
+
+button,
+.btn,
+button[type="submit"] {
+  border-radius: 10px;
+  transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+button:hover,
+.btn:hover,
+button[type="submit"]:hover {
+  transform: translateY(-1px);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--demo-orange) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, .14);
+}
+
+.demo-orange,
+.text-orange { color: var(--demo-orange-dark) !important; }
+
+.demo-orange-bg,
+.bg-orange { background-color: var(--demo-orange) !important; }
+
+.demo-orange-soft { background-color: var(--demo-orange-soft) !important; }
+
+.demo-border { border-color: var(--demo-border) !important; }
+
+.card,
+.dashboard-card,
+.panel,
+.notice-card,
+.stat-card {
+  border: 1px solid var(--demo-border);
+  border-radius: 14px;
+}
+
