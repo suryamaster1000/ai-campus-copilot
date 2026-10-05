@@ -1,0 +1,244 @@
+import { supabase } from '../supabase.js';
+import { showToast } from '../components/toast.js';
+
+const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
+const SECTIONS = Array.from({ length: 8 }, (_, index) => 'CSM' + (index + 1));
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[ch]));
+}
+
+export async function renderAdminTeachers(mount) {
+  if (!mount) return;
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const isOwner = user?.id === OWNER_USER_ID;
+
+  if (!isOwner) {
+    mount.innerHTML = '';
+    return;
+  }
+
+  const quick = document.getElementById('ownerTeacherQuick');
+  quick?.classList.remove('hidden');
+
+  const manager = document.getElementById('adminTeacherManagement');
+  manager?.classList.remove('hidden');
+
+  mount.innerHTML = `
+    <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/30 shadow-sm">
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">school</span>
+            <h2 class="font-headline-md text-base font-bold text-on-surface">Teacher Management</h2>
+            <span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">OWNER ONLY</span>
+          </div>
+          <p class="text-xs text-on-surface-variant mt-1">Create faculty login accounts and assign each teacher to CSM1–CSM8. Teacher passwords are set by you during account creation and are not displayed afterward.</p>
+        </div>
+        <button id="refreshTeachersBtn" type="button" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">
+          <span class="material-symbols-outlined text-[17px]">refresh</span>
+          Refresh
+        </button>
+      </div>
+
+      <div class="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+        <form id="createTeacherForm" class="rounded-2xl bg-surface-container-low border border-surface-container-high p-4 space-y-3">
+          <div>
+            <div class="text-sm font-extrabold text-on-surface">Add Teacher</div>
+            <div class="text-[11px] text-on-surface-variant mt-1">The username is the teacher's email address used at Faculty Login.</div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Teacher Name</label>
+            <input id="teacherNameInput" type="text" minlength="2" maxlength="100" required autocomplete="name"
+              class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary"
+              placeholder="e.g. Ravi Kumar">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Username / Email</label>
+            <input id="teacherEmailInput" type="email" maxlength="254" required autocomplete="username"
+              class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary"
+              placeholder="teacher@campus.edu">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Password</label>
+            <input id="teacherPasswordInput" type="password" minlength="8" maxlength="72" required autocomplete="new-password"
+              class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary"
+              placeholder="Set initial password (8+ characters)">
+            <div class="text-[10px] text-on-surface-variant mt-1">The password is sent only to the secure server-side account-creation function.</div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Assigned Section</label>
+            <select id="teacherSectionInput" required
+              class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary">
+              ${SECTIONS.map((section) => `<option value="${section}">${section}</option>`).join('')}
+            </select>
+          </div>
+
+          <button id="createTeacherBtn" type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-on-primary text-sm font-bold shadow-sm">
+            <span class="material-symbols-outlined text-[18px]">person_add</span>
+            Create Teacher Account
+          </button>
+          <div id="teacherCreateStatus" class="hidden rounded-xl px-3 py-2.5 text-xs"></div>
+        </form>
+
+        <div class="rounded-2xl bg-white border border-surface-container-high p-4">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-sm font-extrabold text-on-surface">Authorized Teachers</div>
+              <div class="text-[11px] text-on-surface-variant mt-1">Each account is restricted to its assigned section on the Faculty Portal.</div>
+            </div>
+            <span id="teacherCountBadge" class="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">0</span>
+          </div>
+          <div id="teacherList" class="mt-4 space-y-2">
+            <div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Loading teachers...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+
+  async function loadTeachers() {
+    const list = document.getElementById('teacherList');
+    const badge = document.getElementById('teacherCountBadge');
+    if (!list) return;
+
+    list.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Loading teachers...</div>';
+
+    const { data: teachers, error } = await supabase
+      .from('admin_users')
+      .select('user_id,role,assigned_section,authorized_at')
+      .in('role', ['teacher','faculty','instructor'])
+      .order('authorized_at', { ascending: true });
+
+    if (error) {
+      list.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load teacher accounts.</div>';
+      return;
+    }
+
+    const ids = (teachers || []).map((row) => row.user_id);
+    const { data: profiles } = ids.length
+      ? await supabase.from('profiles').select('id,name,email,section').in('id', ids)
+      : { data: [] };
+
+    const profileMap = new Map((profiles || []).map((profile) => [profile.id, profile]));
+    badge.textContent = String((teachers || []).length);
+
+    if (!teachers?.length) {
+      list.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No teacher accounts have been created yet.</div>';
+      return;
+    }
+
+    list.innerHTML = teachers.map((teacher) => {
+      const profile = profileMap.get(teacher.user_id) || {};
+      const section = String(teacher.assigned_section || '').trim();
+      const options = SECTIONS.map((item) =>
+        '<option value="' + esc(item) + '"' + (item === section ? ' selected' : '') + '>' + esc(item) + '</option>'
+      ).join('');
+
+      return '<div class="p-3 rounded-xl border border-surface-container-high bg-surface-container-low">' +
+        '<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">' +
+          '<div class="min-w-0">' +
+            '<div class="text-sm font-bold truncate">' + esc(profile.name || 'Teacher') + '</div>' +
+            '<div class="text-[11px] text-on-surface-variant truncate mt-1">' + esc(profile.email || teacher.user_id) + '</div>' +
+          '</div>' +
+          '<div class="flex items-center gap-2">' +
+            '<select data-teacher-section="' + esc(teacher.user_id) + '" class="px-3 py-2 rounded-lg border border-surface-container-high bg-white text-xs">' + options + '</select>' +
+            '<button data-save-teacher-section="' + esc(teacher.user_id) + '" type="button" class="px-3 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold">Save</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    list.querySelectorAll('[data-save-teacher-section]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const userId = button.dataset.saveTeacherSection;
+        const select = list.querySelector('[data-teacher-section="' + userId + '"]');
+        const section = String(select?.value || '').trim();
+
+        if (!SECTIONS.includes(section)) {
+          showToast('Choose a valid section from CSM1 to CSM8.', 'error');
+          return;
+        }
+
+        button.disabled = true;
+        button.textContent = 'Saving...';
+
+        const { error: updateError } = await supabase
+          .from('admin_users')
+          .update({ assigned_section: section })
+          .eq('user_id', userId)
+          .in('role', ['teacher','faculty','instructor']);
+
+        if (updateError) {
+          showToast(updateError.message || 'Could not update the teacher section.', 'error');
+          button.disabled = false;
+          button.textContent = 'Save';
+          return;
+        }
+
+        showToast('Teacher section updated to ' + section + '.', 'success');
+        await loadTeachers();
+      });
+    });
+  }
+
+  document.getElementById('createTeacherForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const button = document.getElementById('createTeacherBtn');
+    const status = document.getElementById('teacherCreateStatus');
+    const name = document.getElementById('teacherNameInput')?.value.trim() || '';
+    const email = document.getElementById('teacherEmailInput')?.value.trim() || '';
+    const password = document.getElementById('teacherPasswordInput')?.value || '';
+    const section = document.getElementById('teacherSectionInput')?.value || '';
+
+    if (password.length < 8) {
+      showToast('Password must be at least 8 characters.', 'error');
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = 'Creating Teacher...';
+    status.className = 'rounded-xl px-3 py-2.5 text-xs bg-blue-50 border border-blue-100 text-blue-800';
+    status.textContent = 'Creating secure Supabase login and section assignment...';
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-teacher-account', {
+        body: { name, email, password, section }
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || 'Teacher account creation failed.');
+      }
+
+      status.className = 'rounded-xl px-3 py-2.5 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800';
+      status.textContent = 'Teacher account created successfully for ' + section + '. The teacher can now use Faculty Login.';
+      form.reset();
+
+      showToast('Teacher account created.', 'success');
+      await loadTeachers();
+    } catch (error) {
+      status.className = 'rounded-xl px-3 py-2.5 text-xs bg-error-container text-on-error-container';
+      status.textContent = error?.message || 'Teacher account creation failed.';
+      showToast(status.textContent, 'error');
+    } finally {
+      button.disabled = false;
+      button.innerHTML = '<span class="material-symbols-outlined text-[18px]">person_add</span>Create Teacher Account';
+    }
+  });
+
+  document.getElementById('refreshTeachersBtn')?.addEventListener('click', loadTeachers);
+  document.getElementById('openTeacherManager')?.addEventListener('click', () => {
+    document.getElementById('adminTeacherManagement')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  await loadTeachers();
+}
