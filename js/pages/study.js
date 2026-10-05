@@ -3,10 +3,12 @@ import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 
 export function renderStudyAssistant(container) {
-  let selectedCourseCode = campusData.studyModules[0]?.code || '';
+  const studyModules = Array.isArray(campusData.studyModules) ? campusData.studyModules : [];
+  let selectedCourseCode = studyModules[0]?.code || '';
 
   function render() {
-    const course = campusData.studyModules.find(c => c.code === selectedCourseCode) || campusData.studyModules[0] || null;
+    const liveModules = Array.isArray(campusData.studyModules) ? campusData.studyModules : [];
+    const course = liveModules.find(c => c.code === selectedCourseCode) || liveModules[0] || null;
     if (!course) {
       container.innerHTML = '<div class="max-w-[1720px] mx-auto py-space-md"><div class="bg-surface-container-lowest rounded-2xl p-8 text-center border border-surface-container-high"><span class="material-symbols-outlined text-outline text-[44px]">menu_book</span><h1 class="font-headline-md text-xl font-bold text-on-surface mt-3">No course data yet</h1><p class="text-sm text-on-surface-variant mt-2">Course and syllabus information will appear after the live student data is connected.</p></div></div>';
       return;
@@ -41,7 +43,7 @@ export function renderStudyAssistant(container) {
 
         <!-- Course Tabs -->
         <div class="flex items-center gap-2 overflow-x-auto pb-1">
-          ${campusData.studyModules.map(m => `
+          ${liveModules.map(m => `
             <button class="course-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${m.code === selectedCourseCode ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant'}" data-code="${m.code}">
               <span>${m.code}</span>
               <span class="text-[11px] font-normal opacity-90">${m.name}</span>
@@ -80,7 +82,7 @@ export function renderStudyAssistant(container) {
               <div class="space-y-3">
                 <h3 class="font-label-md text-xs font-bold text-outline uppercase tracking-wider">Curriculum Modules &amp; Learning Objectives</h3>
                 <div class="space-y-2">
-                  ${course.units.map((unit, idx) => `
+                  ${(Array.isArray(course.units) && course.units.length ? course.units : [{ title: 'Syllabus details not connected yet', status: 'Live syllabus data pending' }]).map((unit, idx) => `
                     <div class="p-3.5 rounded-xl border ${unit.status.includes('Current') ? 'bg-primary-fixed/15 border-primary shadow-sm' : 'bg-surface-container-low border-surface-container-high'} flex items-center justify-between gap-3">
                       <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-lg ${unit.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : unit.status.includes('Current') ? 'bg-primary text-white' : 'bg-surface-container text-outline'} flex items-center justify-center text-xs font-bold flex-shrink-0">
@@ -120,7 +122,7 @@ export function renderStudyAssistant(container) {
                 <h3 class="font-headline-md font-bold text-base text-on-surface">AI Study Utilities</h3>
               </div>
               <div class="space-y-2">
-                ${course.aiTools.map(tool => `
+                ${(Array.isArray(course.aiTools) && course.aiTools.length ? course.aiTools : ['Ask AI about this course', 'Generate practice quiz']).map(tool => `
                   <button class="ai-tool-action-btn w-full p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container rounded-xl text-left transition-all flex items-center justify-between group" data-tool="${tool}">
                     <span class="text-xs font-semibold text-on-surface group-hover:text-on-secondary-container">${tool}</span>
                     <span class="material-symbols-outlined text-primary group-hover:text-on-secondary-container text-[18px]">arrow_forward</span>
