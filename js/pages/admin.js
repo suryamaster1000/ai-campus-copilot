@@ -103,6 +103,7 @@ export function renderAdminPanel(container) {
       <div id="adminTeacherManagement" class="space-y-space-md hidden"></div>
       <div id="adminExtraTools" class="space-y-space-md"></div>
       <div id="adminContentManagement" class="space-y-space-md"></div>
+      <div id="adminSubjectNotes" class="space-y-space-md"></div>
 
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/30 shadow-sm">
         <div class="flex items-center gap-2">
@@ -196,7 +197,7 @@ export function renderAdminPanel(container) {
       .then((module) => module.renderAdminContent(document.getElementById('adminContentManagement')))
       .catch((error) => console.error('Admin content module failed:', error));
     import('./admin-subject-notes.js?v=20261005-notes1')
-      .then((module) => module.renderSubjectNotes(document.getElementById('adminContentManagement')))
+      .then((module) => module.renderSubjectNotes(document.getElementById('adminSubjectNotes')))
       .catch((error) => console.error('Subject notes module failed:', error));
   });
 
