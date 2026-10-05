@@ -12,6 +12,7 @@ let isAdmin = false;
 let isOwner = false;
 const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
 let adminAccessReady = false;
+let authRedirectInProgress = false;
 const facultyPortalMode = new URLSearchParams(window.location.search).get('portal') === 'faculty';
 
 // Never let a slow Supabase request prevent the application shell/router from starting.
@@ -219,7 +220,7 @@ async function handleAuthSession(session) {
   if (!session?.user) {
     currentUser = null;
     adminAccessReady = false;
-    if (authReady) window.location.replace('login.html');
+    if (authReady && !authRedirectInProgress) { authRedirectInProgress = true; window.location.replace('login.html'); }
     return false;
   }
 
@@ -274,11 +275,9 @@ async function handleAuthSession(session) {
   }
 
   if (adminResult.error) {
-    console.error('Supabase admin authorization failed:', adminResult.error);
-    await supabase.auth.signOut();
-    adminAccessReady = false;
-    window.location.replace('login.html?error=auth-check');
-    return false;
+    console.warn('Supabase admin authorization query unavailable; continuing as approved student:', adminResult.error);
+    // Admin access is optional for students. Do not create a login redirect loop
+    // when the permission lookup is temporarily unavailable.
   }
 
   const adminRole = String(adminAccess?.role || '').toLowerCase();
@@ -289,7 +288,7 @@ async function handleAuthSession(session) {
   if (['teacher','faculty','instructor'].includes(adminRole) &&
       !window.location.pathname.endsWith('/teacher-dashboard.html') &&
       !window.location.pathname.endsWith('/teacher-management.html')) {
-    window.location.replace('teacher-dashboard.html');
+    if (!authRedirectInProgress) { authRedirectInProgress = true; window.location.replace('teacher-dashboard.html'); }
     return false;
   }
 
@@ -300,7 +299,7 @@ async function handleAuthSession(session) {
   if (!profile && !isAdmin) {
     await supabase.auth.signOut();
     adminAccessReady = false;
-    window.location.replace('login.html?error=not-approved');
+    if (!authRedirectInProgress) { authRedirectInProgress = true; window.location.replace('login.html?error=not-approved'); }
     return false;
   }
 
@@ -417,7 +416,7 @@ async function initializeAuth() {
     if (error) {
       console.error('Supabase session restore failed:', error);
       authReady = true;
-      window.location.replace('login.html');
+      if (!authRedirectInProgress) { authRedirectInProgress = true; window.location.replace('login.html'); }
       return false;
     }
 
@@ -425,7 +424,7 @@ async function initializeAuth() {
     authReady = true;
 
     if (!hasSession) {
-      window.location.replace('login.html');
+      if (!authRedirectInProgress) { authRedirectInProgress = true; window.location.replace('login.html'); }
       return false;
     }
 
@@ -441,7 +440,7 @@ supabase.auth.onAuthStateChange((event, session) => {
     currentUser = null;
     if (window.location.pathname.endsWith('/index.html') ||
         window.location.pathname.endsWith('/ai-campus-copilot/')) {
-      window.location.replace('login.html');
+      if (!authRedirectInProgress) { authRedirectInProgress = true; window.location.replace('login.html'); }
     }
     return;
   }
