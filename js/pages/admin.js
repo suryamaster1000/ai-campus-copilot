@@ -182,9 +182,9 @@ export function renderAdminPanel(container) {
       .select('user_id,role')
       .eq('user_id', user.id);
 
-    const canApprove = user.id === OWNER_USER_ID || (admins || []).some(a => a.role === 'owner' || a.role === 'admin');
+    const canApprove = user.id === OWNER_USER_ID || (admins || []).some(a => ['owner','admin','teacher','faculty','instructor'].includes(String(a.role || '').toLowerCase()));
     if (!canApprove) {
-      showToast('Registration approval is restricted to authorized administrators.', 'error');
+      showToast('Registration approval is restricted to authorized administrators and teachers.', 'error');
       return;
     }
 
@@ -282,13 +282,17 @@ export function renderAdminPanel(container) {
     }
 
     const owner = user.id === OWNER_USER_ID || (admins || []).some(a => a.user_id === user.id && a.role === 'owner');
+    const currentAccess = (admins || []).find(a => a.user_id === user.id);
+    const teacherAccess = ['teacher','faculty','instructor'].includes(String(currentAccess?.role || '').toLowerCase());
     const adminCanAuthorize = owner;
     if (owner) ownerBadge?.classList.remove('hidden');
     subtitle.textContent = owner
       ? 'You are the owner. Only the owner can authorize, revoke, and assign administrator accounts.'
-      : adminCanAuthorize
-        ? 'You are an authorized admin. The owner manages administrator accounts and class assignments.'
-        : 'You have Admin Panel access.';
+      : teacherAccess
+        ? 'You are an authorized teacher with admin-level campus management access. The owner manages administrator accounts.'
+        : adminCanAuthorize
+          ? 'You are an authorized admin. The owner manages administrator accounts and class assignments.'
+          : 'You have Admin Panel access.';
 
     const adminIds = new Set((admins || []).map(a => a.user_id));
     const ids = [...adminIds];
@@ -380,9 +384,9 @@ export function renderAdminPanel(container) {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    const canView = user.id === OWNER_USER_ID || access?.role === 'owner' || access?.role === 'admin';
+    const canView = user.id === OWNER_USER_ID || ['owner','admin','teacher','faculty','instructor'].includes(String(access?.role || '').toLowerCase());
     if (!canView) {
-      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Student reports are restricted to authorized administrators.</div>';
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Student reports are restricted to authorized administrators and teachers.</div>';
       if (countBadge) countBadge.textContent = '0 open';
       return;
     }
