@@ -53,9 +53,15 @@ async function start(){
  const {data:{user}}=await supabase.auth.getUser();
  if(!user){location.href='teacher-login.html';return;}
  const {data:row,error}=await supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle();
+ if(error){show('Faculty authorization could not be verified.');return;}
  const role=String(row?.role||'').toLowerCase();
  if(user.id!==OWNER && !['teacher','faculty','instructor'].includes(role)){await supabase.auth.signOut();location.href='teacher-login.html';return;}
- const section=row?.assigned_section||'CSM7';
+ const section=(row?.assigned_section||'').trim();
+ if(user.id!==OWNER && !section){
+   await supabase.auth.signOut();
+   location.href='teacher-login.html?error=no-section';
+   return;
+ }
  document.getElementById('teacherName').textContent=user.email||'Faculty';
  document.getElementById('assigned').textContent='Assigned section: '+section+' • Faculty access only';
  document.getElementById('sectionCard').textContent=section;
