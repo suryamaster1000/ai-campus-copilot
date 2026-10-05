@@ -185,7 +185,7 @@ function applyFacultyPortalMode(profile, adminAccess) {
 
   document.querySelectorAll('nav a[data-path]').forEach(link => {
     const path = link.getAttribute('data-path');
-    const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'admin-panel', 'settings'].includes(path);
+    const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'settings'].includes(path);
     link.style.display = keep ? '' : 'none';
   });
 
@@ -193,7 +193,7 @@ function applyFacultyPortalMode(profile, adminAccess) {
   if (mobileDrawer) {
     mobileDrawer.querySelectorAll('a[data-path]').forEach(link => {
       const path = link.getAttribute('data-path');
-      const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'admin-panel', 'settings'].includes(path);
+      const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'settings'].includes(path);
       link.style.display = keep ? '' : 'none';
     });
   }
@@ -477,7 +477,7 @@ import { renderAiAssistant } from './pages/ai-assistant.js?v=20261005-live4';
 import { renderTimetable } from './pages/timetable.js?v=20261003-live2';
 import { renderNotices } from './pages/notices.js?v=20261003-live2';
 import { renderStudyAssistant } from './pages/study.js?v=20261005-live2';
-import { renderCampusGuide } from './pages/campus-guide.js?v=20261003-live1';
+import { renderCampusGuide } from './pages/campus-guide.js?v=20261005-live1';
 import { renderEvents } from './pages/events.js?v=20261005-live1';
 import { renderTasks } from './pages/tasks.js?v=20261003-live1';
 import { renderSettings } from './pages/settings.js?v=20261003-live1';
@@ -593,8 +593,14 @@ function handleRoute() {
     return;
   }
 
+  if (hash === 'admin-panel' && facultyPortalMode && !isOwner) {
+    showToast('Faculty Portal is read-only. Admin management is restricted to the owner.', 'error');
+    window.location.hash = '#dashboard';
+    return;
+  }
+
   if (hash === 'admin-panel' && !isAdmin) {
-    showToast('Admin access is restricted to authorized students.', 'error');
+    showToast('Admin access is restricted to authorized accounts.', 'error');
     window.location.hash = '#dashboard';
     return;
   }
