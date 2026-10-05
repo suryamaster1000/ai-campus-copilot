@@ -3,6 +3,7 @@ import { showToast } from '../components/toast.js';
 
 const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
+const STANDARD_SECTIONS = Array.from({ length: 8 }, (_, index) => 'CSM' + (index + 1));
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
@@ -43,9 +44,12 @@ export async function renderAdminTools(mount) {
   }
 
   const sectionResult = await supabase.from('admission_directory').select('section').limit(1000);
-  const sections = [...new Set((sectionResult.data || [])
-    .map((row) => String(row.section || '').trim())
-    .filter(Boolean))].sort();
+  const sections = [...new Set([
+    ...STANDARD_SECTIONS,
+    ...(sectionResult.data || [])
+      .map((row) => String(row.section || '').trim())
+      .filter(Boolean)
+  ])].sort();
 
   const assignedSection = String(access?.assigned_section || '').trim();
   const uploadSections = owner ? sections : (assignedSection ? [assignedSection] : []);
