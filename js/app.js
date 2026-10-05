@@ -228,7 +228,7 @@ async function handleAuthSession(session) {
 
   const adminRole = String(adminAccess?.role || '').toLowerCase();
   isOwner = isOwner || adminRole === 'owner';
-  isAdmin = isOwner || (adminAccess?.user_id === currentUser.id && ['admin'].includes(adminRole));
+  isAdmin = isOwner || (adminAccess?.user_id === currentUser.id && ['admin','teacher','faculty','instructor'].includes(adminRole));
 
   // Never create an approval record here. Only the registration/approval flow
   // or an authorized administrator should create the student's profile.
