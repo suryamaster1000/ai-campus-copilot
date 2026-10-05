@@ -10,7 +10,7 @@
 <body class="min-h-screen bg-slate-50 text-slate-900">
 <header class="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200">
   <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-    <div><div class="font-extrabold">AI Campus Copilot</div><div class="text-xs text-slate-500">Faculty Portal • Read-only</div></div>
+    <div><div class="font-extrabold">AI Campus Copilot</div><div class="text-xs text-slate-500">Faculty Portal • Teaching Workspace</div></div>
     <div class="flex items-center gap-3"><span id="teacherName" class="hidden sm:block text-sm font-semibold"></span><button id="logout" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">Logout</button></div>
   </div>
 </header>
@@ -26,24 +26,26 @@
 
   <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Assigned Section</div><div id="sectionCard" class="text-2xl font-extrabold mt-2">—</div></div>
-    <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Student Profiles</div><div id="studentCount" class="text-2xl font-extrabold mt-2">—</div></div>
-    <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Access Level</div><div class="text-2xl font-extrabold mt-2">Read-only Faculty</div></div>
-    <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Data Source</div><div class="text-2xl font-extrabold mt-2">Supabase</div></div>
+    <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Students</div><div id="studentCount" class="text-2xl font-extrabold mt-2">—</div></div>
+    <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Attendance</div><div id="attendanceRate" class="text-2xl font-extrabold mt-2">—</div></div>
+    <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Access</div><div class="text-2xl font-extrabold mt-2">Assigned Section</div></div>
   </section>
 
   <section class="grid lg:grid-cols-2 gap-5">
     <div class="bg-white rounded-2xl border border-slate-200 p-5">
-      <div class="flex justify-between items-center gap-3"><h2 class="font-extrabold">Assigned Students</h2><span class="text-xs font-bold text-blue-700">READ ONLY</span></div>
+      <div class="flex justify-between items-center gap-3"><h2 class="font-extrabold">Assigned Students</h2><span class="text-xs font-bold text-blue-700">SECTION ONLY</span></div>
       <div id="students" class="mt-4 space-y-2"><div class="text-sm text-slate-500">Loading...</div></div>
     </div>
     <div class="bg-white rounded-2xl border border-slate-200 p-5">
       <h2 class="font-extrabold">Faculty Tools</h2>
-      <p class="text-sm text-slate-500 mt-1">View connected academic information without changing campus records.</p>
+      <p class="text-sm text-slate-500 mt-1">Teaching and academic tools for the assigned section.</p>
       <div class="grid grid-cols-2 gap-3 mt-4">
         <a href="index.html?portal=faculty#ai-assistant" class="p-4 rounded-xl bg-blue-50 text-blue-800 font-bold text-sm">AI Assistant</a>
+        <a href="index.html?portal=faculty#study-assistant" class="p-4 rounded-xl bg-indigo-50 text-indigo-800 font-bold text-sm">Study Assistant</a>
         <a href="index.html?portal=faculty#timetable" class="p-4 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm">Timetable</a>
         <a href="index.html?portal=faculty#notices" class="p-4 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm">Notices</a>
         <a href="index.html?portal=faculty#events" class="p-4 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm">Events</a>
+        <a href="index.html?portal=faculty#campus-guide" class="p-4 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm">Campus Guide</a>
       </div>
     </div>
   </section>
@@ -51,34 +53,44 @@
   <section class="bg-white rounded-2xl border border-slate-200 p-5">
     <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
       <div>
-        <h2 class="font-extrabold">Attendance Viewer</h2>
-        <p class="text-sm text-slate-500 mt-1">Read-only attendance for the assigned section. This portal cannot create, edit, or delete attendance records.</p>
+        <h2 class="font-extrabold">Take Attendance</h2>
+        <p class="text-sm text-slate-500 mt-1">Mark Present or Absent for students in your assigned section. Existing records can be edited. Teachers cannot delete attendance.</p>
       </div>
-      <div class="grid sm:grid-cols-2 gap-2">
+      <div class="grid sm:grid-cols-2 gap-2 lg:min-w-[430px]">
         <div>
           <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Date</label>
           <input id="attendanceDate" type="date" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm" />
         </div>
         <div>
           <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Subject</label>
-          <select id="attendanceSubject" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm">
-            <option value="">Loading subjects...</option>
-          </select>
+          <select id="attendanceSubject" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"><option value="">Loading subjects...</option></select>
         </div>
       </div>
     </div>
     <div class="mt-4 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5">
       <div class="text-[11px] text-slate-500">Class summary</div>
-      <div id="attendanceSummary" class="text-sm font-extrabold mt-1">0 present • 0 absent • 0 total</div>
+      <div id="attendanceSummary" class="text-sm font-extrabold mt-1">Select a date and subject.</div>
     </div>
     <div id="attendanceStudents" class="mt-4 space-y-2">
-      <div class="text-sm text-slate-500">Select a date and subject to view attendance.</div>
+      <div class="text-sm text-slate-500">Select a date and subject to start attendance.</div>
     </div>
+    <div id="attendanceActions" class="hidden mt-4 flex items-center justify-end gap-2">
+      <button id="markAllPresent" type="button" class="px-4 py-2.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold">Mark All Present</button>
+      <button id="saveAttendance" type="button" class="px-5 py-2.5 rounded-xl bg-blue-700 text-white text-xs font-bold">Save Attendance</button>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="flex items-center justify-between gap-3">
+      <div><h2 class="font-extrabold">Attendance Overview</h2><p class="text-sm text-slate-500 mt-1">Subject-wise attendance percentage for your assigned section.</p></div>
+      <button id="refreshOverview" class="px-3 py-2 rounded-lg bg-slate-100 text-xs font-bold">Refresh</button>
+    </div>
+    <div id="attendanceOverview" class="mt-4 overflow-x-auto"><div class="text-sm text-slate-500">Loading...</div></div>
   </section>
 
   <section class="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
     <h2 class="font-extrabold text-emerald-900">Faculty permissions</h2>
-    <p class="text-sm text-emerald-800 mt-1">Faculty access is controlled by Supabase and is limited to the assigned section. Administrator account management, student approval, content editing, timetable editing, and other write actions remain outside this portal.</p>
+    <p class="text-sm text-emerald-800 mt-1">Faculty can view and work with students, attendance, timetable, notices, events, study tools, AI Assistant, campus information and attendance reports for the assigned section. Access to other sections and administrator controls remains blocked.</p>
   </section>
 </main>
 
@@ -89,155 +101,127 @@ const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
 const status=document.getElementById('status');
 let assignedSection='';
 let classStudents=[];
-let attendanceStatuses=new Map();
+let attendanceRows=[];
+let subjectList=[];
+let attendanceDraft=new Map();
 
 function show(message, ok=false){
   status.textContent=message;
   status.className='rounded-xl px-4 py-3 text-sm '+(ok?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200');
 }
-function withLocalTimeout(promise,ms){
-  return Promise.race([
-    promise,
-    new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error('Request timed out after '+ms+'ms')}),ms))
-  ]);
-}
-function todayLocal(){
-  const d=new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function todayLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function timeout(p,ms=8000){return Promise.race([p,new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error('Request timed out')}),ms))]);}
 
 document.getElementById('logout').onclick=async()=>{await supabase.auth.signOut();location.href='teacher-login.html';};
 
 async function start(){
-  const userResult=await withLocalTimeout(supabase.auth.getUser(),8000);
-  const user=userResult?.data?.user;
+  const {data:{user}={}}=await timeout(supabase.auth.getUser());
   if(!user){location.href='teacher-login.html';return;}
-
-  const adminResult=await withLocalTimeout(
-    supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle(),
-    8000
-  );
-  const row=adminResult?.data;
-  const error=adminResult?.error;
-  if(error){show('Faculty authorization could not be verified: '+(error.message||'Unknown error'));return;}
-
+  const {data:row,error}=await timeout(supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle());
+  if(error){show('Faculty authorization could not be verified: '+error.message);return;}
   const role=String(row?.role||'').toLowerCase();
-  const facultyAuthorized=user.id===OWNER || ['teacher','faculty','instructor'].includes(role);
-  if(!facultyAuthorized){
-    await supabase.auth.signOut();
-    location.href='teacher-login.html';
-    return;
-  }
+  const authorized=user.id===OWNER || ['teacher','faculty','instructor'].includes(role);
+  if(!authorized){await supabase.auth.signOut();location.href='teacher-login.html';return;}
+  assignedSection=(row?.assigned_section||'').trim();
+  if(user.id!==OWNER && !assignedSection){await supabase.auth.signOut();location.href='teacher-login.html?error=no-section';return;}
 
-  const section=(row?.assigned_section||'').trim();
-  if(user.id!==OWNER && !section){
-    await supabase.auth.signOut();
-    location.href='teacher-login.html?error=no-section';
-    return;
-  }
-
-  assignedSection=section;
   document.getElementById('teacherName').textContent=user.email||'Faculty';
-  document.getElementById('assigned').textContent='Assigned section: '+section+' • Read-only Supabase data';
-  document.getElementById('sectionCard').textContent=section;
+  document.getElementById('assigned').textContent='Assigned section: '+assignedSection+' • Teaching access enabled';
+  document.getElementById('sectionCard').textContent=assignedSection;
+  document.getElementById('attendanceDate').value=todayLocal();
+  document.getElementById('attendanceDate').max=todayLocal();
 
-  const profileResult=await withLocalTimeout(
-    supabase.from('profiles').select('id,name,email,roll_number,section,program').eq('section',section).order('name'),
-    8000
-  );
-  const profiles=profileResult?.data;
-  const profileError=profileResult?.error;
-  if(profileError){
-    console.error('Faculty profile load failed:',profileError);
-    show('Student profiles could not be loaded: '+(profileError.message||'Supabase request timed out.'));
-    document.getElementById('students').innerHTML='<div class="text-sm text-red-600">Unable to load '+esc(section)+' student profiles.</div>';
-    document.getElementById('studentCount').textContent='0';
-    return;
-  }
-
-  classStudents=profiles||[];
-  document.getElementById('studentCount').textContent=String(classStudents.length);
-  document.getElementById('students').innerHTML=classStudents.length
-    ? classStudents.map(p=>'<div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-1">'+esc(p.roll_number||'')+(p.program?' • '+esc(p.program):'')+'</div></div>').join('')
-    : '<div class="text-sm text-slate-500">No profiles found for '+esc(section)+'.</div>';
-
-  const date=document.getElementById('attendanceDate');
-  if(date){date.value=todayLocal();date.max=todayLocal();}
-  await loadAttendanceSubjects();
+  await Promise.all([loadStudents(),loadSubjects(),loadOverview()]);
 }
 
-async function loadAttendanceSubjects(){
+async function loadStudents(){
+  const {data,error}=await timeout(supabase.from('profiles').select('id,name,email,roll_number,section,program,term,cgpa').eq('section',assignedSection).order('name'));
+  if(error){show('Student profiles could not be loaded: '+error.message);return;}
+  classStudents=data||[];
+  document.getElementById('studentCount').textContent=String(classStudents.length);
+  renderStudents();
+}
+function renderStudents(){
+  document.getElementById('students').innerHTML=classStudents.length
+    ? classStudents.map(p=>'<button type="button" data-student="'+esc(p.id)+'" class="studentRow w-full text-left p-3 rounded-xl bg-slate-50 border border-slate-200 hover:bg-blue-50 transition"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-1">'+esc(p.roll_number||'')+(p.program?' • '+esc(p.program):'')+'</div><div class="text-[11px] text-slate-400 mt-1">Term '+esc(p.term||'—')+' • CGPA '+esc(p.cgpa||'—')+'</div></button>').join('')
+    : '<div class="text-sm text-slate-500">No students found for '+esc(assignedSection)+'.</div>';
+  document.querySelectorAll('.studentRow').forEach(btn=>btn.onclick=()=>{const p=classStudents.find(x=>x.id===btn.dataset.student);if(p)alert('Student: '+(p.name||'Student')+'\nEmail: '+(p.email||'—')+'\nRoll: '+(p.roll_number||'—')+'\nProgram: '+(p.program||'—')+'\nTerm: '+(p.term||'—')+'\nCGPA: '+(p.cgpa||'—')+'\nSection: '+(p.section||'—'));});
+}
+
+async function loadSubjects(){
+  const {data,error}=await timeout(supabase.from('timetable').select('subject_id,subjects(id,name,code)').eq('section',assignedSection).not('subject_id','is',null));
+  if(error){show('Subjects could not be loaded: '+error.message);return;}
+  const seen=new Set();subjectList=[];
+  for(const row of data||[]){const s=Array.isArray(row.subjects)?row.subjects[0]:row.subjects;if(s&&!seen.has(s.id)){seen.add(s.id);subjectList.push(s);}}
   const select=document.getElementById('attendanceSubject');
-  if(!select)return;
-  const {data,error}=await supabase.from('timetable').select('subject_id,subjects(id,name,code)').eq('section',assignedSection).not('subject_id','is',null);
-  if(error){
-    select.innerHTML='<option value="">Unable to load subjects</option>';
-    show(error.message||'Unable to load subjects.');
-    return;
-  }
-  const seen=new Set();
-  const subjects=[];
-  for(const row of (data||[])){
-    const s=Array.isArray(row.subjects)?row.subjects[0]:row.subjects;
-    if(!s||seen.has(s.id))continue;
-    seen.add(s.id);
-    subjects.push(s);
-  }
-  select.innerHTML=subjects.length
-    ? '<option value="">Select a subject...</option>'+subjects.map(s=>'<option value="'+esc(s.id)+'">'+esc((s.code?s.code+' — ':'')+(s.name||'Subject'))+'</option>').join('')
-    : '<option value="">No timetable subjects found for '+esc(assignedSection)+'</option>';
+  select.innerHTML=subjectList.length?'<option value="">Select a subject...</option>'+subjectList.map(s=>'<option value="'+esc(s.id)+'">'+esc((s.code?s.code+' — ':'')+(s.name||'Subject'))+'</option>').join(''):'<option value="">No subjects found</option>';
 }
 
 async function loadAttendanceForSelection(){
-  const date=document.getElementById('attendanceDate')?.value;
-  const subjectId=document.getElementById('attendanceSubject')?.value;
+  const date=document.getElementById('attendanceDate').value;
+  const subjectId=document.getElementById('attendanceSubject').value;
   const box=document.getElementById('attendanceStudents');
-  const summary=document.getElementById('attendanceSummary');
-
-  if(!date||!subjectId){
-    attendanceStatuses=new Map();
-    if(box)box.innerHTML='<div class="text-sm text-slate-500">Select a date and subject to view attendance.</div>';
-    if(summary)summary.textContent='0 present • 0 absent • '+classStudents.length+' students';
-    return;
-  }
-
-  const {data,error}=await supabase.from('attendance')
-    .select('user_id,status')
-    .eq('section',assignedSection)
-    .eq('subject_id',subjectId)
-    .eq('attendance_date',date);
-
-  if(error){
-    show(error.message||'Unable to load attendance.');
-    return;
-  }
-
-  attendanceStatuses=new Map((data||[]).map(r=>[r.user_id,String(r.status||'').toLowerCase()]));
-  const present=classStudents.filter(p=>attendanceStatuses.get(p.id)==='present').length;
-  const absent=classStudents.filter(p=>attendanceStatuses.get(p.id)==='absent').length;
-  const total=classStudents.length;
-  if(summary)summary.textContent=present+' present • '+absent+' absent • '+total+' total';
-
-  if(box){
-    box.innerHTML=classStudents.length
-      ? classStudents.map(p=>{
-          const value=attendanceStatuses.get(p.id)||'not recorded';
-          const badge=value==='present'
-            ? '<span class="px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">Present</span>'
-            : value==='absent'
-              ? '<span class="px-2 py-1 rounded-full bg-red-100 text-red-800 text-[10px] font-bold">Absent</span>'
-              : '<span class="px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">Not recorded</span>';
-          return '<div class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50">'+
-            '<div class="min-w-0"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-0.5">'+esc(p.roll_number||'')+'</div></div>'+badge+
-          '</div>';
-        }).join('')
-      : '<div class="text-sm text-slate-500">No students found for this section.</div>';
-  }
+  const actions=document.getElementById('attendanceActions');
+  if(!date||!subjectId){box.innerHTML='<div class="text-sm text-slate-500">Select a date and subject to start attendance.</div>';actions.classList.add('hidden');return;}
+  const {data,error}=await timeout(supabase.from('attendance').select('id,user_id,status,marked_by,marked_at,classes_held,classes_attended').eq('section',assignedSection).eq('subject_id',subjectId).eq('attendance_date',date));
+  if(error){show('Attendance could not be loaded: '+error.message);return;}
+  attendanceRows=data||[];
+  attendanceDraft=new Map(classStudents.map(p=>[p.id,attendanceRows.find(r=>r.user_id===p.id)?.status||'present']));
+  renderAttendanceEditor();
+  actions.classList.remove('hidden');
+}
+function renderAttendanceEditor(){
+  const present=[...attendanceDraft.values()].filter(v=>v==='present').length;
+  const absent=[...attendanceDraft.values()].filter(v=>v==='absent').length;
+  document.getElementById('attendanceSummary').textContent=present+' present • '+absent+' absent • '+classStudents.length+' total';
+  document.getElementById('attendanceStudents').innerHTML=classStudents.length?classStudents.map(p=>{
+    const value=attendanceDraft.get(p.id)||'present';
+    return '<div class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50"><div class="min-w-0"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-0.5">'+esc(p.roll_number||'')+'</div></div><div class="flex gap-2"><button type="button" data-att="present" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='present'?'bg-emerald-600 text-white':'bg-emerald-100 text-emerald-800')+'">Present</button><button type="button" data-att="absent" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='absent'?'bg-red-600 text-white':'bg-red-100 text-red-800')+'">Absent</button></div></div>';
+  }).join(''):'<div class="text-sm text-slate-500">No students found.</div>';
+  document.querySelectorAll('[data-att]').forEach(b=>b.onclick=()=>{attendanceDraft.set(b.dataset.id,b.dataset.att);renderAttendanceEditor();});
 }
 
-document.getElementById('attendanceDate')?.addEventListener('change',loadAttendanceForSelection);
-document.getElementById('attendanceSubject')?.addEventListener('change',loadAttendanceForSelection);
+async function saveAttendance(){
+  const date=document.getElementById('attendanceDate').value;
+  const subjectId=document.getElementById('attendanceSubject').value;
+  if(!date||!subjectId||!classStudents.length)return;
+  const {data:{user}={}}=await supabase.auth.getUser();
+  if(!user){show('Session expired. Please log in again.');return;}
+  const existing=new Map(attendanceRows.map(r=>[r.user_id,r]));
+  const inserts=[];const updates=[];
+  for(const p of classStudents){
+    const statusValue=attendanceDraft.get(p.id)||'present';
+    const old=existing.get(p.id);
+    const payload={user_id:p.id,subject_id:subjectId,classes_held:1,classes_attended:statusValue==='present'?1:0,attendance_date:date,status:statusValue,section:assignedSection,marked_by:user.id,marked_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    if(old)updates.push({id:old.id,payload});else inserts.push(payload);
+  }
+  const button=document.getElementById('saveAttendance');button.disabled=true;button.textContent='Saving...';
+  try{
+    if(inserts.length){const {error}=await supabase.from('attendance').insert(inserts);if(error)throw error;}
+    for(const item of updates){const {error}=await supabase.from('attendance').update(item.payload).eq('id',item.id);if(error)throw error;}
+    show('Attendance saved for '+classStudents.length+' students.',true);
+    await Promise.all([loadAttendanceForSelection(),loadOverview()]);
+  }catch(e){show('Attendance was not saved: '+(e?.message||'Unknown error'));}finally{button.disabled=false;button.textContent='Save Attendance';}
+}
+
+async function loadOverview(){
+  const {data,error}=await timeout(supabase.from('attendance').select('user_id,subject_id,status,subjects(name,code)').eq('section',assignedSection));
+  if(error){document.getElementById('attendanceOverview').innerHTML='<div class="text-sm text-red-600">Unable to load attendance overview.</div>';return;}
+  const rows=data||[];
+  const total=rows.length;const present=rows.filter(r=>String(r.status).toLowerCase()==='present').length;
+  document.getElementById('attendanceRate').textContent=total?((present/total)*100).toFixed(1)+'%':'—';
+  const bySubject=new Map();
+  for(const r of rows){const s=Array.isArray(r.subjects)?r.subjects[0]:r.subjects;const key=r.subject_id;const item=bySubject.get(key)||{name:s?.name||'Subject',code:s?.code||'',total:0,present:0};item.total++;if(String(r.status).toLowerCase()==='present')item.present++;bySubject.set(key,item);}
+  const items=[...bySubject.values()];
+  document.getElementById('attendanceOverview').innerHTML=items.length?'<table class="min-w-full text-sm"><thead><tr class="text-left text-xs text-slate-500 border-b"><th class="p-3">Subject</th><th class="p-3">Classes</th><th class="p-3">Present</th><th class="p-3">Percentage</th></tr></thead><tbody>'+items.map(x=>'<tr class="border-b last:border-0"><td class="p-3 font-bold">'+esc(x.code?x.code+' — ':'')+esc(x.name)+'</td><td class="p-3">'+x.total+'</td><td class="p-3">'+x.present+'</td><td class="p-3 font-bold">'+((x.present/x.total)*100).toFixed(1)+'%</td></tr>').join('')+'</tbody></table>':'<div class="text-sm text-slate-500">No attendance records yet.</div>';
+}
+
+document.getElementById('attendanceDate').addEventListener('change',loadAttendanceForSelection);
+document.getElementById('attendanceSubject').addEventListener('change',loadAttendanceForSelection);
+document.getElementById('markAllPresent').onclick=()=>{classStudents.forEach(p=>attendanceDraft.set(p.id,'present'));renderAttendanceEditor();};
+document.getElementById('saveAttendance').onclick=saveAttendance;
+document.getElementById('refreshOverview').onclick=loadOverview;
 
 start().catch(e=>{console.error(e);show('Faculty portal could not load: '+(e?.message||'Unknown error'));});
 </script>
