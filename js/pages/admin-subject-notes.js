@@ -44,7 +44,13 @@ export async function renderSubjectNotes(mount) {
   async function loadSubjects() {
     const { data, error } = await supabase.from('subjects').select('id,name,code,term').order('term').order('code');
     if (error) { subject.innerHTML = '<option value="">Unable to load subjects</option>'; showToast(error.message, 'error'); return; }
-    const rows = isStaff && access?.assigned_subject ? (data || []).filter(s => s.id === access.assigned_subject) : (data || []);
+    if (isStaff && !access?.assigned_subject) {
+      subject.innerHTML = '<option value="">No subject assigned — contact the administrator</option>';
+      subject.disabled = true;
+      save.disabled = true;
+      return;
+    }
+    const rows = isStaff ? (data || []).filter(s => s.id === access.assigned_subject) : (data || []);
     subject.innerHTML = '<option value="">Select a subject...</option>' + rows.map(s => '<option value="'+esc(s.id)+'">'+esc((s.code ? s.code+' — ' : '')+s.name)+'</option>').join('');
     if (isStaff && access?.assigned_subject) subject.value = access.assigned_subject;
   }
@@ -72,6 +78,7 @@ export async function renderSubjectNotes(mount) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload={title:title.value.trim(),content:body.value.trim(),section:String(section.value||'').trim(),subject_id:String(subject.value||'').trim(),source_url:url.value.trim()||null,created_by:user.id};
+    if (isStaff && !access?.assigned_subject) { showToast('No subject is assigned to this teacher yet.', 'error'); return; }
     if(!payload.title||!payload.content||!payload.section||!payload.subject_id){showToast('Title, section, subject and note content are required.','error');return;}
     save.disabled=true;
     try {
