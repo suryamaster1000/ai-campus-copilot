@@ -152,7 +152,7 @@ export function renderDashboard(container) {
             </div>
 
             <div class="space-y-3">
-              ${(campusData.timetable[0]?.classes || []).map((cls, idx) => `
+              ${(todaySchedule.classes || []).map((cls, idx) => `
                 <div class="p-3.5 rounded-xl border ${cls.isCurrent ? 'bg-primary-fixed/20 border-primary shadow-sm ring-1 ring-primary/30' : 'bg-surface-container-low border-surface-container-high'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div class="flex items-start gap-3">
                     <div class="w-12 h-12 rounded-xl ${cls.isCurrent ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface'} flex flex-col items-center justify-center flex-shrink-0 font-bold">
