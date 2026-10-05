@@ -411,7 +411,7 @@ export function renderAdminPanel(container) {
     const visibleReports = (reports || []).filter(r => {
       if (user.id === OWNER_USER_ID || access?.role === 'owner') return true;
       const profile = profileMap.get(r.reporter_id);
-      return access?.role === 'admin' && access?.assigned_section && profile?.section === access.assigned_section;
+      return ['admin','teacher','faculty','instructor'].includes(String(access?.role || '').toLowerCase()) && access?.assigned_section && profile?.section === access.assigned_section;
     });
 
     const openCount = visibleReports.filter(r => r.status === 'open' || r.status === 'in_review').length;
@@ -515,7 +515,7 @@ export function renderAdminPanel(container) {
     if (!user) return;
 
     const { data: admins } = await supabase.from('admin_users').select('user_id,role').eq('user_id', user.id);
-    const canApprove = user.id === OWNER_USER_ID || (admins || []).some(a => a.role === 'owner' || a.role === 'admin');
+    const canApprove = user.id === OWNER_USER_ID || (admins || []).some(a => ['owner','admin','teacher','faculty','instructor'].includes(String(a.role || '').toLowerCase()));
     if (!canApprove) {
       body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Registration approval is restricted to authorized administrators.</div>';
       return;
