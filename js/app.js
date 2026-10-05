@@ -1,6 +1,6 @@
 // AI Campus Copilot - Main Application Controller & Router
 import { supabase } from './supabase.js';
-import { campusData } from './data.js?v=20261003-live2';
+import { campusData } from './data.js';
 import { initCommandPalette } from './components/command-palette.js?v=20261003-live1';
 import { showToast } from './components/toast.js?v=20261003-live1';
 
