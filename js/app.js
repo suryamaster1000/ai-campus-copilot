@@ -283,6 +283,16 @@ async function handleAuthSession(session) {
 
   const adminRole = String(adminAccess?.role || '').toLowerCase();
   isOwner = isOwner || adminRole === 'owner';
+
+  // Teacher/faculty accounts have a completely separate portal.
+  // Never render the student application for an authorized teacher.
+  if (['teacher','faculty','instructor'].includes(adminRole) &&
+      !window.location.pathname.endsWith('/teacher-dashboard.html') &&
+      !window.location.pathname.endsWith('/teacher-management.html')) {
+    window.location.replace('teacher-dashboard.html');
+    return false;
+  }
+
   isAdmin = isOwner || (adminAccess?.user_id === currentUser.id && ['admin','teacher','faculty','instructor'].includes(adminRole));
 
   // Never create an approval record here. Only the registration/approval flow
