@@ -62,8 +62,6 @@ export function renderAdminPanel(container) {
         </div>
       </section>
 
-      </section>
-
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/20 shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
