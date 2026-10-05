@@ -130,7 +130,8 @@ async function loadLiveCampusData(profile) {
       description: s.description || '',
       faculty: faculty?.name || 'Faculty not assigned',
       progress: 0,
-      units: []
+      units: [],
+      aiTools: []
     };
   });
 
@@ -419,7 +420,7 @@ import { renderDashboard } from './pages/dashboard.js?v=20261003-live1';
 import { renderAiAssistant } from './pages/ai-assistant.js?v=20261003-live3';
 import { renderTimetable } from './pages/timetable.js?v=20261003-live2';
 import { renderNotices } from './pages/notices.js?v=20261003-live2';
-import { renderStudyAssistant } from './pages/study.js?v=20261003-live1';
+import { renderStudyAssistant } from './pages/study.js?v=20261005-live2';
 import { renderCampusGuide } from './pages/campus-guide.js?v=20261003-live1';
 import { renderEvents } from './pages/events.js?v=20261005-live1';
 import { renderTasks } from './pages/tasks.js?v=20261003-live1';
