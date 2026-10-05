@@ -234,6 +234,7 @@ export function renderTasks(container) {
           const { data: freshTasks, error } = await supabase
             .from('tasks')
             .select('*')
+            .eq('user_id', currentUser?.id)
             .order('created_at', { ascending: false });
 
           if (error) throw error;
