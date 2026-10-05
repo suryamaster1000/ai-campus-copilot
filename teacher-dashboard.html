@@ -24,8 +24,9 @@
 
   <div id="status" class="hidden rounded-xl px-4 py-3 text-sm"></div>
 
-  <section class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  <section class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
     <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Assigned Section</div><div id="sectionCard" class="text-2xl font-extrabold mt-2">—</div></div>
+    <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Assigned Subject</div><div id="subjectCard" class="text-sm font-extrabold mt-2 leading-5">—</div></div>
     <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Students</div><div id="studentCount" class="text-2xl font-extrabold mt-2">—</div></div>
     <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Attendance</div><div id="attendanceRate" class="text-2xl font-extrabold mt-2">—</div></div>
     <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Access</div><div class="text-2xl font-extrabold mt-2">Assigned Section</div></div>
@@ -100,6 +101,8 @@ import { supabase } from './js/supabase.js';
 const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
 const status=document.getElementById('status');
 let assignedSection='';
+let assignedSubject='';
+let assignedSubjectInfo=null;
 let classStudents=[];
 let attendanceRows=[];
 let subjectList=[];
@@ -118,17 +121,21 @@ document.getElementById('logout').onclick=async()=>{await supabase.auth.signOut(
 async function start(){
   const {data:{user}={}}=await timeout(supabase.auth.getUser());
   if(!user){location.href='teacher-login.html';return;}
-  const {data:row,error}=await timeout(supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle());
+  const {data:row,error}=await timeout(supabase.from('admin_users').select('role,assigned_section,assigned_subject,subjects:assigned_subject(id,name,code)').eq('user_id',user.id).maybeSingle());
   if(error){show('Faculty authorization could not be verified: '+error.message);return;}
   const role=String(row?.role||'').toLowerCase();
   const authorized=user.id===OWNER || ['teacher','faculty','instructor'].includes(role);
   if(!authorized){await supabase.auth.signOut();location.href='teacher-login.html';return;}
   assignedSection=(row?.assigned_section||'').trim();
+  assignedSubject=(row?.assigned_subject||'').trim();
+  assignedSubjectInfo=Array.isArray(row?.subjects)?row.subjects[0]:row?.subjects;
   if(user.id!==OWNER && !assignedSection){await supabase.auth.signOut();location.href='teacher-login.html?error=no-section';return;}
 
   document.getElementById('teacherName').textContent=user.email||'Faculty';
-  document.getElementById('assigned').textContent='Assigned section: '+assignedSection+' • Teaching access enabled';
+  const subjectLabel=assignedSubjectInfo?.code ? assignedSubjectInfo.code+' — '+assignedSubjectInfo.name : (assignedSubjectInfo?.name || 'Assigned subject');
+  document.getElementById('assigned').textContent='Assigned section: '+assignedSection+' • Subject: '+subjectLabel+' • Teaching access enabled';
   document.getElementById('sectionCard').textContent=assignedSection;
+  document.getElementById('subjectCard').textContent=subjectLabel;
   document.getElementById('attendanceDate').value=todayLocal();
   document.getElementById('attendanceDate').max=todayLocal();
 
@@ -150,11 +157,20 @@ function renderStudents(){
 }
 
 async function loadSubjects(){
+  const select=document.getElementById('attendanceSubject');
+  if(assignedSubject){
+    const subject=assignedSubjectInfo;
+    subjectList=subject?[subject]:[];
+    select.innerHTML=subjectList.length
+      ? '<option value="'+esc(subject.id)+'">'+esc((subject.code?subject.code+' — ':'')+(subject.name||'Subject'))+'</option>'
+      : '<option value="">Assigned subject not found</option>';
+    if(subjectList.length) select.value=assignedSubject;
+    return;
+  }
   const {data,error}=await timeout(supabase.from('timetable').select('subject_id,subjects(id,name,code)').eq('section',assignedSection).not('subject_id','is',null));
   if(error){show('Subjects could not be loaded: '+error.message);return;}
   const seen=new Set();subjectList=[];
   for(const row of data||[]){const s=Array.isArray(row.subjects)?row.subjects[0]:row.subjects;if(s&&!seen.has(s.id)){seen.add(s.id);subjectList.push(s);}}
-  const select=document.getElementById('attendanceSubject');
   select.innerHTML=subjectList.length?'<option value="">Select a subject...</option>'+subjectList.map(s=>'<option value="'+esc(s.id)+'">'+esc((s.code?s.code+' — ':'')+(s.name||'Subject'))+'</option>').join(''):'<option value="">No subjects found</option>';
 }
 
