@@ -268,11 +268,12 @@ export function renderAdminPanel(container) {
       return;
     }
 
-    const { data: registrations, error } = await supabase
-      .from('student_registrations')
-      .select('id,student_name,admission_no,email,status')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true });
+    const { data: access } = await supabase.from('admin_users').select('role,assigned_section').eq('user_id', user.id).maybeSingle();
+    const accessRole = String(access?.role || '').toLowerCase();
+    const sectionStaff = ['teacher','faculty','instructor'].includes(accessRole);
+    let pendingQuery = supabase.from('student_registrations').select('id,student_name,admission_no,email,status,section').eq('status', 'pending').order('created_at', { ascending: true });
+    if (sectionStaff) pendingQuery = pendingQuery.eq('section', access?.assigned_section || '');
+    const { data: registrations, error } = await pendingQuery;
 
     if (error) {
       showToast(error.message || 'Unable to load pending registrations.', 'error');
@@ -811,10 +812,12 @@ export function renderAdminPanel(container) {
       return;
     }
 
-    const { data: registrations, error } = await supabase
-      .from('student_registrations')
-      .select('id,admission_no,student_name,email,section,phone,status,created_at')
-      .order('created_at', { ascending: false });
+    const access = await supabase.from('admin_users').select('role,assigned_section').eq('user_id', user.id).maybeSingle();
+    const accessRole = String(access.data?.role || '').toLowerCase();
+    const sectionStaff = ['teacher','faculty','instructor'].includes(accessRole);
+    let registrationQuery = supabase.from('student_registrations').select('id,admission_no,student_name,email,section,phone,status,created_at').order('created_at', { ascending: false });
+    if (sectionStaff) registrationQuery = registrationQuery.eq('section', access.data?.assigned_section || '');
+    const { data: registrations, error } = await registrationQuery;
 
     if (error) {
       body.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load student registrations.</div>';
