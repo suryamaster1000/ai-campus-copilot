@@ -98,7 +98,7 @@ export function renderAdminPanel(container) {
     import('./admin-tools.js?v=20261003-live1')
       .then((module) => module.renderAdminTools(document.getElementById('adminExtraTools')))
       .catch((error) => console.error('Admin tools module failed:', error));
-    import('./admin-content.js?v=20261003-live1')
+    import('./admin-content.js?v=20261005-live2')
       .then((module) => module.renderAdminContent(document.getElementById('adminContentManagement')))
       .catch((error) => console.error('Admin content module failed:', error));
   });
