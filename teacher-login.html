@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Faculty Login — AI Campus Copilot</title>
+<title>Teacher Portal Login — AI Campus Copilot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet">
@@ -21,13 +21,13 @@ body{font-family:Inter,sans-serif}.display{font-family:'Plus Jakarta Sans',sans-
       <span class="text-3xl">🎓</span>
     </div>
     <h1 class="display text-2xl font-extrabold">AI Campus Copilot</h1>
-    <p class="text-blue-100 mt-1 text-sm">Faculty & Teacher Portal</p>
+    <p class="text-blue-100 mt-1 text-sm">Teacher Portal</p>
   </div>
 
   <section class="card bg-white rounded-3xl p-7">
     <div class="mb-6">
-      <h2 class="display text-xl font-extrabold text-slate-900">Teacher Login</h2>
-      <p class="text-sm text-slate-500 mt-1">For authorized faculty accounts only.</p>
+      <h2 class="display text-xl font-extrabold text-slate-900">Teacher Portal Login</h2>
+      <p class="text-sm text-slate-500 mt-1">For authorized teacher accounts only.</p>
     </div>
 
     <div id="msg" class="hidden mb-4 rounded-xl px-4 py-3 text-sm"></div>
@@ -46,14 +46,14 @@ body{font-family:Inter,sans-serif}.display{font-family:'Plus Jakarta Sans',sans-
           placeholder="••••••••">
       </div>
       <button id="btn" class="w-full rounded-xl bg-blue-700 hover:bg-blue-800 text-white py-3 font-bold transition" type="submit">
-        Sign in to Faculty Portal
+        Sign in to Teacher Portal
       </button>
     </form>
 
     <div class="mb-5 rounded-xl bg-blue-50 border border-blue-100 p-4">
-      <div class="text-xs font-extrabold text-blue-900">Authorized Faculty Access</div>
-      <div class="text-xs text-blue-800 mt-1">Sign in with the faculty account created and authorized by the university administrator.</div>
-      <div class="text-[10px] text-blue-700 mt-2">Faculty permissions are verified through Supabase.</div>
+      <div class="text-xs font-extrabold text-blue-900">Authorized Teacher access</div>
+      <div class="text-xs text-blue-800 mt-1">Sign in with the teacher account created and authorized by the university administrator.</div>
+      <div class="text-[10px] text-blue-700 mt-2">Teacher permissions are verified through Supabase.</div>
     </div>
 
     <div class="flex items-center gap-3 my-6">
@@ -63,7 +63,7 @@ body{font-family:Inter,sans-serif}.display{font-family:'Plus Jakarta Sans',sans-
     <a href="login.html" class="block text-center text-sm font-bold text-blue-700 hover:underline">← Student / Admin Login</a>
   </section>
 
-  <p class="text-center text-xs text-blue-100/70 mt-5">AI Campus Copilot • Faculty access is controlled by Supabase</p>
+  <p class="text-center text-xs text-blue-100/70 mt-5">AI Campus Copilot • Teacher access is controlled by Supabase</p>
 </main>
 
 <script type="module">
@@ -74,7 +74,7 @@ const form = document.getElementById('form');
 const btn = document.getElementById('btn');
 const msg = document.getElementById('msg');
 const loginError = new URLSearchParams(window.location.search).get('error');
-if (loginError === 'no-section') message('Your faculty account needs an assigned section before the portal can be opened.');
+if (loginError === 'no-section') message('Your teacher account needs an assigned section before the portal can be opened.');
 
 function message(text, ok=false){
   msg.textContent=text;
@@ -97,13 +97,13 @@ form.addEventListener('submit', async (e)=>{
     email: document.getElementById('email').value.trim(),
     password: document.getElementById('password').value
   });
-  if(error){ message(error.message || 'Unable to sign in.'); btn.disabled=false; btn.textContent='Sign in to Faculty Portal'; return; }
+  if(error){ message(error.message || 'Unable to sign in.'); btn.disabled=false; btn.textContent='Sign in to Teacher Portal'; return; }
   if(!(await teacherAllowed(data.user))){
     await supabase.auth.signOut();
-    message('This account is not authorized for the Faculty Portal.');
-    btn.disabled=false; btn.textContent='Sign in to Faculty Portal'; return;
+    message('This account is not authorized for the Teacher Portal.');
+    btn.disabled=false; btn.textContent='Sign in to Teacher Portal'; return;
   }
-  message('Faculty account verified. Opening portal...', true);
+  message('teacher account verified. Opening portal...', true);
   setTimeout(()=>{ window.location.href='teacher-dashboard.html'; }, 400);
 });
 </script>
