@@ -38,7 +38,7 @@ async function loadLiveCampusData(profile) {
     supabase.from('timetable').select('id,subject_id,faculty_id,program_id,term,section,day_of_week,start_time,end_time,room,notes,subjects(name,code),faculty(name,designation)').eq('term', term).limit(200),
     examsQuery,
     supabase.from('academic_assignments').select('id,subject_id,program_id,term,title,description,due_date,submission_info,subjects(name,code)').eq('term', term).limit(100),
-    supabase.from('attendance').select('id,subject_id,classes_held,classes_attended,updated_at,subjects(name,code)').eq('user_id', currentUser.id).limit(100),
+    supabase.from('attendance').select('id,subject_id,attendance_date,status,section,marked_at,subjects(name,code)').eq('user_id', currentUser.id).order('attendance_date', { ascending: true }).limit(500),
     supabase.from('subjects').select('id,program_id,code,name,description,credits,term').eq('term', term).limit(100),
     supabase.from('faculty').select('id,name,department,designation,email,office').limit(200),
     supabase.from('campus_locations').select('id,name,category,description,building,floor,room,latitude,longitude,opening_hours,contact_info').limit(200),
@@ -114,8 +114,8 @@ async function loadLiveCampusData(profile) {
 
   const attendanceRows = attendanceRes.data || [];
   campusData.attendance = attendanceRows;
-  const held = attendanceRows.reduce((sum, r) => sum + Number(r.classes_held || 0), 0);
-  const attended = attendanceRows.reduce((sum, r) => sum + Number(r.classes_attended || 0), 0);
+  const held = attendanceRows.length;
+  const attended = attendanceRows.filter(r => String(r.status || '').toLowerCase() === 'present').length;
   campusData.student.attendanceOverall = held > 0 ? ((attended / held) * 100).toFixed(1) + '%' : '';
 
   campusData.studyModules = (subjectsRes.data || []).map(s => {
