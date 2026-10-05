@@ -6,7 +6,7 @@ export function renderEvents(container) {
   let activeFilter = "All";
   // Track registered events in session
   if (!window._registeredEvents) {
-    window._registeredEvents = new Set(["E-1"]); // Default registered to HackCampus
+    window._registeredEvents = new Set();
   }
 
   function render() {
