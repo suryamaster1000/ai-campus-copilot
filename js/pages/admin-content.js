@@ -2,6 +2,7 @@ import { supabase } from '../supabase.js';
 import { showToast } from '../components/toast.js';
 
 const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
+const STANDARD_SECTIONS = Array.from({ length: 8 }, (_, index) => 'CSM' + (index + 1));
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
@@ -74,9 +75,12 @@ export async function renderAdminContent(mount) {
     supabase.from('programs').select('id,code,name,duration_years').order('name')
   ]);
 
-  const sections = [...new Set((sectionsRes.data || [])
-    .map(r => String(r.section || '').trim())
-    .filter(Boolean))].sort();
+  const sections = [...new Set([
+    ...STANDARD_SECTIONS,
+    ...(sectionsRes.data || [])
+      .map(r => String(r.section || '').trim())
+      .filter(Boolean)
+  ])].sort();
 
   const assignedSection = String(access?.assigned_section || '').trim();
   const allowedSections = owner ? sections : (assignedSection ? [assignedSection] : []);
