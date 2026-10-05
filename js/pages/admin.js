@@ -14,6 +14,13 @@ export function renderAdminPanel(container) {
           <h1 class="font-headline-md text-xl lg:text-2xl font-bold text-on-surface">Admin Panel</h1>
         </div>
         <p class="text-xs text-on-surface-variant mt-1">Live administration. No demo campus records are loaded.</p>
+        <div id="ownerTeacherQuick" class="hidden mt-4">
+          <button id="openTeacherManager" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold shadow-sm">
+            <span class="material-symbols-outlined text-[17px]">school</span>
+            Manage Teachers
+          </button>
+          <span class="text-[11px] text-on-surface-variant ml-2">Create teacher login accounts and assign CSM1–CSM8</span>
+        </div>
       </div>
 
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
@@ -75,6 +82,7 @@ export function renderAdminPanel(container) {
         </div>
       </section>
 
+      <div id="adminTeacherManagement" class="space-y-space-md hidden"></div>
       <div id="adminExtraTools" class="space-y-space-md"></div>
       <div id="adminContentManagement" class="space-y-space-md"></div>
 
@@ -118,7 +126,10 @@ export function renderAdminPanel(container) {
     loadStudentReports().catch((error) => {
       console.error('Student reports failed:', error);
     });
-    import('./admin-tools.js?v=20261003-live1')
+    import('./admin-teachers.js?v=20261005-teachers1')
+      .then((module) => module.renderAdminTeachers(document.getElementById('adminTeacherManagement')))
+      .catch((error) => console.error('Admin teachers module failed:', error));
+    import('./admin-tools.js?v=20261005-tools1')
       .then((module) => module.renderAdminTools(document.getElementById('adminExtraTools')))
       .catch((error) => console.error('Admin tools module failed:', error));
     import('./admin-content.js?v=20261005-live3')
