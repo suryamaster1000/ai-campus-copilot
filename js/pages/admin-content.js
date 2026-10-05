@@ -22,6 +22,31 @@ function localDateTimeValue(value) {
     'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
+function expiryFromChoice(choice, customValue, baseValue = new Date()) {
+  if (choice === 'none') return null;
+  if (choice === 'custom') {
+    if (!customValue) throw new Error('Choose a custom display-until date and time.');
+    const custom = new Date(customValue);
+    if (Number.isNaN(custom.getTime()) || custom <= new Date()) {
+      throw new Error('Custom display-until date and time must be in the future.');
+    }
+    return custom.toISOString();
+  }
+  const days = Number.parseInt(String(choice).replace('d', ''), 10);
+  if (!Number.isFinite(days)) throw new Error('Choose a valid display duration.');
+  const base = new Date(baseValue);
+  if (Number.isNaN(base.getTime())) throw new Error('Choose a valid date and time.');
+  base.setDate(base.getDate() + days);
+  return base.toISOString();
+}
+
+function eventDisplayUntil(choice, customValue, startsAt, endsAt) {
+  const base = endsAt || startsAt;
+  if (!base) throw new Error('Choose the event start time before setting display duration.');
+  if (choice === 'event_end') return new Date(base).toISOString();
+  return expiryFromChoice(choice, customValue, new Date(base));
+}
+
 export async function renderAdminContent(mount) {
   if (!mount) return;
 
@@ -186,20 +211,40 @@ export async function renderAdminContent(mount) {
       select('noticeCategory','Category',
         '<option>Academic</option><option>Examinations</option><option>Placements</option><option>Facilities</option><option>General</option>',true) +
       input('noticeSource','Source URL','url') +
+      select('noticeDisplayDuration','How long should this notice be displayed?',
+        '<option value="7d">7 days</option><option value="1d">1 day</option><option value="3d">3 days</option><option value="14d">14 days</option><option value="30d">30 days</option><option value="custom">Until a specific date & time</option><option value="none">No expiry</option>',true) +
+      input('noticeDisplayUntil','Custom display-until date & time','datetime-local') +
       select('noticePublished','Publish status','<option value="true">Published</option><option value="false">Save as draft</option>',true),
       'Publish Notice',
       async (e) => {
         e.preventDefault();
+        const published = document.getElementById('noticePublished').value === 'true';
+        let expiresAt = null;
+        if (published) {
+          try {
+            expiresAt = expiryFromChoice(
+              document.getElementById('noticeDisplayDuration').value,
+              document.getElementById('noticeDisplayUntil').value
+            );
+          } catch (error) {
+            return setStatus(error.message, false);
+          }
+        }
         const payload = {
           title: document.getElementById('noticeTitle').value.trim(),
           body: document.getElementById('noticeBody').value.trim(),
           category: document.getElementById('noticeCategory').value,
           source_url: document.getElementById('noticeSource').value.trim() || null,
-          is_published: document.getElementById('noticePublished').value === 'true'
+          expires_at: expiresAt,
+          is_published: published
         };
         const { error } = await supabase.from('notices').insert(payload);
         if (error) return setStatus(error.message, false);
-        setStatus('Notice added successfully.');
+        setStatus(
+          published
+            ? (expiresAt ? 'Notice added successfully. It will automatically disappear after the selected display period.' : 'Notice added successfully with no expiry.')
+            : 'Notice saved as draft.'
+        );
         e.target.reset();
       }
     );
@@ -215,6 +260,9 @@ export async function renderAdminContent(mount) {
       input('eventType','Event type','text',true) +
       input('eventStarts','Starts at','datetime-local',true) +
       input('eventEnds','Ends at','datetime-local') +
+      select('eventDisplayDuration','How long should this event be displayed?',
+        '<option value="event_end">Until the event ends</option><option value="1d">1 day after event</option><option value="3d">3 days after event</option><option value="7d">7 days after event</option><option value="14d">14 days after event</option><option value="custom">Until a specific date & time</option>',true) +
+      input('eventDisplayUntil','Custom display-until date & time','datetime-local') +
       input('eventVenue','Venue','text',true) +
       input('eventSource','Source URL','url') +
       select('eventPublished','Publish status','<option value="true">Published</option><option value="false">Save as draft</option>',true),
@@ -223,19 +271,38 @@ export async function renderAdminContent(mount) {
         e.preventDefault();
         const start = document.getElementById('eventStarts').value;
         const end = document.getElementById('eventEnds').value;
+        const published = document.getElementById('eventPublished').value === 'true';
+        let displayUntil = null;
+        if (published) {
+          try {
+            displayUntil = eventDisplayUntil(
+              document.getElementById('eventDisplayDuration').value,
+              document.getElementById('eventDisplayUntil').value,
+              start,
+              end
+            );
+          } catch (error) {
+            return setStatus(error.message, false);
+          }
+        }
         const payload = {
           title: document.getElementById('eventTitle').value.trim(),
           description: document.getElementById('eventDescription').value.trim(),
           event_type: document.getElementById('eventType').value.trim(),
           starts_at: start ? new Date(start).toISOString() : null,
           ends_at: end ? new Date(end).toISOString() : null,
+          display_until: displayUntil,
           venue: document.getElementById('eventVenue').value.trim(),
           source_url: document.getElementById('eventSource').value.trim() || null,
-          is_published: document.getElementById('eventPublished').value === 'true'
+          is_published: published
         };
         const { error } = await supabase.from('events').insert(payload);
         if (error) return setStatus(error.message, false);
-        setStatus('Event added successfully.');
+        setStatus(
+          published
+            ? (displayUntil ? 'Event added successfully. It will automatically disappear after the selected display period.' : 'Event added successfully.')
+            : 'Event saved as draft.'
+        );
         e.target.reset();
       }
     );
