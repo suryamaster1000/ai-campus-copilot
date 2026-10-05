@@ -421,8 +421,9 @@ async function allowUser(user) {
     error: adminError
   } = await supabase
     .from('admin_users')
-    .select('user_id')
+    .select('user_id,role')
     .eq('user_id', user.id)
+    .in('role', ['owner', 'admin'])
     .maybeSingle();
 
 
