@@ -185,7 +185,7 @@ function applyFacultyPortalMode(profile, adminAccess) {
 
   document.querySelectorAll('nav a[data-path]').forEach(link => {
     const path = link.getAttribute('data-path');
-    const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'settings'].includes(path);
+    const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'settings', 'admin-panel'].includes(path);
     link.style.display = keep ? '' : 'none';
   });
 
@@ -193,7 +193,7 @@ function applyFacultyPortalMode(profile, adminAccess) {
   if (mobileDrawer) {
     mobileDrawer.querySelectorAll('a[data-path]').forEach(link => {
       const path = link.getAttribute('data-path');
-      const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'settings'].includes(path);
+      const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'settings', 'admin-panel'].includes(path);
       link.style.display = keep ? '' : 'none';
     });
   }
@@ -283,7 +283,7 @@ async function handleAuthSession(session) {
 
   const adminRole = String(adminAccess?.role || '').toLowerCase();
   isOwner = isOwner || adminRole === 'owner';
-  isAdmin = isOwner || (adminAccess?.user_id === currentUser.id && adminRole === 'admin');
+  isAdmin = isOwner || (adminAccess?.user_id === currentUser.id && ['admin','teacher','faculty','instructor'].includes(adminRole));
 
   // Never create an approval record here. Only the registration/approval flow
   // or an authorized administrator should create the student's profile.
@@ -593,8 +593,8 @@ function handleRoute() {
     return;
   }
 
-  if (hash === 'admin-panel' && facultyPortalMode && !isOwner) {
-    showToast('Faculty Portal is read-only. Admin management is restricted to the owner.', 'error');
+  if (hash === 'admin-panel' && facultyPortalMode && !isAdmin) {
+    showToast('Admin access is restricted to authorized campus staff.', 'error');
     window.location.hash = '#dashboard';
     return;
   }
