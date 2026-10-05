@@ -421,7 +421,7 @@ import { renderTimetable } from './pages/timetable.js?v=20261003-live2';
 import { renderNotices } from './pages/notices.js?v=20261003-live2';
 import { renderStudyAssistant } from './pages/study.js?v=20261003-live1';
 import { renderCampusGuide } from './pages/campus-guide.js?v=20261003-live1';
-import { renderEvents } from './pages/events.js?v=20261003-live2';
+import { renderEvents } from './pages/events.js?v=20261005-live1';
 import { renderTasks } from './pages/tasks.js?v=20261003-live1';
 import { renderSettings } from './pages/settings.js?v=20261003-live1';
 
