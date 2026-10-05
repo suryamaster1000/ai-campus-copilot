@@ -32,19 +32,18 @@
     <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Access</div><div class="text-2xl font-extrabold mt-2">Assigned Section</div></div>
   </section>
 
-  <section id="students" class="grid lg:grid-cols-2 gap-5">
+  <section id="assigned-students" class="grid lg:grid-cols-2 gap-5">
     <div class="bg-white rounded-2xl border border-slate-200 p-5">
       <div class="flex justify-between items-center gap-3"><h2 class="font-extrabold">Assigned Students</h2><span class="text-xs font-bold text-blue-700">SECTION ONLY</span></div>
       <div id="students" class="mt-4 space-y-2"><div class="text-sm text-slate-500">Loading...</div></div>
     </div>
     <div class="bg-white rounded-2xl border border-slate-200 p-5">
-      <h2 class="font-extrabold">Faculty Tools</h2>
+      <h2 class="font-extrabold">Teacher Tools</h2>
       <p class="text-sm text-slate-500 mt-1">Teaching and academic tools for the assigned section.</p>
       <div class="grid grid-cols-2 gap-3 mt-4">
         <a href="#students" class="p-4 rounded-xl bg-blue-50 text-blue-800 font-bold text-sm">Students</a>
         <a href="#attendance" class="p-4 rounded-xl bg-indigo-50 text-indigo-800 font-bold text-sm">Attendance</a>
         <a href="#subject-notes" class="p-4 rounded-xl bg-amber-50 text-amber-800 font-bold text-sm">Subject Notes</a>
-        <a href="#teacher-admin" class="p-4 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm">Manage Section</a>
         <a href="#teacher-admin" class="p-4 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm">Manage Section</a>
         <a href="#campus-tools" class="p-4 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm">Campus Tools</a>
       </div>
@@ -89,6 +88,10 @@
     <div id="attendanceOverview" class="mt-4 overflow-x-auto"><div class="text-sm text-slate-500">Loading...</div></div>
   </section>
 
+  <section id="subject-notes" class="bg-white rounded-2xl border border-amber-200 p-5">
+    <div id="teacherSubjectNotes"></div>
+  </section>
+
   <section id="teacher-admin" class="bg-white rounded-2xl border border-slate-200 p-5">
     <div class="flex items-center justify-between gap-3">
       <div><h2 class="font-extrabold">Section Management</h2><p class="text-sm text-slate-500 mt-1">Approve/remove students and add/remove teachers within your assigned section.</p></div>
@@ -98,7 +101,7 @@
   </section>
 
   <section id="campus-tools" class="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
-    <h2 class="font-extrabold text-emerald-900">Faculty permissions</h2>
+    <h2 class="font-extrabold text-emerald-900">Teacher permissions</h2>
     <p class="text-sm text-emerald-800 mt-1">Teachers have a separate portal for assigned-section teaching work. Students use the student portal separately. Teacher management, approvals, and student actions remain restricted to the assigned section.</p>
   </section>
 </main>
@@ -141,7 +144,7 @@ async function start(){
   if(user.id!==OWNER && !assignedSection){await supabase.auth.signOut();location.href='teacher-login.html?error=no-section';return;}
 
   document.getElementById('teacherName').textContent=user.email||'Faculty';
-  const subjectLabel=assignedSubjectInfo?.code ? assignedSubjectInfo.code+' — '+assignedSubjectInfo.name : (assignedSubjectInfo?.name || 'Assigned subject');
+  const subjectLabel=assignedSubjectInfo?.code ? assignedSubjectInfo.code+' — '+assignedSubjectInfo.name : (assignedSubjectInfo?.name || 'No subject assigned');
   document.getElementById('assigned').textContent='Assigned section: '+assignedSection+' • Subject: '+subjectLabel+' • Teaching access enabled';
   document.getElementById('sectionCard').textContent=assignedSection;
   document.getElementById('subjectCard').textContent=subjectLabel;
