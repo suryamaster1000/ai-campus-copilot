@@ -108,6 +108,42 @@ export function renderAdminPanel(container) {
       </section>
 
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">fact_check</span>
+              <h2 class="font-headline-md text-base font-bold text-on-surface">Admin Student Log</h2>
+              <span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">CLICK A STUDENT</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-1">Live registration and report activity connected to student profiles. This log does not invent audit events; it uses available Supabase records.</p>
+          </div>
+          <button id="refreshStudentLogBtn" type="button" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">
+            <span class="material-symbols-outlined text-[17px]">refresh</span>Refresh Log
+          </button>
+        </div>
+        <div class="mt-4">
+          <input id="studentLogSearch" type="search" maxlength="80" placeholder="Search student name, email, roll number or section..." class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">
+        </div>
+        <div id="studentLogBody" class="mt-4 space-y-2">
+          <div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Loading student activity...</div>
+        </div>
+      </section>
+
+      <div id="studentLogModal" class="fixed inset-0 z-[90] hidden items-center justify-center p-4">
+        <div data-student-log-backdrop class="absolute inset-0 bg-black/45 backdrop-blur-sm"></div>
+        <section role="dialog" aria-modal="true" aria-labelledby="studentLogModalTitle" class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-surface-container-lowest rounded-2xl border border-surface-container-high shadow-2xl">
+          <div class="p-5 border-b border-surface-container-high flex items-start justify-between gap-3">
+            <div>
+              <h3 id="studentLogModalTitle" class="text-lg font-bold text-on-surface">Student Details</h3>
+              <p class="text-xs text-on-surface-variant mt-1">Live profile data from Supabase.</p>
+            </div>
+            <button type="button" data-student-log-close class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container"><span class="material-symbols-outlined text-[20px]">close</span></button>
+          </div>
+          <div id="studentLogModalBody" class="p-5 space-y-3"></div>
+        </section>
+      </div>
+
+      <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
         <h2 class="font-headline-md text-base font-bold text-on-surface">Live Campus Data</h2>
         <p class="text-xs text-on-surface-variant mt-1">No sample notices, courses, timetable, events, or student records are stored in the frontend. Add real records through the connected data source.</p>
       </section>
@@ -125,6 +161,9 @@ export function renderAdminPanel(container) {
     });
     loadStudentReports().catch((error) => {
       console.error('Student reports failed:', error);
+    });
+    loadStudentLog().catch((error) => {
+      console.error('Student log failed:', error);
     });
     import('./admin-teachers.js?v=20261005-teachers2')
       .then((module) => module.renderAdminTeachers(document.getElementById('adminTeacherManagement')))
@@ -151,6 +190,21 @@ export function renderAdminPanel(container) {
       button.classList.remove('opacity-70');
       if (icon) icon.classList.remove('animate-spin');
     }
+  });
+
+  document.getElementById('refreshStudentLogBtn')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      await loadStudentLog();
+      showToast('Student log refreshed.', 'success');
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  document.getElementById('studentLogSearch')?.addEventListener('input', () => {
+    loadStudentLog().catch(error => console.error('Student log search failed:', error));
   });
 
   document.getElementById('refreshStudentReportsBtn')?.addEventListener('click', async (event) => {
@@ -506,6 +560,156 @@ export function renderAdminPanel(container) {
     return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
       '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
     }[ch]));
+  }
+
+  async function loadStudentLog() {
+    const body = document.getElementById('studentLogBody');
+    const searchInput = document.getElementById('studentLogSearch');
+    const modal = document.getElementById('studentLogModal');
+    const modalBody = document.getElementById('studentLogModalBody');
+    if (!body) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: access } = await supabase
+      .from('admin_users')
+      .select('role,assigned_section')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const role = String(access?.role || '').toLowerCase();
+    const canView = user.id === OWNER_USER_ID || ['owner','admin'].includes(role);
+    if (!canView) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Student log is restricted to the owner and authorized administrators.</div>';
+      return;
+    }
+
+    const [{ data: profiles, error: profileError }, { data: registrations }, { data: reports }] = await Promise.all([
+      supabase.from('profiles').select('id,name,email,roll_number,program,term,section,cgpa').order('name', { ascending: true }),
+      supabase.from('student_registrations').select('id,student_name,email,admission_no,section,status,created_at').order('created_at', { ascending: false }).limit(100),
+      supabase.from('student_reports').select('id,reporter_id,subject,category,priority,status,created_at').order('created_at', { ascending: false }).limit(100)
+    ]);
+
+    if (profileError) {
+      body.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load student profiles.</div>';
+      return;
+    }
+
+    const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+    const emailMap = new Map((profiles || []).filter(p => p.email).map(p => [String(p.email).toLowerCase(), p]));
+    const events = [];
+
+    for (const report of (reports || [])) {
+      const profile = profileMap.get(report.reporter_id);
+      events.push({
+        id: 'report-' + report.id,
+        studentId: profile?.id || '',
+        student: profile?.name || 'Student',
+        email: profile?.email || '',
+        section: profile?.section || '',
+        time: report.created_at,
+        kind: 'Report',
+        detail: report.subject || report.category || 'Student report',
+        status: report.status || 'open',
+        priority: report.priority || 'medium'
+      });
+    }
+
+    for (const registration of (registrations || [])) {
+      const profile = emailMap.get(String(registration.email || '').toLowerCase());
+      events.push({
+        id: 'registration-' + registration.id,
+        studentId: profile?.id || '',
+        student: profile?.name || registration.student_name || 'Student',
+        email: profile?.email || registration.email || '',
+        section: profile?.section || registration.section || '',
+        time: registration.created_at,
+        kind: 'Registration',
+        detail: 'Admission ' + (registration.admission_no || 'record'),
+        status: registration.status || 'pending',
+        priority: ''
+      });
+    }
+
+    const query = String(searchInput?.value || '').trim().toLowerCase();
+    const matchingProfiles = (profiles || []).filter(p => {
+      if (!query) return true;
+      return [p.name,p.email,p.roll_number,p.program,p.term,p.section].filter(Boolean).some(v => String(v).toLowerCase().includes(query));
+    });
+    const matchedIds = new Set(matchingProfiles.map(p => p.id));
+
+    const filteredEvents = events
+      .filter(e => !query || matchedIds.has(e.studentId) || [e.student,e.email,e.section,e.detail,e.kind,e.status].some(v => String(v || '').toLowerCase().includes(query)))
+      .sort((a,b) => new Date(b.time || 0) - new Date(a.time || 0));
+
+    const directoryOnly = !filteredEvents.length && matchingProfiles.length
+      ? matchingProfiles.map(p => ({
+          id: 'profile-' + p.id,
+          studentId: p.id,
+          student: p.name || 'Student',
+          email: p.email || '',
+          section: p.section || '',
+          time: '',
+          kind: 'Student',
+          detail: 'Current profile',
+          status: 'active',
+          priority: ''
+        }))
+      : [];
+
+    const rows = [...filteredEvents, ...directoryOnly].slice(0, 100);
+
+    if (!rows.length) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No student log entries match your search.</div>';
+      return;
+    }
+
+    body.innerHTML = rows.map(entry => '<button type="button" data-student-log-id="' + escReportValue(entry.studentId) + '" class="w-full text-left p-3 rounded-xl bg-surface-container-low border border-surface-container-high hover:bg-surface-container transition-colors ' + (entry.studentId ? 'cursor-pointer' : 'cursor-default') + '">' +
+      '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">' +
+        '<div class="min-w-0">' +
+          '<div class="flex flex-wrap items-center gap-2">' +
+            '<span class="text-sm font-bold truncate">' + escReportValue(entry.student) + '</span>' +
+            '<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">' + escReportValue(entry.kind) + '</span>' +
+            (entry.status ? '<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-[10px] font-bold">' + escReportValue(entry.status) + '</span>' : '') +
+          '</div>' +
+          '<div class="text-[11px] text-on-surface-variant mt-1">' + escReportValue(entry.email) + (entry.section ? ' • Section ' + escReportValue(entry.section) : '') + '</div>' +
+          '<div class="text-[11px] text-outline mt-0.5">' + escReportValue(entry.detail) + (entry.time ? ' • ' + escReportValue(new Date(entry.time).toLocaleString()) : '') + '</div>' +
+        '</div>' +
+        (entry.studentId ? '<span class="material-symbols-outlined text-primary text-[18px] shrink-0">chevron_right</span>' : '') +
+      '</div>' +
+    '</button>').join('');
+
+    const openStudent = (studentId) => {
+      if (!studentId || !modal || !modalBody) return;
+      const p = profileMap.get(studentId);
+      if (!p) {
+        showToast('The student profile is no longer available.', 'error');
+        return;
+      }
+      modalBody.innerHTML = [
+        ['Name', p.name],
+        ['Email', p.email],
+        ['Roll / Admission', p.roll_number],
+        ['Program', p.program],
+        ['Term', p.term],
+        ['Section', p.section],
+        ['CGPA', p.cgpa]
+      ].map(([label,value]) => '<div class="flex items-start justify-between gap-4 p-3 rounded-xl bg-surface-container-low border border-surface-container-high"><span class="text-[11px] font-bold uppercase tracking-wider text-outline">' + escReportValue(label) + '</span><span class="text-sm font-semibold text-on-surface text-right break-all">' + escReportValue(value || 'Not available') + '</span></div>').join('');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    };
+
+    body.querySelectorAll('[data-student-log-id]').forEach(btn => {
+      btn.addEventListener('click', () => openStudent(btn.dataset.studentLogId));
+    });
+
+    const closeStudent = () => {
+      modal?.classList.add('hidden');
+      modal?.classList.remove('flex');
+    };
+    modal?.querySelectorAll('[data-student-log-close]').forEach(btn => btn.onclick = closeStudent);
+    modal?.querySelector('[data-student-log-backdrop]')?.addEventListener('click', closeStudent);
   }
 
   async function loadStudentRegistrations() {
