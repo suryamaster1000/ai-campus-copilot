@@ -441,7 +441,7 @@
       const reason = event && event.reason;
       window.__showStartupError(reason && (reason.stack || reason.message) || String(reason || 'Unhandled promise rejection'));
     });
-    const startupImport = import('./js/app.js?v=20261003-live12');
+    const startupImport = import('./js/app.js?v=20261005-live2');
     const startupTimeout = new Promise(function (_, reject) {
       setTimeout(function () {
         reject(new Error('The application module did not finish loading within 12 seconds. This usually means a remote JavaScript dependency is blocked or unreachable.'));
