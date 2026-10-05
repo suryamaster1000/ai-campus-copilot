@@ -41,6 +41,40 @@
       </div>
     </div>
   </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+      <div>
+        <h2 class="font-extrabold">Daily Attendance</h2>
+        <p class="text-sm text-slate-500 mt-1">Mark attendance for your assigned section. Re-saving the same date and subject updates the existing class instead of duplicating it.</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button id="markAllPresent" type="button" class="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">✓ Mark All Present</button>
+        <button id="markAllAbsent" type="button" class="px-3 py-2 rounded-lg bg-slate-200 text-slate-800 text-xs font-bold">Mark All Absent</button>
+        <button id="saveAttendance" type="button" class="px-4 py-2 rounded-lg bg-blue-700 text-white text-xs font-bold">Save Attendance</button>
+      </div>
+    </div>
+    <div class="grid md:grid-cols-3 gap-3 mt-4">
+      <div>
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Date</label>
+        <input id="attendanceDate" type="date" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm" />
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Subject</label>
+        <select id="attendanceSubject" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm">
+          <option value="">Loading subjects...</option>
+        </select>
+      </div>
+      <div class="rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5">
+        <div class="text-[11px] text-slate-500">Class summary</div>
+        <div id="attendanceSummary" class="text-sm font-extrabold mt-1">0 present • 0 absent • 0 total</div>
+      </div>
+    </div>
+    <div id="attendanceStudents" class="mt-4 space-y-2">
+      <div class="text-sm text-slate-500">Select a date and subject to load students.</div>
+    </div>
+  </section>
+
   <section class="rounded-2xl bg-emerald-50 border border-emerald-200 p-5">
     <h2 class="font-extrabold text-emerald-900">Teacher permissions</h2>
     <p class="text-sm text-emerald-800 mt-1">Teachers have the same campus management powers as administrators, including viewing/editing content, timetable and events, student reports, registrations, knowledge, and Admin AI. Owner-only account administration remains restricted to the owner.</p>
@@ -76,5 +110,97 @@ async function start(){
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 document.getElementById('logout').onclick=async()=>{await supabase.auth.signOut();location.href='teacher-login.html';};
+
+function todayLocal(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+let teacherUser=null;
+let assignedSection='';
+let classStudents=[];
+let attendanceStatuses=new Map();
+
+function renderAttendanceStudents(){
+  const box=document.getElementById('attendanceStudents');
+  const summary=document.getElementById('attendanceSummary');
+  if(!box) return;
+  if(!classStudents.length){
+    box.innerHTML='<div class="text-sm text-slate-500">No students found for '+esc(assignedSection)+'.</div>';
+    if(summary) summary.textContent='0 present • 0 absent • 0 total';
+    return;
+  }
+  let present=0;
+  box.innerHTML=classStudents.map(p=>{
+    const status=attendanceStatuses.get(p.id)||'present';
+    if(status==='present') present++;
+    return '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50">'+
+      '<div class="min-w-0"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-0.5">'+esc(p.roll_number||'')+(p.program?' • '+esc(p.program):'')+'</div></div>'+
+      '<div class="flex gap-2 shrink-0">'+
+        '<button type="button" data-att-status="'+esc(p.id)+'" data-status="present" class="px-3 py-1.5 rounded-lg text-xs font-bold '+(status==='present'?'bg-emerald-600 text-white':'bg-white border border-slate-200 text-slate-700')+'">Present</button>'+
+        '<button type="button" data-att-status="'+esc(p.id)+'" data-status="absent" class="px-3 py-1.5 rounded-lg text-xs font-bold '+(status==='absent'?'bg-red-600 text-white':'bg-white border border-slate-200 text-slate-700')+'">Absent</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  if(summary) summary.textContent=present+' present • '+(classStudents.length-present)+' absent • '+classStudents.length+' total';
+  box.querySelectorAll('[data-att-status]').forEach(btn=>btn.onclick=()=>{attendanceStatuses.set(btn.dataset.attStatus,btn.dataset.status);renderAttendanceStudents();});
+}
+
+async function loadAttendanceSubjects(){
+  const select=document.getElementById('attendanceSubject');
+  if(!select) return;
+  const {data,error}=await supabase.from('timetable').select('subject_id,subjects(id,name,code)').eq('section',assignedSection).not('subject_id','is',null);
+  if(error){select.innerHTML='<option value="">Unable to load subjects</option>';show(error.message||'Unable to load subjects.');return;}
+  const seen=new Set(), subjects=[];
+  for(const row of (data||[])){const s=row.subjects;if(!s||seen.has(s.id))continue;seen.add(s.id);subjects.push(s);}
+  select.innerHTML=subjects.length?'<option value="">Select a subject...</option>'+subjects.map(s=>'<option value="'+esc(s.id)+'">'+esc((s.code?s.code+' — ':'')+(s.name||'Subject'))+'</option>').join(''):'<option value="">No timetable subjects found for '+esc(assignedSection)+'</option>';
+}
+
+async function loadAttendanceForSelection(){
+  const date=document.getElementById('attendanceDate')?.value;
+  const subjectId=document.getElementById('attendanceSubject')?.value;
+  if(!date||!subjectId){attendanceStatuses=new Map();renderAttendanceStudents();return;}
+  const {data,error}=await supabase.from('attendance').select('user_id,status').eq('section',assignedSection).eq('subject_id',subjectId).eq('attendance_date',date);
+  if(error){show(error.message||'Unable to load attendance.');return;}
+  attendanceStatuses=new Map((data||[]).map(r=>[r.user_id,String(r.status||'present').toLowerCase()]));
+  renderAttendanceStudents();
+}
+
+async function saveCurrentAttendance(){
+  const date=document.getElementById('attendanceDate')?.value;
+  const subjectId=document.getElementById('attendanceSubject')?.value;
+  const button=document.getElementById('saveAttendance');
+  if(!date||!subjectId){show('Select both a date and subject before saving.');return;}
+  if(!classStudents.length){show('No students are available for this section.');return;}
+  if(date>todayLocal()){show('Attendance date cannot be in the future.');return;}
+  button.disabled=true;button.textContent='Saving...';
+  const rows=classStudents.map(p=>({user_id:p.id,subject_id:subjectId,attendance_date:date,status:attendanceStatuses.get(p.id)||'present',section:assignedSection,marked_by:teacherUser.id,marked_at:new Date().toISOString(),classes_held:1,classes_attended:(attendanceStatuses.get(p.id)||'present')==='present'?1:0}));
+  const {error}=await supabase.from('attendance').upsert(rows,{onConflict:'user_id,subject_id,attendance_date'});
+  if(error){show(error.message||'Attendance could not be saved.');button.disabled=false;button.textContent='Save Attendance';return;}
+  show('Attendance saved for '+assignedSection+'.',true);
+  await loadAttendanceForSelection();
+  button.disabled=false;button.textContent='Save Attendance';
+}
+
+document.getElementById('markAllPresent')?.addEventListener('click',()=>{classStudents.forEach(p=>attendanceStatuses.set(p.id,'present'));renderAttendanceStudents();});
+document.getElementById('markAllAbsent')?.addEventListener('click',()=>{classStudents.forEach(p=>attendanceStatuses.set(p.id,'absent'));renderAttendanceStudents();});
+document.getElementById('attendanceDate')?.addEventListener('change',loadAttendanceForSelection);
+document.getElementById('attendanceSubject')?.addEventListener('change',loadAttendanceForSelection);
+document.getElementById('saveAttendance')?.addEventListener('click',saveCurrentAttendance);
+
+async function startAttendance(){
+  const date=document.getElementById('attendanceDate');
+  if(date){date.value=todayLocal();date.max=todayLocal();}
+  const {data:{user}}=await supabase.auth.getUser();
+  if(!user)return;
+  teacherUser=user;
+  const {data:row}=await supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle();
+  assignedSection=(row?.assigned_section||'').trim();
+  const {data:profiles,error}=await supabase.from('profiles').select('id,name,email,roll_number,section,program').eq('section',assignedSection).order('name');
+  if(error){show(error.message||'Unable to load students.');return;}
+  classStudents=profiles||[];
+  await loadAttendanceSubjects();
+  await loadAttendanceForSelection();
+}
+startAttendance().catch(e=>{console.error(e);show('Attendance manager could not load.');});
 start().catch(e=>{console.error(e);show('Faculty portal could not load.');});
 </script></body></html>
