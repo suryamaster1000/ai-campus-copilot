@@ -33,8 +33,8 @@ async function loadLiveCampusData(profile) {
   examsQuery.limit(100);
 
   const [noticesRes, eventsRes, timetableRes, examsRes, assignmentsRes, attendanceRes, subjectsRes, facultyRes, locationsRes, rulesRes] = await Promise.all([
-    supabase.from('notices').select('id,title,body,category,published_at,source_url').eq('is_published', true).order('published_at', { ascending: false }).limit(50),
-    supabase.from('events').select('id,title,description,event_type,starts_at,ends_at,venue,source_url').eq('is_published', true).order('starts_at', { ascending: true }).limit(50),
+    supabase.from('notices').select('id,title,body,category,published_at,expires_at,source_url').eq('is_published', true).order('published_at', { ascending: false }).limit(50),
+    supabase.from('events').select('id,title,description,event_type,starts_at,ends_at,display_until,venue,source_url').eq('is_published', true).order('starts_at', { ascending: true }).limit(50),
     supabase.from('timetable').select('id,subject_id,faculty_id,program_id,term,section,day_of_week,start_time,end_time,room,notes,subjects(name,code),faculty(name,designation)').eq('term', term).limit(200),
     examsQuery,
     supabase.from('academic_assignments').select('id,subject_id,program_id,term,title,description,due_date,submission_info,subjects(name,code)').eq('term', term).limit(100),
@@ -72,19 +72,24 @@ async function loadLiveCampusData(profile) {
     .sort((a,b) => orderedDays.indexOf(a[0]) - orderedDays.indexOf(b[0]))
     .map(([day, classes]) => ({ day, classes: classes.sort((a,b) => a.time.localeCompare(b.time)) }));
 
-  campusData.notices = (noticesRes.data || []).map(n => ({
-    id: n.id,
-    title: n.title,
-    category: n.category || 'Notice',
-    date: n.published_at ? new Date(n.published_at).toLocaleDateString() : 'Recently published',
-    summary: n.body || '',
-    body: n.body || '',
-    sourceUrl: n.source_url || '',
-    read: false,
-    badgeClass: 'bg-secondary-container text-on-secondary-container'
-  }));
+  const now = Date.now();
+  campusData.notices = (noticesRes.data || [])
+    .filter(n => !n.expires_at || new Date(n.expires_at).getTime() > now)
+    .map(n => ({
+      id: n.id,
+      title: n.title,
+      category: n.category || 'Notice',
+      date: n.published_at ? new Date(n.published_at).toLocaleDateString() : 'Recently published',
+      summary: n.body || '',
+      body: n.body || '',
+      sourceUrl: n.source_url || '',
+      read: false,
+      badgeClass: 'bg-secondary-container text-on-secondary-container'
+    }));
 
-  campusData.events = (eventsRes.data || []).map(e => {
+  campusData.events = (eventsRes.data || [])
+    .filter(e => !e.display_until || new Date(e.display_until).getTime() > now)
+    .map(e => {
     const start = e.starts_at ? new Date(e.starts_at) : null;
     const end = e.ends_at ? new Date(e.ends_at) : null;
     return {
