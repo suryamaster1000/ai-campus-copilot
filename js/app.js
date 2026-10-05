@@ -469,6 +469,7 @@ async function startApp() {
   initSidebar();
   initHeaderActions();
   initNotificationsDropdown();
+  initReportFeature();
   updateSidebarBadges();
 
   const palette = initCommandPalette(
@@ -571,6 +572,84 @@ function updateActiveNav(activePath) {
     } else {
       link.className = `flex items-center justify-between px-space-md py-space-sm font-label-lg text-label-lg ${inactiveClass}`;
       link.removeAttribute('aria-current');
+    }
+  });
+}
+
+
+function initReportFeature() {
+  const reportButtons = document.querySelectorAll('[data-report-button]');
+  if (!reportButtons.length) return;
+  if (document.getElementById('studentReportModal')) return;
+
+  document.body.insertAdjacentHTML('beforeend', "<div id=\"studentReportModal\" class=\"fixed inset-0 z-[80] hidden items-center justify-center p-4\"><div data-report-backdrop class=\"absolute inset-0 bg-black/45 backdrop-blur-sm\"></div><section role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"studentReportTitle\" class=\"relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-surface-container-lowest rounded-2xl border border-surface-container-high shadow-2xl\"><div class=\"p-5 border-b border-surface-container-high flex items-start justify-between gap-3\"><div><div class=\"flex items-center gap-2\"><span class=\"material-symbols-outlined text-error\">report_problem</span><h2 id=\"studentReportTitle\" class=\"text-lg font-bold text-on-surface\">Report an Issue</h2></div><p class=\"text-xs text-on-surface-variant mt-1\">Send a bug report, person-related report, or other concern to the project owner and the authorized admin for your section.</p></div><button type=\"button\" data-report-close class=\"p-2 rounded-lg text-on-surface-variant hover:bg-surface-container\"><span class=\"material-symbols-outlined text-[20px]\">close</span></button></div><form id=\"studentReportForm\" class=\"p-5 space-y-4\"><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Report type</label><select id=\"reportCategory\" required class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"><option value=\"bug\">Bug / App problem</option><option value=\"person\">Report a person</option><option value=\"content\">Report content / notice / event</option><option value=\"account\">Account / login problem</option><option value=\"other\">Other concern</option></select></div><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Subject</label><input id=\"reportSubject\" type=\"text\" maxlength=\"160\" required placeholder=\"Briefly describe the issue\" class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"></div><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Details</label><textarea id=\"reportDetails\" rows=\"6\" maxlength=\"5000\" required placeholder=\"Explain what happened, what you expected, and any useful details.\" class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"></textarea></div><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-3\"><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Page / area</label><input id=\"reportPage\" type=\"text\" maxlength=\"120\" class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"></div><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Priority</label><select id=\"reportPriority\" class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"><option value=\"low\">Low</option><option value=\"medium\" selected>Medium</option><option value=\"high\">High</option></select></div></div><div class=\"p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800\">Please do not include passwords, verification codes, API keys, or other private credentials in a report.</div><div class=\"flex items-center justify-end gap-2 pt-1\"><button type=\"button\" data-report-close class=\"px-4 py-2.5 rounded-xl bg-surface-container text-on-surface text-xs font-bold\">Cancel</button><button id=\"submitStudentReportBtn\" type=\"submit\" class=\"inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold\"><span class=\"material-symbols-outlined text-[17px]\">send</span>Send Report</button></div></form></section></div>");
+
+  const modal = document.getElementById('studentReportModal');
+  const form = document.getElementById('studentReportForm');
+  const pageInput = document.getElementById('reportPage');
+  const subjectInput = document.getElementById('reportSubject');
+  const submitButton = document.getElementById('submitStudentReportBtn');
+
+  const closeModal = () => {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  };
+
+  const openModal = () => {
+    if (!currentUser) {
+      showToast('Please sign in before sending a report.', 'error');
+      return;
+    }
+    pageInput.value = currentRoute ? currentRoute.replace(/-/g, ' ') : '';
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => subjectInput?.focus(), 0);
+  };
+
+  reportButtons.forEach(button => button.addEventListener('click', openModal));
+  modal.querySelectorAll('[data-report-close]').forEach(button => button.addEventListener('click', closeModal));
+  modal.querySelector('[data-report-backdrop]')?.addEventListener('click', closeModal);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!currentUser || submitButton.disabled) return;
+
+    const payload = {
+      reporter_id: currentUser.id,
+      category: document.getElementById('reportCategory').value,
+      subject: subjectInput.value.trim(),
+      details: document.getElementById('reportDetails').value.trim(),
+      affected_page: pageInput.value.trim() || null,
+      priority: document.getElementById('reportPriority').value,
+      status: 'open'
+    };
+
+    if (!payload.subject || !payload.details) {
+      showToast('Please enter both a subject and details.', 'error');
+      return;
+    }
+
+    submitButton.disabled = true;
+    submitButton.classList.add('opacity-70');
+    submitButton.innerHTML = '<span class="material-symbols-outlined text-[17px] animate-spin">progress_activity</span>Sending...';
+
+    try {
+      const { error } = await supabase.from('student_reports').insert(payload);
+      if (error) throw error;
+      form.reset();
+      pageInput.value = currentRoute ? currentRoute.replace(/-/g, ' ') : '';
+      closeModal();
+      showToast('Report sent to the project owner and your authorized admin.', 'success');
+    } catch (error) {
+      showToast(error?.message || 'Could not send the report.', 'error');
+    } finally {
+      submitButton.disabled = false;
+      submitButton.classList.remove('opacity-70');
+      submitButton.innerHTML = '<span class="material-symbols-outlined text-[17px]">send</span>Send Report';
     }
   });
 }
