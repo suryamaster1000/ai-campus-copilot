@@ -38,10 +38,16 @@ export function renderAdminPanel(container) {
             <span class="material-symbols-outlined text-primary">how_to_reg</span>
             <h2 class="font-headline-md text-base font-bold text-on-surface">Student Registration Approvals</h2>
           </div>
-          <button id="refreshRegistrationsBtn" type="button" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">
-            <span class="material-symbols-outlined text-[17px]">refresh</span>
-            Refresh
-          </button>
+          <div class="flex flex-wrap items-center justify-end gap-2">
+            <button id="approveAllRegistrationsBtn" type="button" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold shadow-sm">
+              <span class="material-symbols-outlined text-[17px]">done_all</span>
+              Approve & Accept All
+            </button>
+            <button id="refreshRegistrationsBtn" type="button" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">
+              <span class="material-symbols-outlined text-[17px]">refresh</span>
+              Refresh
+            </button>
+          </div>
         </div>
         <p class="text-xs text-on-surface-variant mt-1">Review verified registrations and create their Supabase student accounts. Authorized admins and the owner can approve. Only the owner can manage administrator accounts.</p>
         <div id="registrationApprovalBody" class="mt-4 space-y-2">
@@ -110,6 +116,101 @@ export function renderAdminPanel(container) {
       button.disabled = false;
       button.classList.remove('opacity-70');
       if (icon) icon.classList.remove('animate-spin');
+    }
+  });
+
+  document.getElementById('approveAllRegistrationsBtn')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const icon = button.querySelector('.material-symbols-outlined');
+    if (button.disabled) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: admins, error: adminError } = await supabase
+      .from('admin_users')
+      .select('user_id,role')
+      .eq('user_id', user.id);
+
+    const canApprove = user.id === OWNER_USER_ID || (admins || []).some(a => a.role === 'owner' || a.role === 'admin');
+    if (!canApprove) {
+      showToast('Registration approval is restricted to authorized administrators.', 'error');
+      return;
+    }
+
+    const { data: registrations, error } = await supabase
+      .from('student_registrations')
+      .select('id,student_name,admission_no,email,status')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      showToast(error.message || 'Unable to load pending registrations.', 'error');
+      return;
+    }
+
+    const pending = registrations || [];
+    if (!pending.length) {
+      showToast('There are no pending students to approve.', 'success');
+      return;
+    }
+
+    if (!window.confirm(
+      'Approve and accept all ' + pending.length + ' pending student registrations?\\n\\n' +
+      'This will create their student accounts and mark the registrations as linked. ' +
+      'The action will process students one by one.'
+    )) return;
+
+    button.disabled = true;
+    button.classList.add('opacity-70');
+    if (icon) icon.classList.add('animate-spin');
+    const refreshButton = document.getElementById('refreshRegistrationsBtn');
+    if (refreshButton) refreshButton.disabled = true;
+
+    let approved = 0;
+    let failed = 0;
+    const failedNames = [];
+
+    try {
+      for (let index = 0; index < pending.length; index += 1) {
+        const student = pending[index];
+        button.innerHTML =
+          '<span class="material-symbols-outlined text-[17px] animate-spin">progress_activity</span>' +
+          'Approving ' + (index + 1) + '/' + pending.length;
+
+        try {
+          const { data, error: invokeError } = await supabase.functions.invoke('approve-student-registration', {
+            body: { registration_id: student.id }
+          });
+
+          if (invokeError || data?.error) {
+            throw new Error(data?.error || invokeError?.message || 'Approval failed.');
+          }
+
+          approved += 1;
+        } catch (approvalError) {
+          failed += 1;
+          failedNames.push(student.student_name || student.admission_no || student.email || student.id);
+          console.error('Bulk student approval failed:', student.id, approvalError);
+        }
+      }
+
+      await loadStudentRegistrations();
+
+      if (failed === 0) {
+        showToast('Approved and accepted all ' + approved + ' students successfully.', 'success');
+      } else {
+        showToast(
+          'Approved ' + approved + ' students. ' + failed + ' failed — please review those registrations and try again.',
+          'error'
+        );
+        console.warn('Students that failed bulk approval:', failedNames);
+      }
+    } finally {
+      button.disabled = false;
+      button.classList.remove('opacity-70');
+      button.innerHTML = '<span class="material-symbols-outlined text-[17px]">done_all</span>Approve & Accept All';
+      if (refreshButton) refreshButton.disabled = false;
     }
   });
 
