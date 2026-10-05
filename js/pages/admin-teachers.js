@@ -73,12 +73,21 @@ export async function renderAdminTeachers(mount) {
             <div class="text-[10px] text-on-surface-variant mt-1">The password is sent only to the secure server-side account-creation function.</div>
           </div>
 
-          <div>
-            <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Assigned Section</label>
-            <select id="teacherSectionInput" required
-              class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary">
-              ${SECTIONS.map((section) => `<option value="${section}">${section}</option>`).join('')}
-            </select>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Assigned Section</label>
+              <select id="teacherSectionInput" required
+                class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary">
+                ${SECTIONS.map((section) => `<option value="${section}">${section}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Assigned Subject</label>
+              <select id="teacherSubjectInput" required
+                class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary">
+                <option value="">Loading subjects...</option>
+              </select>
+            </div>
           </div>
 
           <button id="createTeacherBtn" type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-on-primary text-sm font-bold shadow-sm">
@@ -113,7 +122,7 @@ export async function renderAdminTeachers(mount) {
 
     const { data: teachers, error } = await supabase
       .from('admin_users')
-      .select('user_id,role,assigned_section,authorized_at')
+      .select('user_id,role,assigned_section,assigned_subject,authorized_at,subjects:assigned_subject(id,name,code)')
       .in('role', ['teacher','faculty','instructor'])
       .order('authorized_at', { ascending: true });
 
@@ -146,6 +155,7 @@ export async function renderAdminTeachers(mount) {
           '</div>' +
           '<div class="flex items-center gap-2">' +
             '<span class="px-3 py-2 rounded-lg bg-primary-fixed text-on-primary-fixed text-xs font-bold">' + esc(section || 'Unassigned') + '</span>' +
+            '<span class="px-3 py-2 rounded-lg bg-secondary-container text-on-secondary-container text-xs font-bold">' + esc(teacher.subjects?.code ? teacher.subjects.code + ' — ' + teacher.subjects.name : teacher.subjects?.name || 'No subject') + '</span>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -163,20 +173,25 @@ export async function renderAdminTeachers(mount) {
     const email = document.getElementById('teacherEmailInput')?.value.trim() || '';
     const password = document.getElementById('teacherPasswordInput')?.value || '';
     const section = document.getElementById('teacherSectionInput')?.value || '';
+    const subjectId = document.getElementById('teacherSubjectInput')?.value || '';
 
     if (password.length < 8) {
       showToast('Password must be at least 8 characters.', 'error');
+      return;
+    }
+    if (!subjectId) {
+      showToast('Please select a subject.', 'error');
       return;
     }
 
     button.disabled = true;
     button.textContent = 'Creating Teacher...';
     status.className = 'rounded-xl px-3 py-2.5 text-xs bg-blue-50 border border-blue-100 text-blue-800';
-    status.textContent = 'Creating secure Supabase login and section assignment...';
+    status.textContent = 'Creating secure Supabase login, section and subject assignment...';
 
     try {
       const { data, error } = await supabase.functions.invoke('create-teacher-account', {
-        body: { name, email, password, section }
+        body: { name, email, password, section, subject_id: subjectId }
       });
 
       if (error || data?.error) {
@@ -184,11 +199,11 @@ export async function renderAdminTeachers(mount) {
       }
 
       status.className = 'rounded-xl px-3 py-2.5 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800';
-      status.textContent = 'Teacher account created successfully for ' + section + '. The teacher can now use Faculty Login.';
+      status.textContent = 'Teacher account created successfully for ' + section + '. The assigned subject is now restricted to this faculty account.';
       form.reset();
 
       showToast('Teacher account created.', 'success');
-      await loadTeachers();
+      await Promise.all([loadSubjects(), loadTeachers()]);
     } catch (error) {
       status.className = 'rounded-xl px-3 py-2.5 text-xs bg-error-container text-on-error-container';
       status.textContent = error?.message || 'Teacher account creation failed.';
@@ -198,6 +213,28 @@ export async function renderAdminTeachers(mount) {
       button.innerHTML = '<span class="material-symbols-outlined text-[18px]">person_add</span>Create Teacher Account';
     }
   });
+
+  async function loadSubjects() {
+    const select = document.getElementById('teacherSubjectInput');
+    if (!select) return;
+    const { data, error } = await supabase
+      .from('subjects')
+      .select('id,name,code,term')
+      .order('term', { ascending: true })
+      .order('code', { ascending: true });
+    if (error) {
+      select.innerHTML = '<option value="">Unable to load subjects</option>';
+      showToast('Subjects could not be loaded: ' + error.message, 'error');
+      return;
+    }
+    select.innerHTML = data?.length
+      ? '<option value="">Select a subject...</option>' + data.map(subject =>
+          '<option value="' + esc(subject.id) + '">' +
+          esc((subject.code ? subject.code + ' — ' : '') + (subject.name || 'Subject')) +
+          '</option>'
+        ).join('')
+      : '<option value="">No subjects found</option>';
+  }
 
   document.getElementById('refreshTeachersBtn')?.addEventListener('click', loadTeachers);
   document.getElementById('openTeacherManager')?.addEventListener('click', () => {
