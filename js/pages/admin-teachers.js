@@ -14,9 +14,14 @@ export async function renderAdminTeachers(mount) {
   if (!mount) return;
 
   const { data: { user } } = await supabase.auth.getUser();
-  const isOwner = user?.id === OWNER_USER_ID;
+  const { data: access } = user?.id
+    ? await supabase.from('admin_users').select('role,assigned_section').eq('user_id', user.id).maybeSingle()
+    : { data: null };
+  const role = String(access?.role || '').toLowerCase();
+  const isOwner = user?.id === OWNER_USER_ID || role === 'owner';
+  const isSectionStaff = ['teacher','faculty','instructor'].includes(role);
 
-  if (!isOwner) {
+  if (!isOwner && !isSectionStaff) {
     mount.innerHTML = '';
     return;
   }
@@ -34,9 +39,9 @@ export async function renderAdminTeachers(mount) {
           <div class="flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">school</span>
             <h2 class="font-headline-md text-base font-bold text-on-surface">Teacher Management</h2>
-            <span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">OWNER ONLY</span>
+            <span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">SECTION MANAGEMENT</span>
           </div>
-          <p class="text-xs text-on-surface-variant mt-1">Create faculty login accounts and assign each teacher to CSM1–CSM8. Teacher passwords are set by you during account creation and are not displayed afterward.</p>
+          <p class="text-xs text-on-surface-variant mt-1">Create faculty login accounts. Teachers can manage teacher accounts only within their assigned section; the owner can manage all sections.</p>
         </div>
         <button id="refreshTeachersBtn" type="button" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">
           <span class="material-symbols-outlined text-[17px]">refresh</span>
@@ -76,9 +81,9 @@ export async function renderAdminTeachers(mount) {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Assigned Section</label>
-              <select id="teacherSectionInput" required
+              <select id="teacherSectionInput" ${isSectionStaff ? 'disabled' : ''} required
                 class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary">
-                ${SECTIONS.map((section) => `<option value="${section}">${section}</option>`).join('')}
+                ${SECTIONS.map((section) => `<option value="${section}" ${isSectionStaff && access?.assigned_section === section ? 'selected' : ''}>${section}</option>`).join('')}
               </select>
             </div>
             <div>
@@ -131,20 +136,24 @@ export async function renderAdminTeachers(mount) {
       return;
     }
 
-    const ids = (teachers || []).map((row) => row.user_id);
+    const visibleTeachers = isSectionStaff
+      ? (teachers || []).filter(row => row.assigned_section === access?.assigned_section)
+      : (teachers || []);
+
+    const ids = visibleTeachers.map((row) => row.user_id);
     const { data: profiles } = ids.length
       ? await supabase.from('profiles').select('id,name,email,section').in('id', ids)
       : { data: [] };
 
     const profileMap = new Map((profiles || []).map((profile) => [profile.id, profile]));
-    badge.textContent = String((teachers || []).length);
+    badge.textContent = String(visibleTeachers.length);
 
-    if (!teachers?.length) {
+    if (!visibleTeachers.length) {
       list.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No teacher accounts have been created yet.</div>';
       return;
     }
 
-    list.innerHTML = teachers.map((teacher) => {
+    list.innerHTML = visibleTeachers.map((teacher) => {
       const profile = profileMap.get(teacher.user_id) || {};
       const section = String(teacher.assigned_section || '').trim();
       return '<div class="p-3 rounded-xl border border-surface-container-high bg-surface-container-low">' +
@@ -156,12 +165,29 @@ export async function renderAdminTeachers(mount) {
           '<div class="flex items-center gap-2">' +
             '<span class="px-3 py-2 rounded-lg bg-primary-fixed text-on-primary-fixed text-xs font-bold">' + esc(section || 'Unassigned') + '</span>' +
             '<span class="px-3 py-2 rounded-lg bg-secondary-container text-on-secondary-container text-xs font-bold">' + esc(teacher.subjects?.code ? teacher.subjects.code + ' — ' + teacher.subjects.name : teacher.subjects?.name || 'No subject') + '</span>' +
+            (teacher.user_id !== user?.id ? '<button type="button" data-remove-teacher="' + esc(teacher.user_id) + '" class="px-3 py-2 rounded-lg bg-error-container text-on-error-container text-xs font-bold">Remove</button>' : '') +
           '</div>' +
         '</div>' +
       '</div>';
     }).join('');
 
   }
+
+  document.querySelectorAll('[data-remove-teacher]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const teacherId = button.dataset.removeTeacher;
+      if (!teacherId || !confirm('Remove this teacher account from the campus?')) return;
+      button.disabled = true;
+      const { data, error } = await supabase.functions.invoke('remove-teacher-account', { body: { teacher_id: teacherId } });
+      if (error || data?.error) {
+        showToast(data?.error || error?.message || 'Could not remove teacher.', 'error');
+        button.disabled = false;
+        return;
+      }
+      showToast('Teacher account removed.', 'success');
+      await loadTeachers();
+    });
+  });
 
   document.getElementById('createTeacherForm')?.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -172,7 +198,7 @@ export async function renderAdminTeachers(mount) {
     const name = document.getElementById('teacherNameInput')?.value.trim() || '';
     const email = document.getElementById('teacherEmailInput')?.value.trim() || '';
     const password = document.getElementById('teacherPasswordInput')?.value || '';
-    const section = document.getElementById('teacherSectionInput')?.value || '';
+    const section = isSectionStaff ? String(access?.assigned_section || '').trim() : (document.getElementById('teacherSectionInput')?.value || '');
     const subjectId = document.getElementById('teacherSubjectInput')?.value || '';
 
     if (password.length < 8) {
