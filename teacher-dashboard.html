@@ -54,7 +54,7 @@
     <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
       <div>
         <h2 class="font-extrabold">Take Attendance</h2>
-        <p class="text-sm text-slate-500 mt-1">Mark Present or Absent for students in your assigned section. Existing records can be edited. Teachers cannot delete attendance.</p>
+        <p class="text-sm text-slate-500 mt-1">Mark Present or Absent for students in your assigned section. Existing records can be edited or deleted for your assigned section.</p>
       </div>
       <div class="grid sm:grid-cols-2 gap-2 lg:min-w-[430px]">
         <div>
@@ -177,9 +177,9 @@ function renderAttendanceEditor(){
   document.getElementById('attendanceSummary').textContent=present+' present • '+absent+' absent • '+classStudents.length+' total';
   document.getElementById('attendanceStudents').innerHTML=classStudents.length?classStudents.map(p=>{
     const value=attendanceDraft.get(p.id)||'present';
-    return '<div class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50"><div class="min-w-0"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-0.5">'+esc(p.roll_number||'')+'</div></div><div class="flex gap-2"><button type="button" data-att="present" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='present'?'bg-emerald-600 text-white':'bg-emerald-100 text-emerald-800')+'">Present</button><button type="button" data-att="absent" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='absent'?'bg-red-600 text-white':'bg-red-100 text-red-800')+'">Absent</button></div></div>';
+    return '<div class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50"><div class="min-w-0"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-0.5">'+esc(p.roll_number||'')+'</div></div><div class="flex gap-2"><button type="button" data-att="present" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='present'?'bg-emerald-600 text-white':'bg-emerald-100 text-emerald-800')+'">Present</button><button type="button" data-att="absent" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='absent'?'bg-red-600 text-white':'bg-red-100 text-red-800')+'">Absent</button><button type="button" data-delete-attendance="'+esc(p.id)+'" class="px-2 py-2 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold">Delete</button></div></div>';
   }).join(''):'<div class="text-sm text-slate-500">No students found.</div>';
-  document.querySelectorAll('[data-att]').forEach(b=>b.onclick=()=>{attendanceDraft.set(b.dataset.id,b.dataset.att);renderAttendanceEditor();});
+  document.querySelectorAll('[data-att]').forEach(b=>b.onclick=()=>{attendanceDraft.set(b.dataset.id,b.dataset.att);renderAttendanceEditor();});document.querySelectorAll('[data-delete-attendance]').forEach(b=>b.onclick=async()=>{const row=attendanceRows.find(r=>r.user_id===b.dataset.deleteAttendance);if(!row)return;if(!confirm('Delete attendance for this student?'))return;const {error}=await supabase.from('attendance').delete().eq('id',row.id);if(error){show('Attendance was not deleted: '+error.message);return;}show('Attendance deleted.',true);await loadAttendanceForSelection();await loadOverview();});
 }
 
 async function saveAttendance(){
