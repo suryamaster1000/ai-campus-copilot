@@ -472,7 +472,7 @@ export function renderAdminPanel(container) {
     }
 
     let query = supabase.from('profiles').select('id,name,email,roll_number,program,term,section').order('name', { ascending: true });
-    if (staff) query = query.eq('section', access?.assigned_section || '');
+    if (staff) query = query.eq('section', access?.assigned_section || '').neq('program', 'Faculty');
     const { data: students, error } = await query;
     if (error) {
       body.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load students: ' + escReportValue(error.message) + '</div>';
