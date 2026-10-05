@@ -270,7 +270,7 @@ async function handleAuthSession(session) {
     console.error('Supabase profile authorization failed:', profileResult.error);
     await supabase.auth.signOut();
     adminAccessReady = false;
-    window.location.replace('login.html?error=auth-check');
+    if (!authRedirectInProgress) { authRedirectInProgress = true; window.location.replace('login.html?error=auth-check'); }
     return false;
   }
 
