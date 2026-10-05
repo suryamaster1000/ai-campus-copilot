@@ -567,6 +567,25 @@ document
     }
 
 
+    /* TEACHER ACCOUNTS ALWAYS USE THE SEPARATE TEACHER PORTAL */
+    const { data: teacherAccess, error: teacherAccessError } = await supabase
+      .from('admin_users')
+      .select('user_id,role,assigned_section')
+      .eq('user_id', data.user.id)
+      .maybeSingle();
+
+    const teacherRole = String(teacherAccess?.role || '').toLowerCase();
+    if (!teacherAccessError && ['teacher','faculty','instructor'].includes(teacherRole)) {
+      if (!String(teacherAccess?.assigned_section || '').trim()) {
+        await supabase.auth.signOut();
+        hideLoading();
+        showError('Your teacher account needs an assigned section before the Teacher Portal can be opened.');
+        return;
+      }
+      window.location.href = 'teacher-dashboard.html';
+      return;
+    }
+
     /* APPROVED ACCOUNT CHECK */
 
     if (!(await allowUser(data.user))) {
