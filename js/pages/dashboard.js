@@ -83,7 +83,7 @@ export function renderDashboard(container) {
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs text-on-surface-variant">
             <span>No courses loaded</span>
-            <span class="text-amber-600 font-semibold">Add attendance data</span>
+    <span class="text-amber-600 font-semibold">No attendance recorded</span>
           </div>
         </div>
 
