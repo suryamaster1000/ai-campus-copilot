@@ -305,16 +305,43 @@ export function renderAdminPanel(container) {
         candidateHtml = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load student accounts. Check the profiles SELECT policy.</div>';
       } else {
         const candidates = (profiles || []).filter(p => !adminIds.has(p.id) && p.id !== OWNER_USER_ID);
-        candidateHtml = `<div class="pt-3 border-t border-surface-container-high"><div class="flex items-center justify-between mb-2"><h3 class="text-xs font-bold uppercase tracking-wider text-outline">Authorize another student</h3><span class="text-[10px] text-on-surface-variant">${candidates.length} available</span></div>${candidates.length ? candidates.map(p => `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 mb-2 rounded-xl border border-surface-container-high"><div class="min-w-0"><div class="text-sm font-semibold truncate">${p.name || 'Student'}</div><div class="text-[11px] text-on-surface-variant truncate">${p.email || ''}${p.section ? ' • Section ' + p.section : ''}</div></div><button data-authorize="${p.id}" class="px-3 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold">Authorize Admin</button></div>`).join('') : '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No other student accounts are available yet.</div>'}</div>`;
+        candidateHtml = `<div class="pt-3 border-t border-surface-container-high">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-outline">Authorize another student</h3>
+            <span class="text-[10px] text-on-surface-variant">${candidates.length} available</span>
+          </div>
+          ${candidates.length ? `
+            <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+              <select id="authorizeAdminStudentSelect" class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">
+                <option value="">Select a student to authorize as admin...</option>
+                ${candidates.map(p => `<option value="${p.id}">${p.name || 'Student'} — ${p.email || 'No email'}${p.section ? ' • ' + p.section : ''}</option>`).join('')}
+              </select>
+              <button id="authorizeSelectedAdminBtn" type="button" class="px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold">Authorize Admin</button>
+            </div>
+            <div class="mt-2 text-[11px] text-on-surface-variant">Choose a student from the dropdown instead of scrolling through the full list.</div>
+          ` : '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No other student accounts are available yet.</div>'}
+        </div>`;
       }
     }
 
     body.innerHTML = (rows || '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No authorized administrators.</div>') + candidateHtml;
 
-    body.querySelectorAll('[data-authorize]').forEach(btn => btn.onclick = async () => {
+    body.querySelector('#authorizeSelectedAdminBtn')?.addEventListener('click', async () => {
+      const select = body.querySelector('#authorizeAdminStudentSelect');
+      const selectedUserId = select?.value;
+      if (!selectedUserId) {
+        showToast('Select a student first.', 'error');
+        return;
+      }
+
+      const btn = body.querySelector('#authorizeSelectedAdminBtn');
       btn.disabled = true;
-      const { error: insertError } = await supabase.from('admin_users').insert({ user_id: btn.dataset.authorize, role: 'admin', authorized_by: user.id });
-      if (insertError) { showToast(insertError.message, 'error'); btn.disabled = false; return; }
+      const { error: insertError } = await supabase.from('admin_users').insert({ user_id: selectedUserId, role: 'admin', authorized_by: user.id });
+      if (insertError) {
+        showToast(insertError.message, 'error');
+        btn.disabled = false;
+        return;
+      }
       showToast('Admin account authorized.', 'success');
       await loadAdminAccessControl();
     });
@@ -494,32 +521,97 @@ export function renderAdminPanel(container) {
       return;
     }
 
-    body.innerHTML = registrations.map(r => {
-      const pending = r.status === 'pending';
-      const statusClass = r.status === 'linked'
-        ? 'bg-emerald-100 text-emerald-800'
-        : r.status === 'rejected'
-          ? 'bg-error-container text-on-error-container'
-          : 'bg-amber-100 text-amber-800';
-      return `<div data-registration-id="${r.id}" class="p-3 rounded-xl border border-surface-container-high bg-surface-container-low">
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div class="min-w-0">
-            <div class="flex flex-wrap items-center gap-2">
-              <span class="text-sm font-bold">${r.student_name || 'Student'}</span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${statusClass}">${r.status.toUpperCase()}</span>
-            </div>
-            <div class="text-[11px] text-on-surface-variant mt-1">${r.admission_no} • Section ${r.section} • ${r.email}</div>
-            ${r.phone ? `<div class="text-[11px] text-on-surface-variant mt-0.5">${r.phone}</div>` : ''}
-          </div>
-          ${pending ? `<button data-approve-registration="${r.id}" class="px-3 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold">Approve & Create Account</button>` : ''}
-        </div>
-      </div>`;
-    }).join('');
+    const pendingRegistrations = (registrations || []).filter(r => r.status === 'pending');
+    const statusCounts = (registrations || []).reduce((acc, r) => {
+      acc[r.status] = (acc[r.status] || 0) + 1;
+      return acc;
+    }, {});
 
-    body.querySelectorAll('[data-approve-registration]').forEach(btn => btn.onclick = async () => {
-      if (!confirm('Approve this verified student and create their Supabase account?')) return;
-      btn.disabled = true;
-      btn.textContent = 'Creating...';
+    if (!registrations.length) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No student registrations yet.</div>';
+      return;
+    }
+
+    const statusSummary = `<div class="flex flex-wrap gap-2 mb-3">
+      <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">${statusCounts.pending || 0} pending</span>
+      <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">${statusCounts.linked || 0} linked</span>
+      <span class="px-2.5 py-1 rounded-full bg-error-container text-on-error-container text-[10px] font-bold">${statusCounts.rejected || 0} rejected</span>
+      ${statusCounts.approved ? `<span class="px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant text-[10px] font-bold">${statusCounts.approved} approved</span>` : ''}
+    </div>`;
+
+    if (!pendingRegistrations.length) {
+      body.innerHTML = statusSummary + '<div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-sm text-emerald-800 font-semibold">There are no pending student registrations. All currently actionable students have been processed.</div>';
+      return;
+    }
+
+    body.innerHTML = statusSummary + `
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Select student to approve</label>
+          <select id="approveStudentSelect" class="w-full px-3 py-3 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary">
+            <option value="">Select a pending student...</option>
+            ${pendingRegistrations.map(r => `<option value="${r.id}">
+              ${r.student_name || 'Student'} — ${r.admission_no || 'No admission no.'} • ${r.section || 'No section'}
+            </option>`).join('')}
+          </select>
+          <div class="mt-2 text-[11px] text-on-surface-variant">Use the dropdown to switch between students without scrolling through the entire registration list.</div>
+        </div>
+        <div class="flex items-end">
+          <button id="approveSelectedRegistrationBtn" type="button" disabled class="w-full lg:w-auto px-4 py-3 rounded-xl bg-primary text-on-primary text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed">Approve & Create Account</button>
+        </div>
+      </div>
+      <div id="selectedRegistrationDetails" class="mt-3"></div>
+    `;
+
+    const registrationSelect = document.getElementById('approveStudentSelect');
+    const approveSelectedBtn = document.getElementById('approveSelectedRegistrationBtn');
+    const detailBox = document.getElementById('selectedRegistrationDetails');
+
+    const renderSelectedRegistration = () => {
+      const selectedId = registrationSelect?.value;
+      const student = pendingRegistrations.find(r => r.id === selectedId);
+      if (!student) {
+        if (detailBox) detailBox.innerHTML = '<div class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface-variant">Select a student to view their details.</div>';
+        if (approveSelectedBtn) approveSelectedBtn.disabled = true;
+        return;
+      }
+
+      if (detailBox) {
+        detailBox.innerHTML = `
+          <div class="p-4 rounded-2xl border border-primary/20 bg-surface-container-low">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-sm font-bold">${student.student_name || 'Student'}</span>
+              <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">PENDING</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-[11px]">
+              <div><span class="font-bold">Admission No:</span> ${student.admission_no || '—'}</div>
+              <div><span class="font-bold">Email:</span> ${student.email || '—'}</div>
+              <div><span class="font-bold">Section:</span> ${student.section || '—'}</div>
+              <div><span class="font-bold">Phone:</span> ${student.phone || '—'}</div>
+            </div>
+          </div>`;
+      }
+      if (approveSelectedBtn) approveSelectedBtn.disabled = false;
+    };
+
+    registrationSelect?.addEventListener('change', renderSelectedRegistration);
+    renderSelectedRegistration();
+
+    approveSelectedBtn?.addEventListener('click', async () => {
+      const registrationId = registrationSelect?.value;
+      if (!registrationId) {
+        showToast('Select a student first.', 'error');
+        return;
+      }
+
+      const selectedStudent = pendingRegistrations.find(r => r.id === registrationId);
+      if (!selectedStudent) return;
+
+      if (!confirm('Approve ' + (selectedStudent.student_name || 'this student') + ' and create their Supabase account?')) return;
+
+      approveSelectedBtn.disabled = true;
+      approveSelectedBtn.textContent = 'Creating...';
+
       let initialPassword = '';
       const { data: currentUserData } = await supabase.auth.getUser();
       const currentUser = currentUserData?.user;
@@ -527,30 +619,30 @@ export function renderAdminPanel(container) {
       if (currentUser?.id === OWNER_USER_ID) {
         const enteredPassword = window.prompt('Enter the student initial password. Leave blank to keep the normal invitation/password-setup flow:');
         if (enteredPassword === null) {
-          btn.disabled = false;
-          btn.textContent = 'Approve & Create Account';
+          approveSelectedBtn.disabled = false;
+          approveSelectedBtn.textContent = 'Approve & Create Account';
           return;
         }
         if (enteredPassword && enteredPassword.length < 8) {
           showToast('Password must be at least 8 characters.', 'error');
-          btn.disabled = false;
-          btn.textContent = 'Approve & Create Account';
+          approveSelectedBtn.disabled = false;
+          approveSelectedBtn.textContent = 'Approve & Create Account';
           return;
         }
         initialPassword = enteredPassword;
       }
 
       const { data, error: invokeError } = await supabase.functions.invoke('approve-student-registration', {
-        body: {
-          registration_id: btn.dataset.approveRegistration
-        }
+        body: { registration_id: registrationId }
       });
+
       if (invokeError || data?.error) {
         showToast(data?.error || invokeError?.message || 'Approval failed.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Approve & Create Account';
+        approveSelectedBtn.disabled = false;
+        approveSelectedBtn.textContent = 'Approve & Create Account';
         return;
       }
+
       if (initialPassword) {
         const { data: syncData, error: syncError } = await supabase.functions.invoke(
           'sync-student-default-password',
@@ -575,7 +667,7 @@ export function renderAdminPanel(container) {
           'success'
         );
         await loadStudentRegistrations();
-        const row = document.querySelector(`[data-registration-id="${btn.dataset.approveRegistration}"]`);
+        const row = document.querySelector(`[data-registration-id="${registrationId}"]`);
         if (row) {
           const linkBox = document.createElement('div');
           linkBox.className = 'mt-3 p-3 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-900';
