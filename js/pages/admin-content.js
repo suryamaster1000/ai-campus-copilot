@@ -135,6 +135,485 @@ export async function renderAdminContent(mount) {
     status.className = 'mt-3 text-[11px] ' + (ok ? 'text-emerald-700' : 'text-error');
   }
 
+
+  // ─── Existing record management ───────────────────────────────────────────
+  const managerConfig = {
+    notice: {
+      label: 'Notices',
+      table: 'notices',
+      icon: 'campaign',
+      order: 'published_at',
+      title: r => r.title || 'Untitled notice',
+      meta: r => (r.category || 'Notice') + ' • ' + (r.is_published ? 'Published' : 'Draft'),
+      empty: 'No notices found.'
+    },
+    event: {
+      label: 'Events',
+      table: 'events',
+      icon: 'event',
+      order: 'starts_at',
+      title: r => r.title || 'Untitled event',
+      meta: r => (r.event_type || 'Campus Event') + ' • ' + (r.is_published ? 'Published' : 'Draft'),
+      empty: 'No events found.'
+    },
+    timetable: {
+      label: 'Timetable',
+      table: 'timetable',
+      icon: 'schedule',
+      order: 'created_at',
+      title: r => {
+        const s = (subjectsRes.data || []).find(x => x.id === r.subject_id);
+        return (s?.code || 'Class') + ' • ' + (s?.name || 'Subject');
+      },
+      meta: r => [r.section || 'No section', r.day_of_week, r.start_time?.slice(0,5) + '–' + r.end_time?.slice(0,5)].filter(Boolean).join(' • '),
+      empty: 'No timetable records found.'
+    },
+    exam: {
+      label: 'Exams',
+      table: 'exams',
+      icon: 'event_note',
+      order: 'exam_date',
+      title: r => {
+        const s = (subjectsRes.data || []).find(x => x.id === r.subject_id);
+        return (s?.code || 'Exam') + ' • ' + (s?.name || 'Subject');
+      },
+      meta: r => [r.section || 'No section', r.exam_type || 'Exam', r.exam_date || 'No date'].filter(Boolean).join(' • '),
+      empty: 'No exam records found.'
+    },
+    assignment: {
+      label: 'Assignments',
+      table: 'academic_assignments',
+      icon: 'assignment',
+      order: 'created_at',
+      title: r => r.title || 'Untitled assignment',
+      meta: r => {
+        const s = (subjectsRes.data || []).find(x => x.id === r.subject_id);
+        return [s?.code || 'No subject', r.due_date ? 'Due ' + r.due_date : 'No due date'].join(' • ');
+      },
+      empty: 'No assignment records found.'
+    }
+  };
+
+  const managerSection = document.createElement('section');
+  managerSection.className = 'bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm';
+  managerSection.innerHTML = `
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">manage_search</span>
+          <h2 class="font-headline-md text-base font-bold text-on-surface">Manage Existing Content</h2>
+        </div>
+        <p class="text-xs text-on-surface-variant mt-1">Search, edit, publish/unpublish, or delete live campus records. Permissions are still enforced by Supabase RLS.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <select id="contentManagerKind" class="px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs font-semibold">
+          <option value="notice">Notices</option>
+          <option value="event">Events</option>
+          <option value="timetable">Timetable</option>
+          <option value="exam">Exams</option>
+          <option value="assignment">Assignments</option>
+        </select>
+        <button id="refreshContentManagerBtn" type="button" class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">
+          <span class="material-symbols-outlined text-[17px]">refresh</span> Refresh
+        </button>
+      </div>
+    </div>
+    <div class="mt-3 relative">
+      <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
+      <input id="contentManagerSearch" class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary" placeholder="Search existing records..." autocomplete="off">
+    </div>
+    <div id="contentManagerList" class="mt-4 space-y-2"></div>
+
+    <div id="contentEditorModal" class="fixed inset-0 z-[70] hidden items-center justify-center p-4 bg-black/30 backdrop-blur-sm">
+      <div class="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-surface-container-high p-5">
+        <div class="flex items-center justify-between gap-3 border-b border-surface-container-high pb-3">
+          <div>
+            <h3 id="contentEditorTitle" class="text-base font-bold text-on-surface">Edit Content</h3>
+            <p id="contentEditorMeta" class="text-[11px] text-on-surface-variant mt-0.5"></p>
+          </div>
+          <button id="closeContentEditorBtn" type="button" class="p-2 rounded-lg text-outline hover:bg-surface-container">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+        <form id="contentEditorForm" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3"></form>
+      </div>
+    </div>
+  `;
+  mount.appendChild(managerSection);
+
+  const managerKind = managerSection.querySelector('#contentManagerKind');
+  const managerSearch = managerSection.querySelector('#contentManagerSearch');
+  const managerList = managerSection.querySelector('#contentManagerList');
+  const managerModal = managerSection.querySelector('#contentEditorModal');
+  const managerForm = managerSection.querySelector('#contentEditorForm');
+  const managerTitle = managerSection.querySelector('#contentEditorTitle');
+  const managerMeta = managerSection.querySelector('#contentEditorMeta');
+
+  let managerRows = [];
+  let managerEditing = null;
+
+  const formatDateTime = (value) => value ? new Date(value).toLocaleString() : '—';
+
+  function managerFields(kind, row) {
+    const common = (inner) => inner + `
+      <div class="md:col-span-2 pt-2 flex items-center justify-end gap-2">
+        <button id="cancelContentEditBtn" type="button" class="px-4 py-2.5 rounded-xl bg-surface-container text-on-surface text-xs font-bold">Cancel</button>
+        <button type="submit" class="px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold">
+          <span class="material-symbols-outlined text-[16px] align-middle mr-1">save</span>Save Changes
+        </button>
+      </div>`;
+    if (kind === 'notice') {
+      return common(
+        input('editNoticeTitle','Title','text',true,'value="' + esc(row.title) + '"') +
+        textarea('editNoticeBody','Notice / circular text',true,true) +
+        select('editNoticeCategory','Category',
+          '<option'+selected('Academic',row.category)+'>Academic</option><option'+selected('Examinations',row.category)+'>Examinations</option><option'+selected('Placements',row.category)+'>Placements</option><option'+selected('Facilities',row.category)+'>Facilities</option><option'+selected('General',row.category)+'>General</option>',true) +
+        input('editNoticeSource','Source URL','url',false,'value="' + esc(row.source_url || '') + '"') +
+        input('editNoticeExpiry','Display until','datetime-local',false,'value="' + esc(localDateTimeValue(row.expires_at)) + '"') +
+        select('editNoticePublished','Publish status','<option value="true"'+selected('true',String(row.is_published))+'>Published</option><option value="false"'+selected('false',String(row.is_published))+'>Draft</option>',true)
+      );
+    }
+    if (kind === 'event') {
+      return common(
+        input('editEventTitle','Event title','text',true,'value="' + esc(row.title) + '"') +
+        textarea('editEventDescription','Description',true,true) +
+        input('editEventType','Event type','text',false,'value="' + esc(row.event_type || '') + '"') +
+        input('editEventStarts','Starts at','datetime-local',true,'value="' + esc(localDateTimeValue(row.starts_at)) + '"') +
+        input('editEventEnds','Ends at','datetime-local',false,'value="' + esc(localDateTimeValue(row.ends_at)) + '"') +
+        input('editEventDisplayUntil','Display until','datetime-local',false,'value="' + esc(localDateTimeValue(row.display_until)) + '"') +
+        input('editEventVenue','Venue','text',false,'value="' + esc(row.venue || '') + '"') +
+        input('editEventSource','Source URL','url',false,'value="' + esc(row.source_url || '') + '"') +
+        select('editEventPublished','Publish status','<option value="true"'+selected('true',String(row.is_published))+'>Published</option><option value="false"'+selected('false',String(row.is_published))+'>Draft</option>',true)
+      );
+    }
+    if (kind === 'timetable') {
+      if (!allowedSections.length) return '<div class="md:col-span-2 p-3 rounded-xl bg-amber-50 text-xs text-amber-800">No assigned class is available.</div>';
+      return common(
+        select('editTtSection','Class / Section',commonClassOptions,true) +
+        select('editTtSubject','Subject',subjectOptions,true) +
+        select('editTtFaculty','Faculty','<option value="">Faculty not assigned</option>' + facultyOptions) +
+        select('editTtDay','Day','<option'+selected('Monday',row.day_of_week)+'>Monday</option><option'+selected('Tuesday',row.day_of_week)+'>Tuesday</option><option'+selected('Wednesday',row.day_of_week)+'>Wednesday</option><option'+selected('Thursday',row.day_of_week)+'>Thursday</option><option'+selected('Friday',row.day_of_week)+'>Friday</option><option'+selected('Saturday',row.day_of_week)+'>Saturday</option><option'+selected('Sunday',row.day_of_week)+'>Sunday</option>',true) +
+        input('editTtStart','Start time','time',true,'value="' + esc((row.start_time || '').slice(0,5)) + '"') +
+        input('editTtEnd','End time','time',true,'value="' + esc((row.end_time || '').slice(0,5)) + '"') +
+        input('editTtRoom','Room','text',false,'value="' + esc(row.room || '') + '"') +
+        input('editTtTerm','Term','text',false,'value="' + esc(row.term || defaultTerm) + '"') +
+        input('editTtNotes','Notes','text',false,'value="' + esc(row.notes || '') + '"')
+      );
+    }
+    if (kind === 'exam') {
+      return common(
+        select('editExamSection','Class / Section',commonClassOptions,true) +
+        select('editExamSubject','Subject',subjectOptions,true) +
+        select('editExamType','Exam type','<option'+selected('Mid-1',row.exam_type)+'>Mid-1</option><option'+selected('Mid-2',row.exam_type)+'>Mid-2</option><option'+selected('Semester',row.exam_type)+'>Semester</option><option'+selected('Practical',row.exam_type)+'>Practical</option><option'+selected('Internal',row.exam_type)+'>Internal</option><option'+selected('Other',row.exam_type)+'>Other</option>',true) +
+        input('editExamDate','Exam date','date',true,'value="' + esc(row.exam_date || '') + '"') +
+        input('editExamStart','Start time','time',false,'value="' + esc((row.start_time || '').slice(0,5)) + '"') +
+        input('editExamEnd','End time','time',false,'value="' + esc((row.end_time || '').slice(0,5)) + '"') +
+        input('editExamRoom','Room','text',false,'value="' + esc(row.room || '') + '"') +
+        input('editExamTerm','Term','text',false,'value="' + esc(row.term || defaultTerm) + '"') +
+        textarea('editExamInstructions','Instructions',false,true)
+      );
+    }
+    return common(
+      select('editAsSubject','Subject',subjectOptions,true) +
+      select('editAsProgram','Program','<option value="">No program</option>' + programOptions) +
+      input('editAsTerm','Term','text',false,'value="' + esc(row.term || defaultTerm) + '"') +
+      input('editAsTitle','Assignment title','text',true,'value="' + esc(row.title || '') + '"') +
+      textarea('editAsDescription','Description',false,true) +
+      input('editAsDue','Due date','date',false,'value="' + esc(row.due_date || '') + '"') +
+      input('editAsSubmission','Submission information','text',false,'value="' + esc(row.submission_info || '') + '"')
+    );
+  }
+
+  function setEditorTextareas(kind, row) {
+    const valueMap = {
+      notice: { editNoticeBody: row.body || '' },
+      event: { editEventDescription: row.description || '' },
+      exam: { editExamInstructions: row.instructions || '' },
+      assignment: { editAsDescription: row.description || '' }
+    };
+    Object.entries(valueMap[kind] || {}).forEach(([id, value]) => {
+      const el = managerForm.querySelector('#' + id);
+      if (el) el.value = value;
+    });
+
+    const setVal = (id, value) => {
+      const el = managerForm.querySelector('#' + id);
+      if (el) el.value = value ?? '';
+    };
+
+    if (kind === 'timetable') {
+      setVal('editTtSection', row.section || assignedSection || allowedSections[0] || '');
+      setVal('editTtSubject', row.subject_id);
+      setVal('editTtFaculty', row.faculty_id || '');
+    }
+    if (kind === 'exam') {
+      setVal('editExamSection', row.section || assignedSection || allowedSections[0] || '');
+      setVal('editExamSubject', row.subject_id);
+    }
+    if (kind === 'assignment') {
+      setVal('editAsSubject', row.subject_id || '');
+      setVal('editAsProgram', row.program_id || '');
+    }
+  }
+
+  function openEditor(kind, row) {
+    managerEditing = { kind, id: row.id };
+    const config = managerConfig[kind];
+    managerTitle.textContent = 'Edit ' + config.label.slice(0, -1);
+    managerMeta.textContent = config.title(row) + ' • Created ' + formatDateTime(row.created_at);
+    managerForm.innerHTML = managerFields(kind, row);
+    setEditorTextareas(kind, row);
+    managerModal.classList.remove('hidden');
+    managerModal.classList.add('flex');
+
+    managerForm.querySelector('#cancelContentEditBtn')?.addEventListener('click', closeEditor);
+  }
+
+  function closeEditor() {
+    managerEditing = null;
+    managerModal.classList.add('hidden');
+    managerModal.classList.remove('flex');
+    managerForm.innerHTML = '';
+  }
+
+  managerSection.querySelector('#closeContentEditorBtn').addEventListener('click', closeEditor);
+
+  async function saveEditor(event) {
+    event.preventDefault();
+    if (!managerEditing) return;
+    const { kind, id } = managerEditing;
+    let payload = {};
+
+    if (kind === 'notice') {
+      let expiresAt = null;
+      const expiry = managerForm.querySelector('#editNoticeExpiry')?.value || '';
+      if (expiry) {
+        const d = new Date(expiry);
+        if (Number.isNaN(d.getTime())) return showToast('Choose a valid display-until date and time.', 'error');
+        expiresAt = d.toISOString();
+      }
+      payload = {
+        title: managerForm.querySelector('#editNoticeTitle').value.trim(),
+        body: managerForm.querySelector('#editNoticeBody').value.trim(),
+        category: managerForm.querySelector('#editNoticeCategory').value,
+        source_url: managerForm.querySelector('#editNoticeSource').value.trim() || null,
+        expires_at: expiresAt,
+        is_published: managerForm.querySelector('#editNoticePublished').value === 'true'
+      };
+    }
+
+    if (kind === 'event') {
+      const starts = managerForm.querySelector('#editEventStarts').value;
+      const ends = managerForm.querySelector('#editEventEnds').value;
+      const displayUntil = managerForm.querySelector('#editEventDisplayUntil').value;
+      if (!starts) return showToast('Event start time is required.', 'error');
+      payload = {
+        title: managerForm.querySelector('#editEventTitle').value.trim(),
+        description: managerForm.querySelector('#editEventDescription').value.trim(),
+        event_type: managerForm.querySelector('#editEventType').value.trim() || null,
+        starts_at: new Date(starts).toISOString(),
+        ends_at: ends ? new Date(ends).toISOString() : null,
+        display_until: displayUntil ? new Date(displayUntil).toISOString() : null,
+        venue: managerForm.querySelector('#editEventVenue').value.trim() || null,
+        source_url: managerForm.querySelector('#editEventSource').value.trim() || null,
+        is_published: managerForm.querySelector('#editEventPublished').value === 'true'
+      };
+    }
+
+    if (kind === 'timetable') {
+      payload = {
+        section: managerForm.querySelector('#editTtSection').value,
+        subject_id: managerForm.querySelector('#editTtSubject').value || null,
+        faculty_id: managerForm.querySelector('#editTtFaculty').value || null,
+        program_id: (subjectsRes.data || []).find(s => s.id === managerForm.querySelector('#editTtSubject').value)?.program_id || null,
+        term: managerForm.querySelector('#editTtTerm').value.trim() || null,
+        day_of_week: managerForm.querySelector('#editTtDay').value,
+        start_time: managerForm.querySelector('#editTtStart').value,
+        end_time: managerForm.querySelector('#editTtEnd').value,
+        room: managerForm.querySelector('#editTtRoom').value.trim() || null,
+        notes: managerForm.querySelector('#editTtNotes').value.trim() || null
+      };
+    }
+
+    if (kind === 'exam') {
+      payload = {
+        section: managerForm.querySelector('#editExamSection').value,
+        subject_id: managerForm.querySelector('#editExamSubject').value || null,
+        program_id: (subjectsRes.data || []).find(s => s.id === managerForm.querySelector('#editExamSubject').value)?.program_id || null,
+        term: managerForm.querySelector('#editExamTerm').value.trim() || null,
+        exam_type: managerForm.querySelector('#editExamType').value,
+        exam_date: managerForm.querySelector('#editExamDate').value,
+        start_time: managerForm.querySelector('#editExamStart').value || null,
+        end_time: managerForm.querySelector('#editExamEnd').value || null,
+        room: managerForm.querySelector('#editExamRoom').value.trim() || null,
+        instructions: managerForm.querySelector('#editExamInstructions').value.trim() || null
+      };
+    }
+
+    if (kind === 'assignment') {
+      const subject = (subjectsRes.data || []).find(s => s.id === managerForm.querySelector('#editAsSubject').value);
+      payload = {
+        subject_id: subject?.id || null,
+        program_id: managerForm.querySelector('#editAsProgram').value || subject?.program_id || null,
+        term: managerForm.querySelector('#editAsTerm').value.trim() || null,
+        title: managerForm.querySelector('#editAsTitle').value.trim(),
+        description: managerForm.querySelector('#editAsDescription').value.trim() || null,
+        due_date: managerForm.querySelector('#editAsDue').value || null,
+        submission_info: managerForm.querySelector('#editAsSubmission').value.trim() || null
+      };
+    }
+
+    const { error } = await supabase.from(managerConfig[kind].table).update(payload).eq('id', id);
+    if (error) {
+      showToast(error.message || 'Unable to save changes.', 'error');
+      return;
+    }
+
+    showToast(managerConfig[kind].label.slice(0, -1) + ' updated successfully.', 'success');
+    closeEditor();
+    await refreshManager();
+  }
+
+  managerForm.addEventListener('submit', saveEditor);
+
+  async function deleteRecord(kind, row) {
+    const config = managerConfig[kind];
+    if (!window.confirm('Delete this ' + config.label.slice(0,-1).toLowerCase() + '? This cannot be undone.')) return;
+    const { error } = await supabase.from(config.table).delete().eq('id', row.id);
+    if (error) {
+      showToast(error.message || 'Delete failed.', 'error');
+      return;
+    }
+    showToast(config.label.slice(0, -1) + ' deleted.', 'success');
+    await refreshManager();
+  }
+
+  async function togglePublish(kind, row) {
+    const config = managerConfig[kind];
+    if (kind !== 'notice' && kind !== 'event') return;
+    const next = !row.is_published;
+    const { error } = await supabase.from(config.table).update({ is_published: next }).eq('id', row.id);
+    if (error) {
+      showToast(error.message || 'Unable to change publish status.', 'error');
+      return;
+    }
+    showToast(next ? config.label.slice(0, -1) + ' published.' : config.label.slice(0, -1) + ' moved to draft.', 'success');
+    await refreshManager();
+  }
+
+  async function refreshManager() {
+    const kind = managerKind.value;
+    const config = managerConfig[kind];
+    managerList.innerHTML = '<div class="p-4 rounded-xl bg-surface-container-low text-xs text-on-surface-variant">Loading ' + config.label.toLowerCase() + '...</div>';
+
+    let select = '*';
+    if (kind === 'notice') select = 'id,title,body,category,published_at,expires_at,source_url,is_published,created_at';
+    if (kind === 'event') select = 'id,title,description,event_type,starts_at,ends_at,display_until,venue,source_url,is_published,created_at';
+    if (kind === 'timetable') select = 'id,subject_id,faculty_id,program_id,term,section,day_of_week,start_time,end_time,room,notes,created_at';
+    if (kind === 'exam') select = 'id,subject_id,program_id,term,section,exam_type,exam_date,start_time,end_time,room,instructions,created_at';
+    if (kind === 'assignment') select = 'id,subject_id,program_id,term,title,description,due_date,submission_info,created_at';
+
+    let query = supabase.from(config.table).select(select).order(config.order, { ascending: false }).limit(100);
+    if ((kind === 'timetable' || kind === 'exam') && !owner && assignedSection) {
+      query = query.eq('section', assignedSection);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      managerRows = [];
+      managerList.innerHTML = '<div class="p-4 rounded-xl bg-error-container text-on-error-container text-xs">Unable to load records: ' + esc(error.message) + '</div>';
+      return;
+    }
+
+    managerRows = data || [];
+    renderManagerList();
+  }
+
+  function renderManagerList() {
+    const q = String(managerSearch.value || '').trim().toLowerCase();
+    const filtered = managerRows.filter(row => {
+      const config = managerConfig[managerKind.value];
+      const s = JSON.stringify(row).toLowerCase();
+      return !q || s.includes(q) || config.title(row).toLowerCase().includes(q) || config.meta(row).toLowerCase().includes(q);
+    });
+
+    if (!filtered.length) {
+      managerList.innerHTML = '<div class="p-8 rounded-xl bg-surface-container-low text-center text-xs text-on-surface-variant">' +
+        esc(managerConfig[managerKind.value].empty) + '</div>';
+      return;
+    }
+
+    managerList.innerHTML = filtered.map(row => {
+      const kind = managerKind.value;
+      const config = managerConfig[kind];
+      const statusChip = (kind === 'notice' || kind === 'event')
+        ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (row.is_published ? 'bg-emerald-100 text-emerald-800' : 'bg-surface-container text-outline') + '">' + (row.is_published ? 'PUBLISHED' : 'DRAFT') + '</span>'
+        : '';
+      const expiry = kind === 'notice'
+        ? (row.expires_at ? 'Expires ' + formatDateTime(row.expires_at) : 'No expiry')
+        : kind === 'event'
+          ? (row.display_until ? 'Displayed until ' + formatDateTime(row.display_until) : 'No display expiry')
+          : '';
+
+      return '<div class="p-3 rounded-xl border border-surface-container-high bg-surface-container-low">' +
+        '<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">' +
+          '<div class="min-w-0">' +
+            '<div class="flex flex-wrap items-center gap-2">' +
+              '<span class="material-symbols-outlined text-[18px] text-primary">' + config.icon + '</span>' +
+              '<span class="text-sm font-bold truncate">' + esc(config.title(row)) + '</span>' +
+              statusChip +
+            '</div>' +
+            '<div class="text-[11px] text-on-surface-variant mt-1">' + esc(config.meta(row)) + (expiry ? ' • ' + esc(expiry) : '') + '</div>' +
+          '</div>' +
+          '<div class="flex flex-wrap items-center gap-2 shrink-0">' +
+            ((kind === 'notice' || kind === 'event')
+              ? '<button data-toggle-publish="' + esc(row.id) + '" class="px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold">' + (row.is_published ? 'Move to Draft' : 'Publish') + '</button>'
+              : '') +
+            '<button data-edit-content="' + esc(row.id) + '" class="px-3 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold">Edit</button>' +
+            '<button data-delete-content="' + esc(row.id) + '" class="px-3 py-2 rounded-lg bg-error-container text-on-error-container text-xs font-bold">Delete</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    managerList.querySelectorAll('[data-edit-content]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = managerRows.find(r => r.id === btn.dataset.editContent);
+        if (row) openEditor(managerKind.value, row);
+      });
+    });
+    managerList.querySelectorAll('[data-delete-content]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = managerRows.find(r => r.id === btn.dataset.deleteContent);
+        if (row) deleteRecord(managerKind.value, row);
+      });
+    });
+    managerList.querySelectorAll('[data-toggle-publish]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = managerRows.find(r => r.id === btn.dataset.togglePublish);
+        if (row) togglePublish(managerKind.value, row);
+      });
+    });
+  }
+
+  managerKind.addEventListener('change', refreshManager);
+  managerSearch.addEventListener('input', renderManagerList);
+  managerSection.querySelector('#refreshContentManagerBtn').addEventListener('click', refreshManager);
+
+  function syncManagerWithContentTab(kind) {
+    const mapped = {
+      notice: 'notice',
+      event: 'event',
+      timetable: 'timetable',
+      exam: 'exam',
+      assignment: 'assignment'
+    };
+    if (mapped[kind]) {
+      managerKind.value = mapped[kind];
+      refreshManager();
+    }
+  }
+
   function switchTab(kind) {
     document.querySelectorAll('.content-tab').forEach(btn => {
       const active = btn.getAttribute('data-content-tab') === kind;
@@ -147,6 +626,7 @@ export async function renderAdminContent(mount) {
     if (kind === 'timetable') renderTimetableForm();
     if (kind === 'exam') renderExamForm();
     if (kind === 'assignment') renderAssignmentForm();
+    syncManagerWithContentTab(kind);
   }
 
   document.querySelectorAll('.content-tab').forEach(btn => {
