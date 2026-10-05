@@ -1,6 +1,7 @@
 // Study Assistant Page - Syllabi, Cheat Sheets & AI Quiz Generation
 import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
+import { supabase } from '../supabase.js';
 
 export function renderStudyAssistant(container) {
   const studyModules = Array.isArray(campusData.studyModules) ? campusData.studyModules : [];
@@ -314,4 +315,40 @@ export function renderStudyAssistant(container) {
   }
 
   render();
+  loadSubjectNotes().catch((error) => console.error('Subject notes failed:', error));
+
+  async function loadSubjectNotes() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data: profile } = await supabase.from('profiles').select('section').eq('id', user.id).maybeSingle();
+    const section = String(profile?.section || '').trim();
+    if (!section) return;
+
+    const { data: notes, error } = await supabase
+      .from('subject_notes')
+      .select('id,title,content,section,subject_id,source_url,published_at,subjects:subject_id(id,name,code)')
+      .eq('section', section)
+      .order('published_at', { ascending: false });
+
+    const existing = container.querySelector('#subjectNotesStudentCard');
+    if (existing) existing.remove();
+
+    const card = document.createElement('section');
+    card.id = 'subjectNotesStudentCard';
+    card.className = 'bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg shadow-sm border border-primary/20';
+    if (error) {
+      card.innerHTML = '<div class="flex items-center gap-2"><span class="material-symbols-outlined text-error">error</span><h2 class="font-headline-md text-base font-bold">Subject Notes</h2></div><p class="text-xs text-error mt-2">Notes could not be loaded right now.</p>';
+    } else {
+      const rows = Array.isArray(notes) ? notes : [];
+      const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      card.innerHTML = '<div class="flex items-center justify-between gap-3"><div><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary">menu_book</span><h2 class="font-headline-md text-base font-bold">Subject Notes</h2></div><p class="text-xs text-on-surface-variant mt-1">Notes posted by faculty for Section '+esc(section)+'.</p></div><span class="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">'+rows.length+'</span></div>' +
+        (rows.length ? '<div class="mt-4 grid gap-3 md:grid-cols-2">' + rows.map(n => {
+          const subject = n.subjects?.code ? n.subjects.code+' — '+n.subjects.name : (n.subjects?.name || 'Subject');
+          const body = String(n.content || '');
+          return '<article class="p-4 rounded-xl border border-surface-container-high bg-surface-container-low"><div class="flex items-start justify-between gap-2"><div><span class="text-[10px] font-bold text-primary">'+esc(subject)+'</span><h3 class="text-sm font-bold mt-1">'+esc(n.title)+'</h3></div></div><p class="text-xs text-on-surface-variant mt-2 whitespace-pre-wrap">'+esc(body)+'</p>' + (n.source_url ? '<a target="_blank" rel="noopener noreferrer" href="'+esc(n.source_url)+'" class="inline-flex items-center gap-1 mt-3 text-xs font-bold text-primary hover:underline">Open resource <span class="material-symbols-outlined text-[15px]">open_in_new</span></a>' : '') + '</article>';
+        }).join('') + '</div>' : '<div class="mt-4 p-4 rounded-xl bg-surface-container-low text-xs text-on-surface-variant">No faculty notes have been posted for your section yet.</div>');
+    }
+    const target = container.querySelector('.max-w-\\[1720px\\]');
+    if (target) target.appendChild(card);
+  }
 }
