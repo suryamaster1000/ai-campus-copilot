@@ -195,6 +195,9 @@ export function renderAdminPanel(container) {
     import('./admin-content.js?v=20261005-live4')
       .then((module) => module.renderAdminContent(document.getElementById('adminContentManagement')))
       .catch((error) => console.error('Admin content module failed:', error));
+    import('./admin-subject-notes.js?v=20261005-notes1')
+      .then((module) => module.renderSubjectNotes(document.getElementById('adminContentManagement')))
+      .catch((error) => console.error('Subject notes module failed:', error));
   });
 
   document.getElementById('refreshRegistrationsBtn')?.addEventListener('click', async (event) => {
