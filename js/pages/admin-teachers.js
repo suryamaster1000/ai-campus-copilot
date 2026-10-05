@@ -138,10 +138,6 @@ export async function renderAdminTeachers(mount) {
     list.innerHTML = teachers.map((teacher) => {
       const profile = profileMap.get(teacher.user_id) || {};
       const section = String(teacher.assigned_section || '').trim();
-      const options = SECTIONS.map((item) =>
-        '<option value="' + esc(item) + '"' + (item === section ? ' selected' : '') + '>' + esc(item) + '</option>'
-      ).join('');
-
       return '<div class="p-3 rounded-xl border border-surface-container-high bg-surface-container-low">' +
         '<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">' +
           '<div class="min-w-0">' +
@@ -149,44 +145,12 @@ export async function renderAdminTeachers(mount) {
             '<div class="text-[11px] text-on-surface-variant truncate mt-1">' + esc(profile.email || teacher.user_id) + '</div>' +
           '</div>' +
           '<div class="flex items-center gap-2">' +
-            '<select data-teacher-section="' + esc(teacher.user_id) + '" class="px-3 py-2 rounded-lg border border-surface-container-high bg-white text-xs">' + options + '</select>' +
-            '<button data-save-teacher-section="' + esc(teacher.user_id) + '" type="button" class="px-3 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold">Save</button>' +
+            '<span class="px-3 py-2 rounded-lg bg-primary-fixed text-on-primary-fixed text-xs font-bold">' + esc(section || 'Unassigned') + '</span>' +
           '</div>' +
         '</div>' +
       '</div>';
     }).join('');
 
-    list.querySelectorAll('[data-save-teacher-section]').forEach((button) => {
-      button.addEventListener('click', async () => {
-        const userId = button.dataset.saveTeacherSection;
-        const select = list.querySelector('[data-teacher-section="' + userId + '"]');
-        const section = String(select?.value || '').trim();
-
-        if (!SECTIONS.includes(section)) {
-          showToast('Choose a valid section from CSM1 to CSM8.', 'error');
-          return;
-        }
-
-        button.disabled = true;
-        button.textContent = 'Saving...';
-
-        const { error: updateError } = await supabase
-          .from('admin_users')
-          .update({ assigned_section: section })
-          .eq('user_id', userId)
-          .in('role', ['teacher','faculty','instructor']);
-
-        if (updateError) {
-          showToast(updateError.message || 'Could not update the teacher section.', 'error');
-          button.disabled = false;
-          button.textContent = 'Save';
-          return;
-        }
-
-        showToast('Teacher section updated to ' + section + '.', 'success');
-        await loadTeachers();
-      });
-    });
   }
 
   document.getElementById('createTeacherForm')?.addEventListener('submit', async (event) => {
