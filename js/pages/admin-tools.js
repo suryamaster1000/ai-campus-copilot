@@ -36,7 +36,8 @@ export async function renderAdminTools(mount) {
     .maybeSingle();
 
   const owner = user.id === OWNER_USER_ID || access?.role === 'owner';
-  const authorized = owner || (!accessError && access?.role === 'admin');
+  const teacherRole = ['teacher','faculty','instructor'].includes(String(access?.role || '').toLowerCase());
+  const authorized = owner || (!accessError && (access?.role === 'admin' || teacherRole));
 
   if (!authorized) {
     mount.innerHTML = '';
@@ -63,7 +64,7 @@ export async function renderAdminTools(mount) {
             '<h2 class="font-headline-md text-base font-bold text-on-surface">Admin Class Assignment</h2>' +
             '<span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">' + (owner ? 'OWNER' : 'ASSIGNED') + '</span>' +
           '</div>' +
-          '<p class="text-xs text-on-surface-variant mt-1">Each admin is scoped to one class for knowledge uploads. The owner can assign or change that class.</p>' +
+          '<p class="text-xs text-on-surface-variant mt-1">Administrators and teachers are scoped to one class for knowledge uploads. The owner can assign or change that class.</p>' +
         '</div>' +
       '</div>' +
       '<div id="classAssignmentBody" class="mt-4"></div>' +
@@ -75,7 +76,7 @@ export async function renderAdminTools(mount) {
           '<div class="flex items-center gap-2">' +
             '<span class="material-symbols-outlined text-primary">cloud_upload</span>' +
             '<h2 class="font-headline-md text-base font-bold text-on-surface">Class Knowledge Upload</h2>' +
-            '<span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">ADMIN ONLY</span>' +
+            '<span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">ADMIN / TEACHER</span>' +
           '</div>' +
           '<p class="text-xs text-on-surface-variant mt-1">Upload class files and index their contents for the AI assistant. Your class scope is enforced on the server.</p>' +
         '</div>' +
