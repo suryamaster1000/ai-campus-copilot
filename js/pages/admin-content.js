@@ -61,7 +61,8 @@ export async function renderAdminContent(mount) {
     .maybeSingle();
 
   const owner = user.id === OWNER_USER_ID || access?.role === 'owner';
-  const authorized = owner || access?.role === 'admin';
+  const teacherRole = ['teacher','faculty','instructor'].includes(String(access?.role || '').toLowerCase());
+  const authorized = owner || access?.role === 'admin' || teacherRole;
 
   if (!authorized) {
     mount.innerHTML = '';
@@ -93,7 +94,7 @@ export async function renderAdminContent(mount) {
           <div class="flex items-center gap-2">
             <span class="material-symbols-outlined text-primary">edit_calendar</span>
             <h2 class="font-headline-md text-base font-bold text-on-surface">Campus Content Management</h2>
-            <span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">${owner ? 'OWNER' : 'ADMIN'}</span>
+            <span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">${owner ? 'OWNER' : (teacherRole ? 'TEACHER' : 'ADMIN')}</span>
           </div>
           <p class="text-xs text-on-surface-variant mt-1">
             Add live notices, events, timetables, exams and academic assignments directly to the campus database.
