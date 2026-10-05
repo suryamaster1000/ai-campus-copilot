@@ -646,7 +646,7 @@ export function renderAdminPanel(container) {
       if (initialPassword) {
         const { data: syncData, error: syncError } = await supabase.functions.invoke(
           'sync-student-default-password',
-          { body: { password: initialPassword } }
+          { body: { password: initialPassword, registration_id: registrationId } }
         );
         if (syncError || syncData?.error || syncData?.ok === false) {
           showToast(syncData?.error || syncData?.message || syncError?.message || 'Student account created, but default password could not be applied.', 'error');
