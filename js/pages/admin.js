@@ -129,10 +129,10 @@ export function renderAdminPanel(container) {
     import('./admin-teachers.js?v=20261005-teachers2')
       .then((module) => module.renderAdminTeachers(document.getElementById('adminTeacherManagement')))
       .catch((error) => console.error('Admin teachers module failed:', error));
-    import('./admin-tools.js?v=20261005-tools1')
+    import('./admin-tools.js?v=20261005-tools2')
       .then((module) => module.renderAdminTools(document.getElementById('adminExtraTools')))
       .catch((error) => console.error('Admin tools module failed:', error));
-    import('./admin-content.js?v=20261005-live3')
+    import('./admin-content.js?v=20261005-live4')
       .then((module) => module.renderAdminContent(document.getElementById('adminContentManagement')))
       .catch((error) => console.error('Admin content module failed:', error));
   });
