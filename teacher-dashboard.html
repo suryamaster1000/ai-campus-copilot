@@ -32,12 +32,12 @@
       <h2 class="font-extrabold">Faculty Tools</h2>
       <p class="text-sm text-slate-500 mt-1">Quick access to existing campus features.</p>
       <div class="grid grid-cols-2 gap-3 mt-4">
-        <a href="index.html#ai-assistant" class="p-4 rounded-xl bg-blue-50 text-blue-800 font-bold text-sm">🤖 AI Assistant</a>
-        <a href="index.html#admin-panel" class="p-4 rounded-xl bg-blue-100 text-blue-900 font-bold text-sm">🛠️ Admin Workspace</a>
-        <a href="index.html#admin-panel" class="p-4 rounded-xl bg-slate-100 font-bold text-sm">📅 Manage Timetable</a>
-        <a href="index.html#admin-panel" class="p-4 rounded-xl bg-slate-100 font-bold text-sm">📢 Manage Events</a>
-        <a href="index.html#admin-panel" class="p-4 rounded-xl bg-slate-100 font-bold text-sm">📋 Student Reports</a>
-        <a href="index.html#admin-panel" class="p-4 rounded-xl bg-slate-100 font-bold text-sm">✅ Approve Registrations</a>
+        <a href="index.html?portal=faculty#ai-assistant" class="p-4 rounded-xl bg-blue-50 text-blue-800 font-bold text-sm">🤖 AI Assistant</a>
+        <a href="index.html?portal=faculty#admin-panel" class="p-4 rounded-xl bg-blue-100 text-blue-900 font-bold text-sm">🛠️ Admin Workspace</a>
+        <a href="index.html?portal=faculty#admin-panel" class="p-4 rounded-xl bg-slate-100 font-bold text-sm">📅 Manage Timetable</a>
+        <a href="index.html?portal=faculty#admin-panel" class="p-4 rounded-xl bg-slate-100 font-bold text-sm">📢 Manage Events</a>
+        <a href="index.html?portal=faculty#admin-panel" class="p-4 rounded-xl bg-slate-100 font-bold text-sm">📋 Student Reports</a>
+        <a href="index.html?portal=faculty#admin-panel" class="p-4 rounded-xl bg-slate-100 font-bold text-sm">✅ Approve Registrations</a>
       </div>
     </div>
   </section>
@@ -86,27 +86,67 @@ const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
 const status=document.getElementById('status');
 function show(t,ok=false){status.textContent=t;status.className='rounded-xl px-4 py-3 text-sm '+(ok?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200');}
 async function start(){
- const {data:{user}}=await supabase.auth.getUser();
+ const userResult=await withLocalTimeout(supabase.auth.getUser(),8000);
+ const user=userResult?.data?.user;
  if(!user){location.href='teacher-login.html';return;}
- const {data:row,error}=await supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle();
- if(error){show('Faculty authorization could not be verified.');return;}
+ teacherUser=user;
+
+ const adminResult=await withLocalTimeout(
+   supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle(),
+   8000
+ );
+ const row=adminResult?.data, error=adminResult?.error;
+ if(error){show('Faculty authorization could not be verified: '+(error.message||'Unknown error'));return;}
+
  const role=String(row?.role||'').toLowerCase();
- if(user.id!==OWNER && !['teacher','faculty','instructor'].includes(role)){await supabase.auth.signOut();location.href='teacher-login.html';return;}
+ if(user.id!==OWNER && !['teacher','faculty','instructor'].includes(role)){
+   await supabase.auth.signOut();
+   location.href='teacher-login.html';
+   return;
+ }
+
  const section=(row?.assigned_section||'').trim();
  if(user.id!==OWNER && !section){
    await supabase.auth.signOut();
    location.href='teacher-login.html?error=no-section';
    return;
  }
+
+ assignedSection=section;
  document.getElementById('teacherName').textContent=user.email||'Faculty';
  document.getElementById('assigned').textContent='Assigned section: '+section+' • Faculty access only';
  document.getElementById('sectionCard').textContent=section;
- let q=supabase.from('profiles').select('id,name,email,section,program').eq('section',section).order('name');
- const {data:profiles,error:pErr}=await q;
- if(pErr){show('Student profiles could not be loaded.');document.getElementById('students').innerHTML='<div class="text-sm text-red-600">Check Supabase profile permissions.</div>';return;}
- document.getElementById('studentCount').textContent=String(profiles?.length||0);
+
+ const profileResult=await withLocalTimeout(
+   supabase.from('profiles').select('id,name,email,roll_number,section,program').eq('section',section).order('name'),
+   8000
+ );
+ const profiles=profileResult?.data, pErr=profileResult?.error;
+ if(pErr){
+   console.error('Faculty profile load failed:',pErr);
+   show('Student profiles could not be loaded: '+(pErr.message||'Supabase request timed out.'));
+   document.getElementById('students').innerHTML='<div class="text-sm text-red-600">Unable to load '+esc(section)+' student profiles. Please refresh once.</div>';
+   document.getElementById('studentCount').textContent='0';
+   return;
+ }
+
+ classStudents=profiles||[];
+ document.getElementById('studentCount').textContent=String(classStudents.length);
  const list=document.getElementById('students');
- list.innerHTML=profiles?.length?profiles.map(p=>'<div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-1">'+esc(p.email||'')+(p.program?' • '+esc(p.program):'')+'</div></div>').join(''):'<div class="text-sm text-slate-500">No profiles found for '+esc(section)+'.</div>';
+ list.innerHTML=classStudents.length
+   ? classStudents.map(p=>'<div class="p-3 rounded-xl bg-slate-50 border border-slate-200"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-1">'+esc(p.email||'')+(p.program?' • '+esc(p.program):'')+'</div></div>').join('')
+   : '<div class="text-sm text-slate-500">No profiles found for '+esc(section)+'.</div>';
+
+ const date=document.getElementById('attendanceDate');
+ if(date){date.value=todayLocal();date.max=todayLocal();}
+ await loadAttendanceSubjects();
+ await loadAttendanceForSelection();
+}
+function withLocalTimeout(promise,ms){
+ return Promise.race([
+   promise,
+   new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error('Request timed out after '+ms+'ms')}),ms))
+ ]);
 }
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 document.getElementById('logout').onclick=async()=>{await supabase.auth.signOut();location.href='teacher-login.html';};
@@ -187,20 +227,5 @@ document.getElementById('attendanceDate')?.addEventListener('change',loadAttenda
 document.getElementById('attendanceSubject')?.addEventListener('change',loadAttendanceForSelection);
 document.getElementById('saveAttendance')?.addEventListener('click',saveCurrentAttendance);
 
-async function startAttendance(){
-  const date=document.getElementById('attendanceDate');
-  if(date){date.value=todayLocal();date.max=todayLocal();}
-  const {data:{user}}=await supabase.auth.getUser();
-  if(!user)return;
-  teacherUser=user;
-  const {data:row}=await supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle();
-  assignedSection=(row?.assigned_section||'').trim();
-  const {data:profiles,error}=await supabase.from('profiles').select('id,name,email,roll_number,section,program').eq('section',assignedSection).order('name');
-  if(error){show(error.message||'Unable to load students.');return;}
-  classStudents=profiles||[];
-  await loadAttendanceSubjects();
-  await loadAttendanceForSelection();
-}
-startAttendance().catch(e=>{console.error(e);show('Attendance manager could not load.');});
-start().catch(e=>{console.error(e);show('Faculty portal could not load.');});
+start().catch(e=>{console.error(e);show('Faculty portal could not load: '+(e?.message||'Unknown error'));});
 </script></body></html>
