@@ -126,7 +126,7 @@ export function renderAdminPanel(container) {
     loadStudentReports().catch((error) => {
       console.error('Student reports failed:', error);
     });
-    import('./admin-teachers.js?v=20261005-teachers1')
+    import('./admin-teachers.js?v=20261005-teachers2')
       .then((module) => module.renderAdminTeachers(document.getElementById('adminTeacherManagement')))
       .catch((error) => console.error('Admin teachers module failed:', error));
     import('./admin-tools.js?v=20261005-tools1')
