@@ -416,7 +416,7 @@ export function listenToTasks(callback){
 }
 export { currentUser };
 
-import { renderDashboard } from './pages/dashboard.js?v=20261005-live3';
+import { renderDashboard } from './pages/dashboard.js?v=20261005-live4';
 import { renderAiAssistant } from './pages/ai-assistant.js?v=20261005-live4';
 import { renderTimetable } from './pages/timetable.js?v=20261003-live2';
 import { renderNotices } from './pages/notices.js?v=20261003-live2';
