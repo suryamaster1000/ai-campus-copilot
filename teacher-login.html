@@ -73,6 +73,8 @@ const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
 const form = document.getElementById('form');
 const btn = document.getElementById('btn');
 const msg = document.getElementById('msg');
+const loginError = new URLSearchParams(window.location.search).get('error');
+if (loginError === 'no-section') message('Your faculty account needs an assigned section before the portal can be opened.');
 
 function message(text, ok=false){
   msg.textContent=text;
@@ -81,10 +83,11 @@ function message(text, ok=false){
 async function teacherAllowed(user){
   if(!user?.id) return false;
   if(user.id === OWNER_USER_ID) return true;
-  const {data,error}=await supabase.from('admin_users').select('user_id,role').eq('user_id',user.id).maybeSingle();
+  const {data,error}=await supabase.from('admin_users').select('user_id,role,assigned_section').eq('user_id',user.id).maybeSingle();
   if(error){ console.error(error); return false; }
   const role=String(data?.role||'').toLowerCase();
-  return ['teacher','faculty','instructor'].includes(role);
+  if(!['teacher','faculty','instructor'].includes(role)) return false;
+  return Boolean(String(data?.assigned_section||'').trim());
 }
 
 form.addEventListener('submit', async (e)=>{
