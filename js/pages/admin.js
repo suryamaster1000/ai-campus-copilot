@@ -55,6 +55,26 @@ export function renderAdminPanel(container) {
         </div>
       </section>
 
+      <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-error">report_problem</span>
+              <h2 class="font-headline-md text-base font-bold text-on-surface">Student Reports</h2>
+              <span id="studentReportsOpenCount" class="px-2 py-1 rounded-full bg-error-container text-on-error-container text-[10px] font-bold">0 open</span>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-1">Reports from students are visible to the owner and the authorized admin responsible for the student's section.</p>
+          </div>
+          <button id="refreshStudentReportsBtn" type="button" class="inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">
+            <span class="material-symbols-outlined text-[17px]">refresh</span>
+            Refresh Reports
+          </button>
+        </div>
+        <div id="studentReportsBody" class="mt-4 space-y-3">
+          <div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Loading reports...</div>
+        </div>
+      </section>
+
       <div id="adminExtraTools" class="space-y-space-md"></div>
       <div id="adminContentManagement" class="space-y-space-md"></div>
 
@@ -95,6 +115,9 @@ export function renderAdminPanel(container) {
     loadStudentRegistrations().catch((error) => {
       console.error('Student registrations failed:', error);
     });
+    loadStudentReports().catch((error) => {
+      console.error('Student reports failed:', error);
+    });
     import('./admin-tools.js?v=20261003-live1')
       .then((module) => module.renderAdminTools(document.getElementById('adminExtraTools')))
       .catch((error) => console.error('Admin tools module failed:', error));
@@ -112,6 +135,22 @@ export function renderAdminPanel(container) {
     try {
       await loadStudentRegistrations();
       showToast('Registration list refreshed.', 'success');
+    } finally {
+      button.disabled = false;
+      button.classList.remove('opacity-70');
+      if (icon) icon.classList.remove('animate-spin');
+    }
+  });
+
+  document.getElementById('refreshStudentReportsBtn')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const icon = button.querySelector('.material-symbols-outlined');
+    button.disabled = true;
+    button.classList.add('opacity-70');
+    if (icon) icon.classList.add('animate-spin');
+    try {
+      await loadStudentReports();
+      showToast('Student reports refreshed.', 'success');
     } finally {
       button.disabled = false;
       button.classList.remove('opacity-70');
@@ -289,6 +328,144 @@ export function renderAdminPanel(container) {
       await loadAdminAccessControl();
     });
   }
+  async function loadStudentReports() {
+    const body = document.getElementById('studentReportsBody');
+    const countBadge = document.getElementById('studentReportsOpenCount');
+    if (!body) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: access } = await supabase
+      .from('admin_users')
+      .select('user_id,role,assigned_section')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const canView = user.id === OWNER_USER_ID || access?.role === 'owner' || access?.role === 'admin';
+    if (!canView) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Student reports are restricted to authorized administrators.</div>';
+      if (countBadge) countBadge.textContent = '0 open';
+      return;
+    }
+
+    const { data: reports, error } = await supabase
+      .from('student_reports')
+      .select('id,reporter_id,category,subject,details,affected_page,priority,status,admin_note,created_at,updated_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      body.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load student reports: ' + String(error.message || 'Unknown error') + '</div>';
+      return;
+    }
+
+    const ids = [...new Set((reports || []).map(r => r.reporter_id).filter(Boolean))];
+    const { data: profiles } = ids.length
+      ? await supabase.from('profiles').select('id,name,email,section,roll_number').in('id', ids)
+      : { data: [] };
+    const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+    const visibleReports = (reports || []).filter(r => {
+      if (user.id === OWNER_USER_ID || access?.role === 'owner') return true;
+      const profile = profileMap.get(r.reporter_id);
+      return access?.role === 'admin' && access?.assigned_section && profile?.section === access.assigned_section;
+    });
+
+    const openCount = visibleReports.filter(r => r.status === 'open' || r.status === 'in_review').length;
+    if (countBadge) countBadge.textContent = openCount + ' open';
+
+    if (!visibleReports.length) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No student reports found.</div>';
+      return;
+    }
+
+    const categoryLabels = {
+      bug: 'Bug / App problem',
+      person: 'Report a person',
+      content: 'Content / Notice / Event',
+      account: 'Account / Login',
+      other: 'Other concern'
+    };
+
+    const priorityClasses = {
+      high: 'bg-error-container text-on-error-container',
+      medium: 'bg-amber-100 text-amber-800',
+      low: 'bg-surface-container text-on-surface-variant'
+    };
+
+    body.innerHTML = visibleReports.map(r => {
+      const p = profileMap.get(r.reporter_id) || {};
+      const created = r.created_at ? new Date(r.created_at).toLocaleString() : '';
+      return '<article class="p-4 rounded-2xl border border-surface-container-high bg-surface-container-low" data-report-id="' + escReportValue(r.id) + '">' +
+        '<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">' +
+          '<div class="min-w-0 flex-1">' +
+            '<div class="flex flex-wrap items-center gap-2">' +
+              '<span class="text-sm font-bold">' + escReportValue(r.subject) + '</span>' +
+              '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-fixed text-on-primary-fixed">' + escReportValue(categoryLabels[r.category] || r.category || 'Report') + '</span>' +
+              '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (priorityClasses[r.priority] || priorityClasses.medium) + '">' + escReportValue(String(r.priority || 'medium').toUpperCase()) + '</span>' +
+            '</div>' +
+            '<div class="text-[11px] text-on-surface-variant mt-1">' + escReportValue(p.name || 'Student') + ' • ' + escReportValue(p.email || '') + (p.section ? ' • Section ' + escReportValue(p.section) : '') + (p.roll_number ? ' • ' + escReportValue(p.roll_number) : '') + '</div>' +
+            '<div class="text-[11px] text-outline mt-0.5">' + escReportValue(created) + (r.affected_page ? ' • Page: ' + escReportValue(r.affected_page) : '') + '</div>' +
+          '</div>' +
+          '<select data-report-status="' + escReportValue(r.id) + '" class="px-3 py-2 rounded-lg border border-surface-container-high bg-white text-xs font-semibold">' +
+            '<option value="open"' + (r.status === 'open' ? ' selected' : '') + '>Open</option>' +
+            '<option value="in_review"' + (r.status === 'in_review' ? ' selected' : '') + '>In Review</option>' +
+            '<option value="resolved"' + (r.status === 'resolved' ? ' selected' : '') + '>Resolved</option>' +
+            '<option value="rejected"' + (r.status === 'rejected' ? ' selected' : '') + '>Rejected</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="mt-3 p-3 rounded-xl bg-white border border-surface-container-high text-sm text-on-surface whitespace-pre-wrap">' + escReportValue(r.details) + '</div>' +
+        '<div class="mt-3 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-2">' +
+          '<textarea data-report-note="' + escReportValue(r.id) + '" rows="2" maxlength="3000" placeholder="Admin note / action taken..." class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">' + escReportValue(r.admin_note || '') + '</textarea>' +
+          '<button data-save-report="' + escReportValue(r.id) + '" type="button" class="px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold self-end">Save Update</button>' +
+        '</div>' +
+      '</article>';
+    }).join('');
+
+    body.querySelectorAll('[data-save-report]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.saveReport;
+        const statusSelect = body.querySelector('[data-report-status="' + id + '"]');
+        const noteInput = body.querySelector('[data-report-note="' + id + '"]');
+        const nextStatus = statusSelect?.value || 'open';
+        const update = {
+          status: nextStatus,
+          admin_note: noteInput?.value.trim() || null,
+          updated_at: new Date().toISOString()
+        };
+        if (nextStatus === 'resolved') {
+          update.resolved_at = new Date().toISOString();
+          update.resolved_by = user.id;
+        } else {
+          update.resolved_at = null;
+          update.resolved_by = null;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+        const { error: updateError } = await supabase
+          .from('student_reports')
+          .update(update)
+          .eq('id', id);
+        if (updateError) {
+          showToast(updateError.message || 'Could not update the report.', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Save Update';
+          return;
+        }
+        showToast('Report updated.', 'success');
+        await loadStudentReports();
+      });
+    });
+  }
+
+  function escReportValue(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[ch]));
+  }
+
   async function loadStudentRegistrations() {
     const body = document.getElementById('registrationApprovalBody');
     if (!body) return;
