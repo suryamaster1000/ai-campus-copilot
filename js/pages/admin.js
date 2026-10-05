@@ -62,6 +62,24 @@ export function renderAdminPanel(container) {
         </div>
       </section>
 
+      </section>
+
+      <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/20 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary">groups</span>
+              <h2 class="font-headline-md text-base font-bold text-on-surface">Section Students</h2>
+            </div>
+            <p id="sectionStudentsSubtitle" class="text-xs text-on-surface-variant mt-1">Manage students in your assigned section.</p>
+          </div>
+          <button id="refreshSectionStudentsBtn" type="button" class="px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">Refresh</button>
+        </div>
+        <div id="sectionStudentsBody" class="mt-4 space-y-2">
+          <div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Loading students...</div>
+        </div>
+      </section>
+
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -165,6 +183,9 @@ export function renderAdminPanel(container) {
     loadStudentLog().catch((error) => {
       console.error('Student log failed:', error);
     });
+    loadSectionStudents().catch((error) => {
+      console.error('Section student management failed:', error);
+    });
     import('./admin-teachers.js?v=20261005-teachers2')
       .then((module) => module.renderAdminTeachers(document.getElementById('adminTeacherManagement')))
       .catch((error) => console.error('Admin teachers module failed:', error));
@@ -205,6 +226,11 @@ export function renderAdminPanel(container) {
 
   document.getElementById('studentLogSearch')?.addEventListener('input', () => {
     loadStudentLog().catch(error => console.error('Student log search failed:', error));
+  });
+
+  document.getElementById('refreshSectionStudentsBtn')?.addEventListener('click', async () => {
+    await loadSectionStudents();
+    showToast('Section students refreshed.', 'success');
   });
 
   document.getElementById('refreshStudentReportsBtn')?.addEventListener('click', async (event) => {
@@ -424,6 +450,66 @@ export function renderAdminPanel(container) {
       await loadAdminAccessControl();
     });
   }
+  async function loadSectionStudents() {
+    const body = document.getElementById('sectionStudentsBody');
+    if (!body) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: access } = await supabase
+      .from('admin_users')
+      .select('role,assigned_section')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const role = String(access?.role || '').toLowerCase();
+    const owner = user.id === OWNER_USER_ID || role === 'owner';
+    const staff = ['teacher','faculty','instructor'].includes(role);
+    if (!owner && !staff) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Section student management is restricted.</div>';
+      return;
+    }
+
+    let query = supabase.from('profiles').select('id,name,email,roll_number,program,term,section').order('name', { ascending: true });
+    if (staff) query = query.eq('section', access?.assigned_section || '');
+    const { data: students, error } = await query;
+    if (error) {
+      body.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load students: ' + escReportValue(error.message) + '</div>';
+      return;
+    }
+
+    const section = staff ? access?.assigned_section : 'All Sections';
+    const subtitle = document.getElementById('sectionStudentsSubtitle');
+    if (subtitle) subtitle.textContent = staff ? 'Manage students in ' + section + ' only.' : 'Manage students across all sections.';
+    if (!students?.length) {
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No students found in ' + escReportValue(section || 'this section') + '.</div>';
+      return;
+    }
+
+    body.innerHTML = students.map(student => '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-surface-container-low border border-surface-container-high">' +
+      '<div class="min-w-0">' +
+        '<div class="text-sm font-bold">' + escReportValue(student.name || 'Student') + '</div>' +
+        '<div class="text-[11px] text-on-surface-variant mt-1">' + escReportValue(student.email || '') + ' • ' + escReportValue(student.roll_number || 'No roll number') + ' • ' + escReportValue(student.section || '') + '</div>' +
+      '</div>' +
+      '<button type="button" data-remove-student="' + escReportValue(student.id) + '" class="px-3 py-2 rounded-lg bg-error-container text-on-error-container text-xs font-bold">Remove Student</button>' +
+    '</div>').join('');
+
+    body.querySelectorAll('[data-remove-student]').forEach(button => {
+      button.addEventListener('click', async () => {
+        if (!confirm('Remove this student from campus access? They will be signed out and their profile will be removed.')) return;
+        button.disabled = true;
+        const { data, error } = await supabase.functions.invoke('remove-student-account', { body: { student_id: button.dataset.removeStudent } });
+        if (error || data?.error) {
+          showToast(data?.error || error?.message || 'Could not remove student.', 'error');
+          button.disabled = false;
+          return;
+        }
+        showToast('Student removed from campus access.', 'success');
+        await loadSectionStudents();
+      });
+    });
+  }
+
   async function loadStudentReports() {
     const body = document.getElementById('studentReportsBody');
     const countBadge = document.getElementById('studentReportsOpenCount');
