@@ -119,7 +119,7 @@ export function renderDashboard(container) {
           <div class="my-2">
             <div class="flex items-baseline gap-2">
               <span class="font-headline-lg text-3xl font-extrabold text-on-surface">${campusData.student.cgpa}</span>
-              <span class="text-xs text-outline font-medium">/ 4.0 Scale</span>
+              <span class="text-xs text-outline font-medium">Current scale</span>
             </div>
             <p class="text-xs text-on-surface-variant mt-2">
               ${campusData.student.creditsCompleted} of ${campusData.student.totalCredits} credits completed
