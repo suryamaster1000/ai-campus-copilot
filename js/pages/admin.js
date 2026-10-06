@@ -373,7 +373,7 @@ export function renderAdminPanel(container) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !body) return;
 
-    const { data: admins, error } = await supabase
+    const { data: accessRows, error } = await supabase
       .from('admin_users')
       .select('user_id, role, authorized_at, authorized_by')
       .order('authorized_at', { ascending: true });
@@ -383,8 +383,10 @@ export function renderAdminPanel(container) {
       return;
     }
 
-    const owner = user.id === OWNER_USER_ID || (admins || []).some(a => a.user_id === user.id && a.role === 'owner');
-    const currentAccess = (admins || []).find(a => a.user_id === user.id);
+    const allAccessRows = accessRows || [];
+    const admins = allAccessRows.filter(a => ['owner', 'admin'].includes(String(a.role || '').toLowerCase()));
+    const owner = user.id === OWNER_USER_ID || admins.some(a => a.user_id === user.id && String(a.role || '').toLowerCase() === 'owner');
+    const currentAccess = allAccessRows.find(a => a.user_id === user.id);
     const teacherAccess = ['teacher','faculty','instructor'].includes(String(currentAccess?.role || '').toLowerCase());
     const adminCanAuthorize = owner;
     if (owner) ownerBadge?.classList.remove('hidden');
@@ -396,7 +398,8 @@ export function renderAdminPanel(container) {
           ? 'You are an authorized admin. The owner manages administrator accounts and class assignments.'
           : 'You have Admin Panel access.';
 
-    const adminIds = new Set((admins || []).map(a => a.user_id));
+    const adminIds = new Set(admins.map(a => a.user_id));
+    const staffIds = new Set(allAccessRows.filter(a => ['teacher','faculty','instructor'].includes(String(a.role || '').toLowerCase())).map(a => a.user_id));
     const ids = [...adminIds];
     const { data: adminProfiles } = ids.length
       ? await supabase.from('profiles').select('id,name,email,section,program').in('id', ids)
@@ -421,7 +424,7 @@ export function renderAdminPanel(container) {
       if (profileError) {
         candidateHtml = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load student accounts. Check the profiles SELECT policy.</div>';
       } else {
-        const candidates = (profiles || []).filter(p => !adminIds.has(p.id) && p.id !== OWNER_USER_ID);
+        const candidates = (profiles || []).filter(p => !adminIds.has(p.id) && !staffIds.has(p.id) && p.id !== OWNER_USER_ID);
         candidateHtml = `<div class="pt-3 border-t border-surface-container-high">
           <div class="flex items-center justify-between mb-2">
             <h3 class="text-xs font-bold uppercase tracking-wider text-outline">Authorize another student</h3>
