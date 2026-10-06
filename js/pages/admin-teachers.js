@@ -3,6 +3,7 @@ import { showToast } from '../components/toast.js';
 
 const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
 const SECTIONS = Array.from({ length: 8 }, (_, index) => 'CSM' + (index + 1));
+let subjects = [];
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
@@ -118,6 +119,7 @@ export async function renderAdminTeachers(mount) {
     </section>
   `;
 
+  document.getElementById('teacherEditModal')?.remove();
   const editModal = document.createElement('div');
   editModal.id = 'teacherEditModal';
   editModal.className = 'fixed inset-0 z-[110] hidden items-center justify-center p-4';
@@ -361,6 +363,7 @@ export async function renderAdminTeachers(mount) {
       showToast('Subjects could not be loaded: ' + error.message, 'error');
       return;
     }
+    subjects = data || [];
     select.innerHTML = data?.length
       ? '<option value="">Select a subject...</option>' + data.map(subject =>
           '<option value="' + esc(subject.id) + '">' +
