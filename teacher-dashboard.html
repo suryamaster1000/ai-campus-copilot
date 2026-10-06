@@ -161,7 +161,6 @@
 
 <script type="module">
 import { supabase } from './js/supabase.js';
-import { renderSubjectNotes } from './js/pages/admin-subject-notes.js?v=20261005-notes1';
 
 const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
 const status=document.getElementById('status');
@@ -287,7 +286,28 @@ async function start(){
   document.getElementById('attendanceDate').value=todayLocal();
   document.getElementById('attendanceDate').max=todayLocal();
 
-  await Promise.all([loadStudents(),loadSubjects(),loadOverview(),loadSharedData(),renderSubjectNotes(document.getElementById('teacherSubjectNotes'))]);
+  // Load core dashboard data independently so one optional panel cannot block the whole portal.
+  await Promise.allSettled([
+    loadStudents(),
+    loadSubjects(),
+    loadOverview(),
+    loadSharedData()
+  ]);
+
+  // Subject Notes is an optional module; load it separately with a timeout.
+  const notesMount=document.getElementById('teacherSubjectNotes');
+  notesMount.innerHTML='<div class="text-sm text-slate-500">Loading subject notes...</div>';
+  try {
+    const modulePromise=import('./js/pages/admin-subject-notes.js?v=20261006-notes2');
+    const moduleResult=await Promise.race([
+      modulePromise,
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Subject Notes module timed out')),8000))
+    ]);
+    await moduleResult.renderSubjectNotes(notesMount);
+  } catch(e) {
+    console.error('Subject Notes module failed:',e);
+    notesMount.innerHTML='<div class="text-sm text-slate-500">Subject Notes are temporarily unavailable. The rest of the Teacher Dashboard is still available.</div>';
+  }
 }
 
 async function loadStudents(){
