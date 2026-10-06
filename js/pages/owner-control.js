@@ -5,7 +5,7 @@ const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
 const SECTIONS=Array.from({length:8},(_,i)=>'CSM'+(i+1));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let activeTab='students';
-let cache={students:[],admins:[],teachers:[],subjects:[]};
+let cache={profiles:[],students:[],admins:[],teachers:[],subjects:[]};
 
 export async function renderOwnerControl(mount){
   if(!mount)return;
@@ -86,11 +86,13 @@ export async function renderOwnerControl(mount){
       supabase.from('subjects').select('id,name,code,term').order('term').order('code')
     ]);
     if(students.error){list.innerHTML='<div class="text-xs text-error p-3 rounded-xl bg-error-container">Students could not be loaded: '+esc(students.error.message)+'</div>';return;}
-    cache.students=students.data||[]; cache.admins=admins.data||[]; cache.teachers=teachers.data||[]; cache.subjects=subjects.data||[];
+    cache.profiles=students.data||[]; cache.admins=admins.data||[]; cache.teachers=teachers.data||[]; cache.subjects=subjects.data||[];
+    const staffIds=new Set([...cache.admins,...cache.teachers].map(row=>row.user_id));
+    cache.students=cache.profiles.filter(profile=>!staffIds.has(profile.id));
     await loadCurrent();
   }
   function labelSubject(row){const s=Array.isArray(row?.subjects)?row.subjects[0]:row?.subjects;return s?(s.code?(s.code+' — '+s.name):s.name):'No subject assigned';}
-  function profileFor(id){return cache.students.find(p=>p.id===id)||{};}
+  function profileFor(id){return cache.profiles.find(p=>p.id===id)||{};}
   async function loadCurrent(){
     const q=(document.getElementById('ownerSearch').value||'').trim().toLowerCase();
     const list=document.getElementById('ownerList');
