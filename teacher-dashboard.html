@@ -32,6 +32,59 @@
     <div class="bg-white rounded-2xl p-5 border border-slate-200"><div class="text-xs text-slate-500">Access</div><div class="text-2xl font-extrabold mt-2">Assigned Section</div></div>
   </section>
 
+  <section id="shared-data" class="space-y-5">
+    <div class="flex items-end justify-between gap-3">
+      <div>
+        <h2 class="text-xl font-extrabold">Live Shared Campus Data</h2>
+        <p class="text-sm text-slate-500 mt-1">The same live Supabase data used by the student portal, shown here for your assigned section.</p>
+      </div>
+      <button id="refreshSharedData" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-xs font-bold">Refresh</button>
+    </div>
+
+    <div class="grid xl:grid-cols-3 gap-5">
+      <section class="bg-white rounded-2xl border border-slate-200 p-5 xl:col-span-2">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h3 class="font-extrabold">CSM7 Timetable</h3>
+            <p id="timetableMeta" class="text-xs text-slate-500 mt-1">Loading live timetable...</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold">LIVE</span>
+        </div>
+        <div id="sharedTimetable" class="mt-4 space-y-4">
+          <div class="text-sm text-slate-500">Loading timetable...</div>
+        </div>
+      </section>
+
+      <section class="space-y-5">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h3 class="font-extrabold">Latest Notices</h3>
+              <p class="text-xs text-slate-500 mt-1">Published campus notices</p>
+            </div>
+            <span id="sharedNoticeCount" class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold">0</span>
+          </div>
+          <div id="sharedNotices" class="mt-4 space-y-3">
+            <div class="text-sm text-slate-500">Loading notices...</div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h3 class="font-extrabold">Upcoming Events</h3>
+              <p class="text-xs text-slate-500 mt-1">Shared campus events</p>
+            </div>
+            <span id="sharedEventCount" class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">0</span>
+          </div>
+          <div id="sharedEvents" class="mt-4 space-y-3">
+            <div class="text-sm text-slate-500">Loading events...</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </section>
+
   <section id="assigned-students" class="grid lg:grid-cols-2 gap-5">
     <div class="bg-white rounded-2xl border border-slate-200 p-5">
       <div class="flex justify-between items-center gap-3"><h2 class="font-extrabold">Assigned Students</h2><span class="text-xs font-bold text-blue-700">SECTION ONLY</span></div>
@@ -119,6 +172,9 @@ let classStudents=[];
 let attendanceRows=[];
 let subjectList=[];
 let attendanceDraft=new Map();
+let sharedTimetableRows=[];
+let sharedNotices=[];
+let sharedEvents=[];
 
 function show(message, ok=false){
   status.textContent=message;
@@ -129,6 +185,86 @@ function todayLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.get
 function timeout(p,ms=8000){return Promise.race([p,new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error('Request timed out')}),ms))]);}
 
 document.getElementById('logout').onclick=async()=>{await supabase.auth.signOut();location.href='teacher-login.html';};
+
+function formatTime(value){
+  if(!value) return '—';
+  const [h,m]=String(value).slice(0,5).split(':').map(Number);
+  if(Number.isNaN(h)||Number.isNaN(m)) return String(value).slice(0,5);
+  const d=new Date();
+  d.setHours(h,m,0,0);
+  return d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+}
+function formatDate(value){
+  if(!value) return 'Date not set';
+  const d=new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString([], {day:'numeric',month:'short',year:'numeric'});
+}
+function renderSharedTimetable(){
+  const box=document.getElementById('sharedTimetable');
+  const byDay=new Map();
+  const order=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  for(const r of sharedTimetableRows){
+    const day=r.day_of_week||'Unscheduled';
+    if(!byDay.has(day)) byDay.set(day,[]);
+    byDay.get(day).push(r);
+  }
+  const days=[...byDay.keys()].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  if(!days.length){ box.innerHTML='<div class="text-sm text-slate-500">No timetable rows found for '+esc(assignedSection)+'.</div>'; return; }
+  const today=new Date().toLocaleDateString('en-US',{weekday:'long'});
+  box.innerHTML=days.map(day=>{
+    const rows=byDay.get(day).sort((a,b)=>String(a.start_time||'').localeCompare(String(b.start_time||'')));
+    const isToday=day===today;
+    return '<div class="rounded-xl border '+(isToday?'border-blue-300 bg-blue-50/50':'border-slate-200 bg-slate-50')+' p-3">'+
+      '<div class="flex items-center justify-between gap-3 mb-2"><div class="font-extrabold text-sm">'+esc(day)+'</div>'+(isToday?'<span class="text-[10px] font-bold text-blue-700">TODAY</span>':'')+'</div>'+
+      '<div class="space-y-2">'+rows.map(r=>{
+        const subject=r.subjects||{};
+        const name=Array.isArray(subject)?subject[0]?.name:subject.name;
+        const code=Array.isArray(subject)?subject[0]?.code:subject.code;
+        return '<div class="flex items-center gap-3 rounded-lg bg-white border border-slate-200 px-3 py-2"><div class="w-28 shrink-0 text-[11px] font-bold text-slate-500">'+esc(formatTime(r.start_time))+' – '+esc(formatTime(r.end_time))+'</div><div class="min-w-0 flex-1"><div class="text-sm font-bold truncate">'+esc(name||r.notes||'Class')+'</div><div class="text-[11px] text-slate-500 mt-0.5">'+esc(code||'')+(r.room?' • '+esc(r.room):'')+'</div></div></div>';
+      }).join('')+'</div></div>';
+  }).join('');
+  document.getElementById('timetableMeta').textContent=sharedTimetableRows.length+' timetable entries • '+assignedSection+' • live from Supabase';
+}
+function renderSharedNotices(){
+  const box=document.getElementById('sharedNotices');
+  document.getElementById('sharedNoticeCount').textContent=String(sharedNotices.length);
+  box.innerHTML=sharedNotices.length?sharedNotices.map(n=>{
+    return '<article class="rounded-xl border border-amber-100 bg-amber-50/60 p-3"><div class="flex items-start justify-between gap-3"><div class="text-sm font-bold">'+esc(n.title)+'</div><span class="text-[10px] font-bold text-amber-700 shrink-0">'+esc(n.category||'Notice')+'</span></div><div class="text-[11px] text-slate-500 mt-2">'+esc(formatDate(n.published_at))+'</div><p class="text-xs text-slate-700 mt-2 whitespace-pre-line">'+esc(String(n.body||'').slice(0,220))+(String(n.body||'').length>220?'…':'')+'</p></article>';
+  }).join(''):'<div class="text-sm text-slate-500">No published notices right now.</div>';
+}
+function renderSharedEvents(){
+  const box=document.getElementById('sharedEvents');
+  document.getElementById('sharedEventCount').textContent=String(sharedEvents.length);
+  box.innerHTML=sharedEvents.length?sharedEvents.map(e=>{
+    return '<article class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-3"><div class="text-sm font-bold">'+esc(e.title)+'</div><div class="text-[11px] text-slate-500 mt-1">'+esc(formatDate(e.starts_at))+(e.venue?' • '+esc(e.venue):'')+'</div><div class="text-xs text-slate-700 mt-2">'+(e.ends_at?'Until '+esc(formatDate(e.ends_at)):'Event details available in campus portal')+'</div></article>';
+  }).join(''):'<div class="text-sm text-slate-500">No upcoming events right now.</div>';
+}
+async function loadSharedData(){
+  const [timetableRes,noticesRes,eventsRes]=await Promise.all([
+    timeout(supabase.from('timetable').select('id,day_of_week,start_time,end_time,room,notes,subjects(name,code)').eq('section',assignedSection).order('day_of_week').order('start_time')),
+    timeout(supabase.from('notices').select('id,title,body,category,published_at,expires_at,is_published').eq('is_published',true).order('published_at',{ascending:false}).limit(20)),
+    timeout(supabase.from('events').select('id,title,description,event_type,starts_at,ends_at,venue,display_until,is_published').eq('is_published',true).order('starts_at',{ascending:true}).limit(20))
+  ]);
+  if(timetableRes.error){
+    document.getElementById('sharedTimetable').innerHTML='<div class="text-sm text-red-600">Timetable could not be loaded: '+esc(timetableRes.error.message)+'</div>';
+  } else {
+    sharedTimetableRows=(timetableRes.data||[]);
+    renderSharedTimetable();
+  }
+  const now=Date.now();
+  if(noticesRes.error){
+    document.getElementById('sharedNotices').innerHTML='<div class="text-sm text-red-600">Notices could not be loaded: '+esc(noticesRes.error.message)+'</div>';
+  } else {
+    sharedNotices=(noticesRes.data||[]).filter(n=>!n.expires_at||new Date(n.expires_at).getTime()>now);
+    renderSharedNotices();
+  }
+  if(eventsRes.error){
+    document.getElementById('sharedEvents').innerHTML='<div class="text-sm text-red-600">Events could not be loaded: '+esc(eventsRes.error.message)+'</div>';
+  } else {
+    sharedEvents=(eventsRes.data||[]).filter(e=>!e.display_until||new Date(e.display_until).getTime()>now);
+    renderSharedEvents();
+  }
+}
 
 async function start(){
   const {data:{user}={}}=await timeout(supabase.auth.getUser());
@@ -144,14 +280,14 @@ async function start(){
   if(user.id!==OWNER && !assignedSection){await supabase.auth.signOut();location.href='teacher-login.html?error=no-section';return;}
 
   document.getElementById('teacherName').textContent=user.email||'Faculty';
-  const subjectLabel=assignedSubjectInfo?.code ? assignedSubjectInfo.code+' — '+assignedSubjectInfo.name : (assignedSubjectInfo?.name || 'No subject assigned');
+  const subjectLabel=assignedSubjectInfo?.code ? assignedSubjectInfo.code+' — '+assignedSubjectInfo.name : (assignedSubjectInfo?.name || 'All subjects in assigned section');
   document.getElementById('assigned').textContent='Assigned section: '+assignedSection+' • Subject: '+subjectLabel+' • Teaching access enabled';
   document.getElementById('sectionCard').textContent=assignedSection;
   document.getElementById('subjectCard').textContent=subjectLabel;
   document.getElementById('attendanceDate').value=todayLocal();
   document.getElementById('attendanceDate').max=todayLocal();
 
-  await Promise.all([loadStudents(),loadSubjects(),loadOverview(),renderSubjectNotes(document.getElementById('teacherSubjectNotes'))]);
+  await Promise.all([loadStudents(),loadSubjects(),loadOverview(),loadSharedData(),renderSubjectNotes(document.getElementById('teacherSubjectNotes'))]);
 }
 
 async function loadStudents(){
@@ -250,6 +386,7 @@ document.getElementById('attendanceSubject').addEventListener('change',loadAtten
 document.getElementById('markAllPresent').onclick=()=>{classStudents.forEach(p=>attendanceDraft.set(p.id,'present'));renderAttendanceEditor();};
 document.getElementById('saveAttendance').onclick=saveAttendance;
 document.getElementById('refreshOverview').onclick=loadOverview;
+document.getElementById('refreshSharedData').onclick=loadSharedData;
 
 start().catch(e=>{console.error(e);show('Faculty portal could not load: '+(e?.message||'Unknown error'));});
 </script>
