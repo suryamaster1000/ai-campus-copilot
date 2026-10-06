@@ -184,7 +184,7 @@ export function renderAdminPanel(container) {
     loadAdminAccessControl().catch((error) => {
       console.error('Admin access control failed:', error);
     });
-    import('./owner-control.js?v=20261006-owner5')
+    import('./owner-control.js?v=20261006-owner6')
       .then((module) => module.renderOwnerControl(document.getElementById('ownerControlCenter')))
       .catch((error) => console.error('Owner control module failed:', error));
 
@@ -200,7 +200,7 @@ export function renderAdminPanel(container) {
     loadSectionStudents().catch((error) => {
       console.error('Section student management failed:', error);
     });
-    import('./admin-teachers.js?v=20261006-teachers9')
+    import('./admin-teachers.js?v=20261006-teachers10')
       .then((module) => module.renderAdminTeachers(document.getElementById('adminTeacherManagement')))
       .catch((error) => console.error('Admin teachers module failed:', error));
     import('./admin-tools.js?v=20261005-tools2')
