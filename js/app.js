@@ -535,18 +535,12 @@ function handleRoute() {
 
   if (hash === 'admin-panel' && !adminAccessReady) {
     currentRoute = hash;
-    document.title = facultyPortalMode ? 'Faculty Portal — ' + routes[hash].title.replace(' - AI Campus Copilot', '') : routes[hash].title;
+    document.title = routes[hash].title;
     updateActiveNav(hash);
     const mainContainer = document.getElementById('mainContentArea');
     if (mainContainer) {
       mainContainer.innerHTML = '<div class="max-w-[900px] mx-auto py-12 text-center"><p class="text-lg font-semibold">Checking admin permissions…</p><p class="mt-2 text-sm opacity-70">Please wait a moment.</p></div>';
     }
-    return;
-  }
-
-  if (hash === 'admin-panel' && facultyPortalMode && !isAdmin) {
-    showToast('Admin access is restricted to authorized campus staff.', 'error');
-    window.location.hash = '#dashboard';
     return;
   }
 
