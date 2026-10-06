@@ -200,7 +200,7 @@ export function renderAdminPanel(container) {
     loadSectionStudents().catch((error) => {
       console.error('Section student management failed:', error);
     });
-    import('./admin-teachers.js?v=20261006-teachers5')
+    import('./admin-teachers.js?v=20261006-teachers6')
       .then((module) => module.renderAdminTeachers(document.getElementById('adminTeacherManagement')))
       .catch((error) => console.error('Admin teachers module failed:', error));
     import('./admin-tools.js?v=20261005-tools2')
