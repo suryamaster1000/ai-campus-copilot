@@ -62,7 +62,7 @@ export async function renderAdminContent(mount) {
 
   const owner = user.id === OWNER_USER_ID || access?.role === 'owner';
   const teacherRole = ['teacher','faculty','instructor'].includes(String(access?.role || '').toLowerCase());
-  const authorized = owner || access?.role === 'admin' || teacherRole;
+  const authorized = owner || String(access?.role || '').toLowerCase() === 'admin';
 
   if (!authorized) {
     mount.innerHTML = '';
