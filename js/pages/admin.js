@@ -39,6 +39,8 @@ export function renderAdminPanel(container) {
         </div>
       </section>
 
+      <div id="ownerControlCenter" class="space-y-space-md"></div>
+
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2">
@@ -173,6 +175,10 @@ export function renderAdminPanel(container) {
     loadAdminAccessControl().catch((error) => {
       console.error('Admin access control failed:', error);
     });
+    import('./owner-control.js?v=20261006-owner1')
+      .then((module) => module.renderOwnerControl(document.getElementById('ownerControlCenter')))
+      .catch((error) => console.error('Owner control module failed:', error));
+
     loadStudentRegistrations().catch((error) => {
       console.error('Student registrations failed:', error);
     });
