@@ -435,7 +435,7 @@ import { renderSettings } from './pages/settings.js?v=20261003-live1';
 
 async function renderAdminPanelRoute(container) {
   try {
-    const module = await import('./pages/admin.js?v=20261006-owner3');
+    const module = await import('./pages/admin.js?v=20261006-owner4');
     module.renderAdminPanel(container);
   } catch (error) {
     console.error('Admin Panel module failed to load:', error);
