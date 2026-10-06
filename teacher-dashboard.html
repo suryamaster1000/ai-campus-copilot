@@ -45,7 +45,7 @@
       <section class="bg-white rounded-2xl border border-slate-200 p-5 xl:col-span-2">
         <div class="flex items-center justify-between gap-3">
           <div>
-            <h3 class="font-extrabold">CSM7 Timetable</h3>
+            <h3 id="timetableTitle" class="font-extrabold">Assigned Section Timetable</h3>
             <p id="timetableMeta" class="text-xs text-slate-500 mt-1">Loading live timetable...</p>
           </div>
           <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold">LIVE</span>
@@ -281,7 +281,8 @@ async function start(){
   document.getElementById('teacherName').textContent=user.email||'Faculty';
   const subjectLabel=assignedSubjectInfo?.code ? assignedSubjectInfo.code+' — '+assignedSubjectInfo.name : (assignedSubjectInfo?.name || 'All subjects in assigned section');
   document.getElementById('assigned').textContent='Assigned section: '+assignedSection+' • Subject: '+subjectLabel+' • Teaching access enabled';
-  document.getElementById('sectionCard').textContent=assignedSection;
+  document.getElementById('sectionCard').textContent=assignedSection || 'All Sections';
+  document.getElementById('timetableTitle').textContent=(assignedSection || 'Assigned Section')+' Timetable';
   document.getElementById('subjectCard').textContent=subjectLabel;
   document.getElementById('attendanceDate').value=todayLocal();
   document.getElementById('attendanceDate').max=todayLocal();
