@@ -13,7 +13,6 @@ let isOwner = false;
 const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
 let adminAccessReady = false;
 let authRedirectInProgress = false;
-const facultyPortalMode = new URLSearchParams(window.location.search).get('portal') === 'faculty';
 
 // Never let a slow Supabase request prevent the application shell/router from starting.
 function withTimeout(promise, ms, label) {
@@ -167,60 +166,6 @@ async function loadLiveCampusData(profile) {
   campusData.loadedAt = new Date().toISOString();
 }
 
-function applyFacultyPortalMode(profile, adminAccess) {
-  if (!facultyPortalMode) return;
-
-  const role = String(adminAccess?.role || '').toLowerCase();
-  const facultyAuthorized = isOwner || ['teacher', 'faculty', 'instructor'].includes(role);
-  if (!facultyAuthorized) return;
-
-  const section = String(profile?.section || adminAccess?.assigned_section || '').trim();
-  document.body.classList.add('faculty-portal-mode');
-
-  const subtitle = document.querySelector('header > div > div:first-child .font-label-sm.text-on-surface-variant');
-  if (subtitle) subtitle.textContent = section ? 'Faculty Portal • ' + section : 'Faculty Portal';
-
-  const profileName = document.querySelector('#headerProfilePill .font-label-md');
-  const profileRole = document.querySelector('#headerProfilePill .font-label-sm');
-  const profilePill = document.getElementById('headerProfilePill');
-  const avatar = document.getElementById('headerAvatar');
-  if (profileName) profileName.textContent = 'Faculty';
-  if (profileRole) profileRole.textContent = section ? 'Section ' + section : 'Authorized account';
-  if (profilePill) profilePill.title = 'Faculty Settings';
-  if (avatar) avatar.alt = 'Faculty';
-
-  document.querySelectorAll('nav a[data-path]').forEach(link => {
-    const path = link.getAttribute('data-path');
-    const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'settings', 'admin-panel'].includes(path);
-    link.style.display = keep ? '' : 'none';
-  });
-
-  const mobileDrawer = document.getElementById('mobileDrawer');
-  if (mobileDrawer) {
-    mobileDrawer.querySelectorAll('a[data-path]').forEach(link => {
-      const path = link.getAttribute('data-path');
-      const keep = ['ai-assistant', 'timetable', 'notices', 'events', 'settings', 'admin-panel'].includes(path);
-      link.style.display = keep ? '' : 'none';
-    });
-  }
-
-  const brand = document.querySelector('header [onclick*="window.location.hash"]');
-  if (brand) {
-    brand.title = 'Back to Faculty Dashboard';
-    brand.onclick = () => { window.location.href = 'teacher-dashboard.html'; };
-  }
-
-  const gatewayLabels = document.querySelectorAll('aside span.font-label-sm');
-  gatewayLabels.forEach(label => {
-    if (label.textContent.trim() === 'Academic Gateway') label.textContent = 'Faculty Workspace';
-  });
-
-  const gatewayStatus = document.querySelectorAll('aside span.font-label-sm');
-  gatewayStatus.forEach(label => {
-    if (label.textContent.trim() === 'Connected: Supabase live data') label.textContent = 'Section-scoped Supabase data';
-  });
-}
-
 async function handleAuthSession(session) {
   if (!session?.user) {
     currentUser = null;
@@ -288,15 +233,8 @@ async function handleAuthSession(session) {
   const adminRole = String(adminAccess?.role || '').toLowerCase();
   isOwner = isOwner || adminRole === 'owner';
 
-  // Teacher/faculty accounts have a completely separate portal.
-  // Never render the student application for an authorized teacher.
-  if (['teacher','faculty','instructor'].includes(adminRole) &&
-      !window.location.pathname.endsWith('/teacher-dashboard.html') &&
-      !window.location.pathname.endsWith('/teacher-management.html')) {
-    if (!authRedirectInProgress) { authRedirectInProgress = true; window.location.replace('teacher-dashboard.html'); }
-    return false;
-  }
-
+  // Teacher/faculty accounts never enter the student application.
+  // Their dedicated portal starts at teacher-login.html and uses the same Supabase project/data.
   isAdmin = isOwner || (adminAccess?.user_id === currentUser.id && ['admin','teacher','faculty','instructor'].includes(adminRole));
 
   // Never create an approval record here. Only the registration/approval flow
@@ -316,7 +254,6 @@ async function handleAuthSession(session) {
     'Student';
 
   updateHeader(name);
-  applyFacultyPortalMode(profile, adminAccess);
 
   if (profile) {
     campusData.student.name = profile.name || name;
