@@ -152,6 +152,7 @@ export async function renderOwnerControl(mount){
       showToast('Account removed successfully.','success');await load();
     }catch(e){showToast(e?.message||'Removal failed.','error');if(button)button.disabled=false;}
   }
+  window.aiCampusOwnerControl = { setTab, openEdit };
   document.getElementById('ownerTabs').querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
   document.getElementById('ownerSearch').addEventListener('input',loadCurrent);
   document.getElementById('ownerRefresh').onclick=load;
