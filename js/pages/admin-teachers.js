@@ -121,7 +121,7 @@ export async function renderAdminTeachers(mount) {
   const editModal = document.createElement('div');
   editModal.id = 'teacherEditModal';
   editModal.className = 'fixed inset-0 z-[110] hidden items-center justify-center p-4';
-  editModal.innerHTML = \
+  editModal.innerHTML = 
     '<div data-teacher-edit-backdrop class="absolute inset-0 bg-black/45 backdrop-blur-sm"></div>' +
     '<section role="dialog" aria-modal="true" class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl border border-slate-200 shadow-2xl">' +
       '<div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3">' +
