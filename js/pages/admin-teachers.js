@@ -267,5 +267,5 @@ export async function renderAdminTeachers(mount) {
     document.getElementById('adminTeacherManagement')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
-  await loadTeachers();
+  await Promise.all([loadSubjects(), loadTeachers()]);
 }
