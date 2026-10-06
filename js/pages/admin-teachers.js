@@ -118,6 +118,29 @@ export async function renderAdminTeachers(mount) {
     </section>
   `;
 
+  const editModal = document.createElement('div');
+  editModal.id = 'teacherEditModal';
+  editModal.className = 'fixed inset-0 z-[110] hidden items-center justify-center p-4';
+  editModal.innerHTML = \
+    '<div data-teacher-edit-backdrop class="absolute inset-0 bg-black/45 backdrop-blur-sm"></div>' +
+    '<section role="dialog" aria-modal="true" class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl border border-slate-200 shadow-2xl">' +
+      '<div class="p-5 border-b border-slate-200 flex items-start justify-between gap-3">' +
+        '<div><h3 class="text-lg font-extrabold text-slate-900">Edit Teacher</h3><p class="text-xs text-slate-500 mt-1">Owner-only teacher account management</p></div>' +
+        '<button type="button" data-teacher-edit-close class="p-2 rounded-lg hover:bg-slate-100"><span class="material-symbols-outlined text-[20px]">close</span></button>' +
+      '</div>' +
+      '<form id="teacherEditForm" class="p-5 space-y-4">' +
+        '<input id="teacherEditId" type="hidden">' +
+        '<div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Teacher Name</label><input id="teacherEditName" required maxlength="120" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm"></div>' +
+        '<div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Username / Email</label><input id="teacherEditEmail" type="email" required maxlength="254" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm"></div>' +
+        '<div class="grid grid-cols-2 gap-3"><div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Assigned Section</label><select id="teacherEditSection" required class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm">' +
+          SECTIONS.map((section) => '<option value="' + section + '">' + section + '</option>').join('') +
+        '</select></div><div><label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Assigned Subject</label><select id="teacherEditSubject" required class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm"><option value="">Select subject...</option></select></div></div>' +
+        '<div id="teacherEditStatus" class="hidden rounded-xl px-3 py-2.5 text-xs"></div>' +
+        '<div class="flex justify-end gap-2"><button type="button" data-teacher-edit-close class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold">Cancel</button><button id="teacherEditSave" type="submit" class="px-5 py-2.5 rounded-xl bg-blue-700 text-white text-xs font-bold">Save Changes</button></div>' +
+      '</form>' +
+    '</section>';
+  document.body.appendChild(editModal);
+
   async function loadTeachers() {
     const list = document.getElementById('teacherList');
     const badge = document.getElementById('teacherCountBadge');
@@ -174,21 +197,86 @@ export async function renderAdminTeachers(mount) {
 
   }
 
+  function closeTeacherEdit() {
+    editModal.classList.add('hidden');
+    editModal.classList.remove('flex');
+  }
+
+  async function openTeacherEdit(teacherId) {
+    if (!isOwner) {
+      showToast('Only the Owner can edit teacher accounts.', 'error');
+      return;
+    }
+    const status = document.getElementById('teacherEditStatus');
+    const subjectSelect = document.getElementById('teacherEditSubject');
+    const saveButton = document.getElementById('teacherEditSave');
+    const [profileRes, accessRes] = await Promise.all([
+      supabase.from('profiles').select('name,email').eq('id', teacherId).maybeSingle(),
+      supabase.from('admin_users').select('assigned_section,assigned_subject,role').eq('user_id', teacherId).maybeSingle()
+    ]);
+    if (profileRes.error || accessRes.error || !accessRes.data) {
+      showToast(profileRes.error?.message || accessRes.error?.message || 'Teacher account could not be loaded.', 'error');
+      return;
+    }
+    if (!['teacher','faculty','instructor'].includes(String(accessRes.data.role || '').toLowerCase())) {
+      showToast('This account is not a teacher account.', 'error');
+      return;
+    }
+    document.getElementById('teacherEditId').value = teacherId;
+    document.getElementById('teacherEditName').value = profileRes.data?.name || '';
+    document.getElementById('teacherEditEmail').value = profileRes.data?.email || '';
+    document.getElementById('teacherEditSection').value = accessRes.data.assigned_section || SECTIONS[0];
+    subjectSelect.innerHTML = '<option value="">Select subject...</option>' + subjects.map((subject) => '<option value="' + esc(subject.id) + '">' + esc((subject.code ? subject.code + ' — ' : '') + (subject.name || 'Subject')) + '</option>').join('');
+    subjectSelect.value = accessRes.data.assigned_subject || '';
+    status.className = 'hidden';
+    saveButton.disabled = false;
+    saveButton.textContent = 'Save Changes';
+    editModal.classList.remove('hidden');
+    editModal.classList.add('flex');
+    setTimeout(() => document.getElementById('teacherEditName')?.focus(), 0);
+  }
+
   document.querySelectorAll('[data-edit-teacher]').forEach((button) => {
-    button.addEventListener('click', () => {
-      if (!isOwner) {
-        showToast('Only the Owner can edit teacher accounts.', 'error');
-        return;
-      }
-      const editor = window.aiCampusOwnerControl;
-      if (!editor?.openEdit) {
-        showToast('Owner Control is still loading. Please try again.', 'error');
-        return;
-      }
-      editor.setTab('teachers');
-      document.getElementById('ownerControlCenter')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      editor.openEdit('teachers', button.dataset.editTeacher);
-    });
+    button.addEventListener('click', () => openTeacherEdit(button.dataset.editTeacher));
+  });
+
+  editModal.querySelectorAll('[data-teacher-edit-close]').forEach((button) => button.addEventListener('click', closeTeacherEdit));
+  editModal.querySelector('[data-teacher-edit-backdrop]')?.addEventListener('click', closeTeacherEdit);
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeTeacherEdit(); });
+
+  document.getElementById('teacherEditForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!isOwner) return showToast('Only the Owner can edit teacher accounts.', 'error');
+    const id = document.getElementById('teacherEditId').value;
+    const status = document.getElementById('teacherEditStatus');
+    const saveButton = document.getElementById('teacherEditSave');
+    const payload = {
+      teacher_id: id,
+      name: document.getElementById('teacherEditName').value.trim(),
+      email: document.getElementById('teacherEditEmail').value.trim().toLowerCase(),
+      section: document.getElementById('teacherEditSection').value,
+      subject_id: document.getElementById('teacherEditSubject').value
+    };
+    saveButton.disabled = true;
+    saveButton.textContent = 'Saving...';
+    status.className = 'rounded-xl px-3 py-2.5 text-xs bg-blue-50 border border-blue-100 text-blue-800';
+    status.textContent = 'Updating secure teacher account...';
+    try {
+      const { data, error } = await supabase.functions.invoke('owner-update-teacher', { body: payload });
+      if (error || data?.error) throw new Error(data?.error || error?.message || 'Teacher update failed.');
+      status.className = 'rounded-xl px-3 py-2.5 text-xs bg-emerald-50 border border-emerald-200 text-emerald-800';
+      status.textContent = 'Teacher account updated successfully.';
+      showToast('Teacher account updated.', 'success');
+      await loadTeachers();
+      setTimeout(closeTeacherEdit, 250);
+    } catch (error) {
+      status.className = 'rounded-xl px-3 py-2.5 text-xs bg-red-50 border border-red-200 text-red-700';
+      status.textContent = error?.message || 'Teacher update failed.';
+      showToast(status.textContent, 'error');
+    } finally {
+      saveButton.disabled = false;
+      saveButton.textContent = 'Save Changes';
+    }
   });
 
   document.querySelectorAll('[data-remove-teacher]').forEach((button) => {
