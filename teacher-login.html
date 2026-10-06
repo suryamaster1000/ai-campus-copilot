@@ -83,7 +83,10 @@ function message(text, ok=false){
 async function teacherAllowed(user){
   if(!user?.id) return false;
   if(user.id === OWNER_USER_ID) return true;
-  const {data,error}=await supabase.from('admin_users').select('user_id,role,assigned_section').eq('user_id',user.id).maybeSingle();
+  const {data,error}=await Promise.race([
+    supabase.from('admin_users').select('user_id,role,assigned_section').eq('user_id',user.id).maybeSingle(),
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Teacher authorization check timed out')),8000))
+  ]);
   if(error){ console.error(error); return false; }
   const role=String(data?.role||'').toLowerCase();
   if(!['teacher','faculty','instructor'].includes(role)) return false;
@@ -93,18 +96,29 @@ async function teacherAllowed(user){
 form.addEventListener('submit', async (e)=>{
   e.preventDefault();
   btn.disabled=true; btn.textContent='Signing in...';
-  const {data,error}=await supabase.auth.signInWithPassword({
-    email: document.getElementById('email').value.trim(),
-    password: document.getElementById('password').value
-  });
-  if(error){ message(error.message || 'Unable to sign in.'); btn.disabled=false; btn.textContent='Sign in to Teacher Portal'; return; }
-  if(!(await teacherAllowed(data.user))){
+  try {
+    const {data,error}=await Promise.race([
+      supabase.auth.signInWithPassword({
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value
+      }),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Teacher sign-in timed out. Please try again.')),15000))
+    ]);
+    if(error) throw error;
+    if(!(await teacherAllowed(data.user))){
+      await supabase.auth.signOut();
+      message('This account is not authorized for the Teacher Portal.');
+      return;
+    }
+    message('Teacher account verified. Opening portal...', true);
+    setTimeout(()=>{ window.location.href='teacher-dashboard.html'; }, 400);
+  } catch(error) {
     await supabase.auth.signOut();
-    message('This account is not authorized for the Teacher Portal.');
-    btn.disabled=false; btn.textContent='Sign in to Teacher Portal'; return;
+    message(error?.message || 'Unable to sign in to the Teacher Portal.');
+  } finally {
+    btn.disabled=false;
+    btn.textContent='Sign in to Teacher Portal';
   }
-  message('teacher account verified. Opening portal...', true);
-  setTimeout(()=>{ window.location.href='teacher-dashboard.html'; }, 400);
 });
 </script>
 </body>
