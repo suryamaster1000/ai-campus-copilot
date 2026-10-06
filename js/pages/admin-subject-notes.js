@@ -4,12 +4,21 @@ import { showToast } from '../components/toast.js';
 const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
 const SECTIONS = Array.from({ length: 8 }, (_, i) => 'CSM' + (i + 1));
 const esc = (v) => String(v ?? '').replace(/[&<>\"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
+const withTimeout = (promise, ms = 8000, label = 'Request') =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(label + ' timed out')), ms))
+  ]);
 
 export async function renderSubjectNotes(mount) {
   if (!mount) return;
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await withTimeout(supabase.auth.getUser(), 8000, 'Authentication check');
   if (!user) return;
-  const { data: access } = await supabase.from('admin_users').select('role,assigned_section,assigned_subject').eq('user_id', user.id).maybeSingle();
+  const { data: access } = await withTimeout(
+    supabase.from('admin_users').select('role,assigned_section,assigned_subject').eq('user_id', user.id).maybeSingle(),
+    8000,
+    'Teacher access check'
+  );
   const role = String(access?.role || '').toLowerCase();
   const isAdmin = user.id === OWNER_USER_ID || ['owner','admin'].includes(role);
   const isStaff = ['teacher','faculty','instructor'].includes(role);
@@ -42,7 +51,18 @@ export async function renderSubjectNotes(mount) {
   const cancel = document.getElementById('cancelSubjectNoteBtn');
 
   async function loadSubjects() {
-    const { data, error } = await supabase.from('subjects').select('id,name,code,term').order('term').order('code');
+    let data, error;
+    try {
+      ({ data, error } = await withTimeout(
+        supabase.from('subjects').select('id,name,code,term').order('term').order('code'),
+        8000,
+        'Subjects request'
+      ));
+    } catch (e) {
+      subject.innerHTML = '<option value="">Unable to load subjects</option>';
+      showToast(e?.message || 'Subjects could not be loaded.', 'error');
+      return;
+    }
     if (error) { subject.innerHTML = '<option value="">Unable to load subjects</option>'; showToast(error.message, 'error'); return; }
     if (isStaff && !access?.assigned_subject) {
       subject.innerHTML = '<option value="">No subject assigned — contact the administrator</option>';
@@ -59,7 +79,13 @@ export async function renderSubjectNotes(mount) {
     const list = document.getElementById('subjectNotesList');
     let query = supabase.from('subject_notes').select('id,title,content,section,subject_id,source_url,created_by,published_at,subjects:subject_id(id,name,code)').order('published_at',{ascending:false});
     if (isStaff) query = query.eq('section', access?.assigned_section || '');
-    const { data, error } = await query;
+    let data, error;
+    try {
+      ({ data, error } = await withTimeout(query, 8000, 'Subject notes request'));
+    } catch (e) {
+      list.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">' + esc(e?.message || 'Subject notes could not be loaded.') + '</div>';
+      return;
+    }
     if (error) { list.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">'+esc(error.message)+'</div>'; return; }
     const notes = data || [];
     document.getElementById('subjectNotesCount').textContent = String(notes.length);
