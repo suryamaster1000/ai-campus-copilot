@@ -48,6 +48,7 @@ const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let user=null,access=null,section='',subjects=[];
 function timeout(p,ms=8000,label='Request'){return Promise.race([p,new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error(label+' timed out')}),ms))]);}
+async function functionTimeout(p,ms=15000,label='Action'){return Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out')),ms))]);}
 function msg(t,ok=false){$('status').textContent=t;$('status').className='rounded-xl px-4 py-3 text-sm '+(ok?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200');}
 async function start(){
   const r=await timeout(supabase.auth.getUser(),8000,'Authentication check'); user=r.data?.user;
@@ -68,7 +69,12 @@ async function loadStudents(){
   $('students').innerHTML='<div class="text-sm text-slate-500">Loading students...</div>';
   let q=supabase.from('profiles').select('id,name,email,roll_number,section,program,term').eq('section',section).neq('program','Faculty').order('name');
   const r=await timeout(q,8000,'Students request');
-  if(r.error){msg(r.error.message);return;}
+  if(r.error){
+    $('studentCount').textContent='—';
+    $('students').innerHTML='<div class="text-sm text-red-600">Student data could not be loaded: '+esc(r.error.message||'Unknown error')+'</div>';
+    msg(r.error.message||'Student data could not be loaded.');
+    return;
+  }
   const rows=r.data||[];$('studentCount').textContent=rows.length;
   $('students').innerHTML=rows.length?rows.map(s=>'<div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border"><div><div class="text-sm font-bold">'+esc(s.name||'Student')+'</div><div class="text-[11px] text-slate-500">'+esc(s.email||'')+' • '+esc(s.roll_number||'')+' • '+esc(s.section||'')+'</div></div><button data-remove-student="'+esc(s.id)+'" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold">Remove</button></div>').join(''):'<div class="text-sm text-slate-500">No students in this section.</div>';
   document.querySelectorAll('[data-remove-student]').forEach(b=>b.onclick=async()=>{if(!confirm('Remove this student from campus access?'))return;b.disabled=true;const r=await supabase.functions.invoke('remove-student-account',{body:{student_id:b.dataset.removeStudent}});if(r.error||r.data?.error){msg(r.data?.error||r.error?.message||'Could not remove student.');b.disabled=false;return;}msg('Student removed.',true);await loadStudents();});
@@ -76,7 +82,7 @@ async function loadStudents(){
 async function loadPending(){
   $('pending').innerHTML='<div class="text-sm text-slate-500">Loading pending approvals...</div>';
   const r=await timeout(supabase.from('student_registrations').select('id,student_name,email,admission_no,section,status,created_at').eq('section',section).eq('status','pending').order('created_at',{ascending:false}),8000,'Pending approvals request');
-  if(r.error){$('pending').innerHTML='<div class="text-sm text-red-600">Unable to load pending registrations.</div>';return;}
+  if(r.error){$('pending').innerHTML='<div class="text-sm text-red-600">Unable to load pending registrations: '+esc(r.error.message||'Unknown error')+'</div>';return;}
   const rows=r.data||[];$('pendingCount').textContent=rows.length;
   $('pending').innerHTML=rows.length?rows.map(s=>'<div class="p-3 rounded-xl bg-amber-50 border border-amber-100"><div class="text-sm font-bold">'+esc(s.student_name||'Student')+'</div><div class="text-[11px] text-slate-600 mt-1">'+esc(s.email||'')+' • '+esc(s.admission_no||'')+' • '+esc(s.section||'')+'</div><button data-approve="'+esc(s.id)+'" class="mt-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">Approve & Create Account</button></div>').join(''):'<div class="text-sm text-slate-500">No pending students.</div>';
   document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{if(!confirm('Approve this student and create their campus account?'))return;b.disabled=true;b.textContent='Approving...';const r=await supabase.functions.invoke('approve-student-registration',{body:{registration_id:b.dataset.approve}});if(r.error||r.data?.error){msg(r.data?.error||r.error?.message||'Approval failed.');b.disabled=false;b.textContent='Approve & Create Account';return;}msg('Student approved successfully.',true);await Promise.all([loadPending(),loadStudents()]);});
@@ -84,7 +90,11 @@ async function loadPending(){
 async function loadTeachers(){
   $('teachers').innerHTML='<div class="text-sm text-slate-500">Loading teachers...</div>';
   const r=await timeout(supabase.from('admin_users').select('user_id,role,assigned_section,assigned_subject,subjects:assigned_subject(id,name,code)').in('role',['teacher','faculty','instructor']).order('authorized_at'),8000,'Teacher accounts request');
-  if(r.error){msg(r.error.message);return;}
+  if(r.error){
+    $('teachers').innerHTML='<div class="text-sm text-red-600">Teacher data could not be loaded: '+esc(r.error.message||'Unknown error')+'</div>';
+    msg(r.error.message||'Teacher data could not be loaded.');
+    return;
+  }
   const rows=(r.data||[]).filter(x=>x.assigned_section===section);$('teachers').innerHTML=rows.length?rows.map(t=>'<div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border"><div><div class="text-sm font-bold">'+esc(t.subjects?.code?t.subjects.code+' — '+t.subjects.name:t.subjects?.name||'No subject')+'</div><div class="text-[11px] text-slate-500">'+esc(t.assigned_section||'')+' • '+esc(t.user_id)+'</div></div>'+(t.user_id!==user.id?'<button data-remove-teacher="'+esc(t.user_id)+'" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold">Remove</button>':'<span class="text-[11px] text-slate-500">You</span>')+'</div>').join(''):'<div class="text-sm text-slate-500">No other teachers in this section.</div>';
   document.querySelectorAll('[data-remove-teacher]').forEach(b=>b.onclick=async()=>{if(!confirm('Remove this teacher account?'))return;b.disabled=true;const r=await supabase.functions.invoke('remove-teacher-account',{body:{teacher_id:b.dataset.removeTeacher}});if(r.error||r.data?.error){msg(r.data?.error||r.error?.message||'Could not remove teacher.');b.disabled=false;return;}msg('Teacher removed.',true);await loadTeachers();});
 }
