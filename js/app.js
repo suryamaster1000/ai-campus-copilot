@@ -58,13 +58,18 @@ async function loadLiveCampusData(profile) {
     if (!days.has(day)) days.set(day, []);
     const subject = Array.isArray(row.subjects) ? row.subjects[0] : row.subjects;
     const faculty = Array.isArray(row.faculty) ? row.faculty[0] : row.faculty;
+    const note = String(row.notes || '').trim();
+    const isLab = /lab/i.test(note);
+    const isTutorial = /tutorial|exam/i.test(note);
+    const noteLabel = note.split('—')[0].trim();
+    const noteFaculty = note.includes('—') ? note.split('—').slice(1).join('—').trim() : '';
     days.get(day).push({
       id: row.id,
-      code: subject?.code || 'Course',
-      name: subject?.name || 'Class',
-      type: row.notes?.toLowerCase().includes('lab') ? 'Lab' : 'Lecture',
+      code: subject?.code || (isTutorial ? 'EXAM' : 'Course'),
+      name: subject?.name || noteLabel || 'Class',
+      type: isLab ? 'Lab' : (isTutorial ? 'Tutorial' : 'Lecture'),
       room: row.room || 'Room not assigned',
-      faculty: faculty?.name || 'Faculty not assigned',
+      faculty: faculty?.name || noteFaculty || 'Faculty not assigned',
       time: row.start_time && row.end_time ? row.start_time.slice(0,5) + ' - ' + row.end_time.slice(0,5) : 'Time not assigned',
       isCurrent: false
     });
