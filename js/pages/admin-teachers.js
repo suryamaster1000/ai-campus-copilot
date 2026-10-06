@@ -165,6 +165,7 @@ export async function renderAdminTeachers(mount) {
           '<div class="flex items-center gap-2">' +
             '<span class="px-3 py-2 rounded-lg bg-primary-fixed text-on-primary-fixed text-xs font-bold">' + esc(section || 'Unassigned') + '</span>' +
             '<span class="px-3 py-2 rounded-lg bg-secondary-container text-on-secondary-container text-xs font-bold">' + esc(teacher.subjects?.code ? teacher.subjects.code + ' — ' + teacher.subjects.name : teacher.subjects?.name || 'No subject') + '</span>' +
+            (isOwner ? '<button type="button" data-edit-teacher="' + esc(teacher.user_id) + '" class="px-3 py-2 rounded-lg bg-primary text-on-primary text-xs font-bold">Edit</button>' : '') +
             (teacher.user_id !== user?.id ? '<button type="button" data-remove-teacher="' + esc(teacher.user_id) + '" class="px-3 py-2 rounded-lg bg-error-container text-on-error-container text-xs font-bold">Remove</button>' : '') +
           '</div>' +
         '</div>' +
@@ -172,6 +173,19 @@ export async function renderAdminTeachers(mount) {
     }).join('');
 
   }
+
+  document.querySelectorAll('[data-edit-teacher]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const editor = window.aiCampusOwnerControl;
+      if (!editor?.openEdit) {
+        showToast('Owner Control is still loading. Please try again.', 'error');
+        return;
+      }
+      editor.setTab('teachers');
+      document.getElementById('ownerControlCenter')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      editor.openEdit('teachers', button.dataset.editTeacher);
+    });
+  });
 
   document.querySelectorAll('[data-remove-teacher]').forEach((button) => {
     button.addEventListener('click', async () => {
