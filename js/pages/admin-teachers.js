@@ -2,6 +2,7 @@ import { supabase } from '../supabase.js';
 import { showToast } from '../components/toast.js';
 
 const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
+const OWNER_EMAIL = 'suryaneerukonda1@gmail.com';
 const SECTIONS = Array.from({ length: 8 }, (_, index) => 'CSM' + (index + 1));
 let subjects = [];
 
@@ -19,7 +20,7 @@ export async function renderAdminTeachers(mount) {
     ? await supabase.from('admin_users').select('role,assigned_section').eq('user_id', user.id).maybeSingle()
     : { data: null };
   const role = String(access?.role || '').toLowerCase();
-  const isOwner = user?.id === OWNER_USER_ID || role === 'owner';
+  const isOwner = user?.id === OWNER_USER_ID || String(user?.email || '').toLowerCase() === OWNER_EMAIL || role === 'owner';
   const isSectionStaff = ['teacher','faculty','instructor'].includes(role);
 
   if (!isOwner && !isSectionStaff) {
