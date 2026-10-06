@@ -195,6 +195,28 @@ export async function renderAdminTeachers(mount) {
       '</div>';
     }).join('');
 
+    list.onclick = async (event) => {
+      const editButton = event.target.closest('[data-edit-teacher]');
+      if (editButton) {
+        await openTeacherEdit(editButton.dataset.editTeacher);
+        return;
+      }
+
+      const removeButton = event.target.closest('[data-remove-teacher]');
+      if (removeButton) {
+        const teacherId = removeButton.dataset.removeTeacher;
+        if (!teacherId || !confirm('Remove this teacher account from the campus?')) return;
+        removeButton.disabled = true;
+        const { data, error } = await supabase.functions.invoke('remove-teacher-account', { body: { teacher_id: teacherId } });
+        if (error || data?.error) {
+          showToast(data?.error || error?.message || 'Could not remove teacher.', 'error');
+          removeButton.disabled = false;
+          return;
+        }
+        showToast('Teacher account removed.', 'success');
+        await loadTeachers();
+      }
+    };
   }
 
   function closeTeacherEdit() {
@@ -236,10 +258,6 @@ export async function renderAdminTeachers(mount) {
     setTimeout(() => document.getElementById('teacherEditName')?.focus(), 0);
   }
 
-  document.querySelectorAll('[data-edit-teacher]').forEach((button) => {
-    button.addEventListener('click', () => openTeacherEdit(button.dataset.editTeacher));
-  });
-
   editModal.querySelectorAll('[data-teacher-edit-close]').forEach((button) => button.addEventListener('click', closeTeacherEdit));
   editModal.querySelector('[data-teacher-edit-backdrop]')?.addEventListener('click', closeTeacherEdit);
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeTeacherEdit(); });
@@ -277,22 +295,6 @@ export async function renderAdminTeachers(mount) {
       saveButton.disabled = false;
       saveButton.textContent = 'Save Changes';
     }
-  });
-
-  document.querySelectorAll('[data-remove-teacher]').forEach((button) => {
-    button.addEventListener('click', async () => {
-      const teacherId = button.dataset.removeTeacher;
-      if (!teacherId || !confirm('Remove this teacher account from the campus?')) return;
-      button.disabled = true;
-      const { data, error } = await supabase.functions.invoke('remove-teacher-account', { body: { teacher_id: teacherId } });
-      if (error || data?.error) {
-        showToast(data?.error || error?.message || 'Could not remove teacher.', 'error');
-        button.disabled = false;
-        return;
-      }
-      showToast('Teacher account removed.', 'success');
-      await loadTeachers();
-    });
   });
 
   document.getElementById('createTeacherForm')?.addEventListener('submit', async (event) => {
