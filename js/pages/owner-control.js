@@ -2,6 +2,7 @@ import { supabase } from '../supabase.js';
 import { showToast } from '../components/toast.js';
 
 const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
+const OWNER_EMAIL='suryaneerukonda1@gmail.com';
 const SECTIONS=Array.from({length:8},(_,i)=>'CSM'+(i+1));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let activeTab='students';
