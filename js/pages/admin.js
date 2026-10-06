@@ -206,7 +206,7 @@ export function renderAdminPanel(container) {
     import('./admin-tools.js?v=20261005-tools2')
       .then((module) => module.renderAdminTools(document.getElementById('adminExtraTools')))
       .catch((error) => console.error('Admin tools module failed:', error));
-    import('./admin-content.js?v=20261005-live4')
+    import('./admin-content.js?v=20261006-live5')
       .then((module) => module.renderAdminContent(document.getElementById('adminContentManagement')))
       .catch((error) => console.error('Admin content module failed:', error));
     import('./admin-subject-notes.js?v=20261005-notes1')
