@@ -231,10 +231,12 @@ export function renderTasks(container) {
 
           // Reload from Supabase so the generated UUID is used by the UI.
           const { supabase } = await import('../supabase.js');
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          if (userError || !user) throw userError || new Error('Your session has expired. Please sign in again.');
           const { data: freshTasks, error } = await supabase
             .from('tasks')
             .select('*')
-            .eq('user_id', currentUser?.id)
+            .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
           if (error) throw error;
