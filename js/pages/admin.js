@@ -567,9 +567,9 @@ export function renderAdminPanel(container) {
       .eq('user_id', user.id)
       .maybeSingle();
 
-    const canView = user.id === OWNER_USER_ID || ['owner','admin','teacher','faculty','instructor'].includes(String(access?.role || '').toLowerCase());
+    const canView = user.id === OWNER_USER_ID || ['owner','admin'].includes(String(access?.role || '').toLowerCase());
     if (!canView) {
-      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Student reports are restricted to authorized administrators and teachers.</div>';
+      body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Student reports are restricted to the owner and authorized administrators.</div>';
       if (countBadge) countBadge.textContent = '0 open';
       return;
     }
