@@ -4,6 +4,8 @@ import { showToast } from '../components/toast.js';
 
 const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
 
+const OWNER_SECTIONS = Array.from({ length: 8 }, (_, index) => 'CSM' + (index + 1));
+
 export function renderAdminPanel(container) {
   if (!container) return;
   container.innerHTML = `
@@ -66,14 +68,21 @@ export function renderAdminPanel(container) {
 
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/20 shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div class="flex items-center gap-2">
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
               <span class="material-symbols-outlined text-primary">groups</span>
               <h2 class="font-headline-md text-base font-bold text-on-surface">Section Students</h2>
+              <span id="ownerSectionBadge" class="hidden px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">OWNER VIEW</span>
             </div>
-            <p id="sectionStudentsSubtitle" class="text-xs text-on-surface-variant mt-1">Manage students in your assigned section.</p>
+            <p id="sectionStudentsSubtitle" class="text-xs text-on-surface-variant mt-1">Select a section to view and manage its students.</p>
           </div>
-          <button id="refreshSectionStudentsBtn" type="button" class="px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">Refresh</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="ownerSectionSelect" class="hidden px-3 py-2 rounded-lg border border-surface-container-high bg-white text-xs font-bold outline-none focus:border-primary">
+              <option value="">Select section...</option>
+              ${OWNER_SECTIONS.map(section => `<option value="${section}">${section}</option>`).join('')}
+            </select>
+            <button id="refreshSectionStudentsBtn" type="button" class="px-3 py-2 rounded-lg bg-surface-container text-on-surface text-xs font-bold border border-surface-container-high">Refresh</button>
+          </div>
         </div>
         <div id="sectionStudentsBody" class="mt-4 space-y-2">
           <div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Loading students...</div>
@@ -234,6 +243,10 @@ export function renderAdminPanel(container) {
 
   document.getElementById('studentLogSearch')?.addEventListener('input', () => {
     loadStudentLog().catch(error => console.error('Student log search failed:', error));
+  });
+
+  document.getElementById('ownerSectionSelect')?.addEventListener('change', async () => {
+    await loadSectionStudents();
   });
 
   document.getElementById('refreshSectionStudentsBtn')?.addEventListener('click', async () => {
@@ -474,22 +487,40 @@ export function renderAdminPanel(container) {
     const role = String(access?.role || '').toLowerCase();
     const owner = user.id === OWNER_USER_ID || role === 'owner';
     const staff = ['teacher','faculty','instructor'].includes(role);
+    const ownerSectionSelect = document.getElementById('ownerSectionSelect');
+    const ownerSectionBadge = document.getElementById('ownerSectionBadge');
+    if (owner) {
+      ownerSectionSelect?.classList.remove('hidden');
+      ownerSectionBadge?.classList.remove('hidden');
+      if (ownerSectionSelect && !ownerSectionSelect.value) {
+        ownerSectionSelect.value = 'CSM1';
+      }
+    }
     if (!owner && !staff) {
       body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">Section student management is restricted.</div>';
       return;
     }
 
+    const selectedOwnerSection = owner ? String(ownerSectionSelect?.value || '').trim() : '';
     let query = supabase.from('profiles').select('id,name,email,roll_number,program,term,section').order('name', { ascending: true });
-    if (staff) query = query.eq('section', access?.assigned_section || '').neq('program', 'Faculty');
+    if (staff) {
+      query = query.eq('section', access?.assigned_section || '').neq('program', 'Faculty');
+    } else if (owner && selectedOwnerSection) {
+      query = query.eq('section', selectedOwnerSection).neq('program', 'Faculty');
+    }
     const { data: students, error } = await query;
     if (error) {
       body.innerHTML = '<div class="text-xs text-error p-3 rounded-xl bg-error-container">Unable to load students: ' + escReportValue(error.message) + '</div>';
       return;
     }
 
-    const section = staff ? access?.assigned_section : 'All Sections';
+    const section = staff ? access?.assigned_section : (selectedOwnerSection || 'No section selected');
     const subtitle = document.getElementById('sectionStudentsSubtitle');
-    if (subtitle) subtitle.textContent = staff ? 'Manage students in ' + section + ' only.' : 'Manage students across all sections.';
+    if (subtitle) {
+      subtitle.textContent = staff
+        ? 'Manage students in ' + section + ' only.'
+        : 'Owner view • Manage students in ' + section + ' only.';
+    }
     if (!students?.length) {
       body.innerHTML = '<div class="text-xs text-on-surface-variant p-3 rounded-xl bg-surface-container-low">No students found in ' + escReportValue(section || 'this section') + '.</div>';
       return;
