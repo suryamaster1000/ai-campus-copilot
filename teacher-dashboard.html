@@ -522,6 +522,24 @@ async function start(){
   }
 }
 
+async function loadSubjects(){
+  // Dashboard only needs the assigned subject label; attendance/notes pages load the full subject list.
+  const card=document.getElementById('subjectCard');
+  if(card && assignedSubjectInfo) card.textContent=assignedSubjectInfo.code ? assignedSubjectInfo.code+' — '+assignedSubjectInfo.name : (assignedSubjectInfo.name||'All subjects in assigned section');
+  return assignedSubjectInfo;
+}
+
+async function loadOverview(){
+  const rateEl=document.getElementById('attendanceRate');
+  if(!rateEl || !assignedSection) return;
+  const {data,error}=await timeout(supabase.from('attendance').select('status,profiles!inner(section)').eq('profiles.section',assignedSection));
+  if(error){rateEl.textContent='—';return;}
+  const rows=data||[];
+  const marked=rows.filter(r=>['present','absent'].includes(String(r.status||'').toLowerCase()));
+  const present=marked.filter(r=>String(r.status||'').toLowerCase()==='present').length;
+  rateEl.textContent=marked.length ? Math.round((present/marked.length)*100)+'%' : '—';
+}
+
 async function loadStudents(){
   const box=document.getElementById('students');
   box.innerHTML='<div class="text-sm text-slate-500">Loading students...</div>';
