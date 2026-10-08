@@ -492,8 +492,11 @@ async function start(){
   document.getElementById('sectionCard').textContent=assignedSection || 'All Sections';
   document.getElementById('timetableTitle').textContent=(assignedSection || 'Assigned Section')+' Timetable';
   document.getElementById('subjectCard').textContent=subjectLabel;
-  document.getElementById('attendanceDate').value=todayLocal();
-  document.getElementById('attendanceDate').max=todayLocal();
+  const attendanceDate = document.getElementById('attendanceDate');
+  if (attendanceDate) {
+    attendanceDate.value=todayLocal();
+    attendanceDate.max=todayLocal();
+  }
 
   // Load core dashboard data independently so one optional panel cannot block the whole portal.
   await Promise.allSettled([
