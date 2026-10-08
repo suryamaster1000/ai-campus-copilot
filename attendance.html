@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Attendance — AI Campus Copilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>body{font-family:Inter,system-ui,sans-serif}</style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+<header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <a href="index.html#dashboard" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-blue-50 hover:text-blue-700" aria-label="Back to student dashboard">←</a>
+      <div class="min-w-0"><div class="font-extrabold truncate">AI Campus Copilot</div><div class="text-xs text-slate-500">Student Portal • My Attendance</div></div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden sm:block text-right"><div id="studentName" class="text-sm font-semibold">Student</div><div id="studentSection" class="text-[11px] text-slate-500">Loading...</div></div>
+      <button id="logout" type="button" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">Logout</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto p-5 space-y-5">
+  <div id="status" class="hidden rounded-xl px-4 py-3 text-sm"></div>
+
+  <section class="rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 text-white p-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <div class="text-xs font-bold uppercase tracking-wider text-blue-200">Personal Academic Record</div>
+        <h1 class="text-2xl lg:text-3xl font-extrabold mt-1">My Attendance</h1>
+        <p class="text-sm text-blue-100 mt-2">Only your own attendance records are shown.</p>
+      </div>
+      <a href="index.html#dashboard" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 text-xs font-bold hover:bg-blue-50">Student Dashboard</a>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="bg-white rounded-2xl border border-slate-200 p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Classes Recorded</div><div id="totalRecords" class="text-2xl font-extrabold mt-2">0</div></div>
+    <div class="bg-emerald-50 rounded-2xl border border-emerald-200 p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Present</div><div id="totalPresent" class="text-2xl font-extrabold mt-2 text-emerald-700">0</div></div>
+    <div class="bg-red-50 rounded-2xl border border-red-200 p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-red-600">Absent</div><div id="totalAbsent" class="text-2xl font-extrabold mt-2 text-red-700">0</div></div>
+    <div class="bg-blue-50 rounded-2xl border border-blue-100 p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-blue-600">Overall Rate</div><div id="overallRate" class="text-2xl font-extrabold mt-2 text-blue-900">—</div></div>
+  </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div><h2 class="font-extrabold">Subject-wise Attendance</h2><p class="text-sm text-slate-500 mt-1">Your attendance percentage for each subject.</p></div>
+      <button id="refreshAttendance" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-xs font-bold">Refresh</button>
+    </div>
+    <div id="subjectCards" class="mt-4 grid md:grid-cols-2 gap-3"><div class="text-sm text-slate-500">Loading attendance...</div></div>
+  </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div><h2 class="font-extrabold">Attendance History</h2><p class="text-sm text-slate-500 mt-1">Most recent records appear first.</p></div>
+      <div class="relative w-full sm:w-[290px]">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+        <input id="attendanceSearch" type="search" autocomplete="off" placeholder="Search subject..." class="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 text-xs outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+      </div>
+    </div>
+    <div id="attendanceHistory" class="mt-4 space-y-2 max-h-[520px] overflow-y-auto pr-1"><div class="text-sm text-slate-500">Loading attendance...</div></div>
+  </section>
+
+  <section class="rounded-2xl bg-amber-50 border border-amber-200 p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div><h2 class="font-extrabold text-amber-950">Attendance issue?</h2><p class="text-sm text-amber-900 mt-1">Send a report to a teacher assigned to your section.</p></div>
+      <button id="reportAttendanceBtn" type="button" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 text-white text-xs font-bold hover:bg-amber-600">Report Attendance Issue</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { supabase } from './js/supabase.js';
+
+let currentUser=null;
+let profile=null;
+let attendanceRows=[];
+
+function show(message,ok=false){
+  const el=document.getElementById('status');
+  el.textContent=message;
+  el.className='rounded-xl px-4 py-3 text-sm '+(ok?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200');
+  el.classList.remove('hidden');
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function timeout(p,ms=8000){return Promise.race([p,new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error('Request timed out')}),ms))]);}
+function formatDate(v){const d=new Date(v+'T00:00:00');return Number.isNaN(d.getTime())?v:d.toLocaleDateString([],{day:'2-digit',month:'short',year:'numeric'});}
+function subjectOf(r){return Array.isArray(r.subjects)?r.subjects[0]:r.subjects;}
+function stats(rows){
+  const present=rows.filter(r=>r.status==='present').length;
+  const absent=rows.filter(r=>r.status==='absent').length;
+  const total=rows.length;
+  return {present,absent,total,rate:total?((present/total)*100).toFixed(1)+'%':'—'};
+}
+function render(){
+  const total=stats(attendanceRows);
+  document.getElementById('totalRecords').textContent=String(total.total);
+  document.getElementById('totalPresent').textContent=String(total.present);
+  document.getElementById('totalAbsent').textContent=String(total.absent);
+  document.getElementById('overallRate').textContent=total.rate;
+
+  const bySubject=new Map();
+  for(const row of attendanceRows){
+    const s=subjectOf(row)||{};
+    const key=row.subject_id||s.code||s.name||'unknown';
+    const item=bySubject.get(key)||{code:s.code||'',name:s.name||'Subject',rows:[]};
+    item.rows.push(row);
+    bySubject.set(key,item);
+  }
+
+  const cards=[...bySubject.values()];
+  document.getElementById('subjectCards').innerHTML=cards.length?cards.map(item=>{
+    const s=stats(item.rows);
+    const pct=parseFloat(s.rate)||0;
+    return '<div class="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div class="flex items-start justify-between gap-3"><div><div class="text-[10px] font-black text-blue-700">'+esc(item.code||'SUBJECT')+'</div><div class="text-sm font-extrabold text-slate-900 mt-1">'+esc(item.name)+'</div></div><div class="text-lg font-extrabold '+(pct>=75?'text-emerald-700':'text-red-700')+'">'+esc(s.rate)+'</div></div><div class="h-2 rounded-full bg-slate-200 mt-3 overflow-hidden"><div class="h-full rounded-full '+(pct>=75?'bg-emerald-500':'bg-red-500')+'" style="width:'+Math.min(100,Math.max(0,pct))+'%"></div></div><div class="flex gap-4 text-[11px] text-slate-500 mt-3"><span>Held: '+s.total+'</span><span>Present: '+s.present+'</span><span>Absent: '+s.absent+'</span></div></div>';
+  }).join(''):'<div class="text-sm text-slate-500">No attendance records found yet.</div>';
+
+  renderHistory();
+}
+function renderHistory(){
+  const q=String(document.getElementById('attendanceSearch').value||'').trim().toLowerCase();
+  const rows=attendanceRows.filter(r=>{const s=subjectOf(r)||{};return !q||String(s.name||'').toLowerCase().includes(q)||String(s.code||'').toLowerCase().includes(q);});
+  document.getElementById('attendanceHistory').innerHTML=rows.length?rows.map(r=>{
+    const s=subjectOf(r)||{};
+    const present=r.status==='present';
+    return '<div class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3"><div class="min-w-0"><div class="text-sm font-bold truncate">'+esc(s.code?s.code+' — ':'')+esc(s.name||'Subject')+'</div><div class="text-[11px] text-slate-500 mt-1">'+esc(formatDate(r.attendance_date))+(r.marked_at?' • Marked '+esc(new Date(r.marked_at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})):'')+'</div></div><span class="px-2.5 py-1 rounded-full text-[10px] font-bold '+(present?'bg-emerald-100 text-emerald-800':'bg-red-100 text-red-800')+'">'+(present?'Present':'Absent')+'</span></div>';
+  }).join(''):'<div class="text-sm text-slate-500 p-3">No matching attendance records.</div>';
+}
+async function loadAttendance(){
+  const {data,error}=await timeout(supabase.from('attendance').select('id,subject_id,attendance_date,status,marked_at,subjects(name,code)').eq('user_id',currentUser.id).order('attendance_date',{ascending:false}));
+  if(error){show('Attendance could not be loaded: '+error.message);return;}
+  attendanceRows=data||[];
+  render();
+}
+async function start(){
+  const {data:{user}={}}=await timeout(supabase.auth.getUser());
+  if(!user){location.href='login.html';return;}
+  currentUser=user;
+  const {data:me,error}=await timeout(supabase.from('profiles').select('id,name,email,section,program,term').eq('id',user.id).maybeSingle());
+  if(error||!me){location.href='login.html?error=auth-check';return;}
+  profile=me;
+  document.getElementById('studentName').textContent=me.name||user.email||'Student';
+  document.getElementById('studentSection').textContent=me.section?('Section '+me.section):'Student';
+  await loadAttendance();
+}
+document.getElementById('logout').onclick=async()=>{await supabase.auth.signOut();location.href='login.html';};
+document.getElementById('refreshAttendance').onclick=loadAttendance;
+document.getElementById('attendanceSearch').addEventListener('input',renderHistory);
+document.getElementById('reportAttendanceBtn').onclick=()=>{
+  sessionStorage.setItem('campus_report_prefill','attendance');
+  location.href='index.html#dashboard';
+  setTimeout(()=>document.querySelector('[data-report-button]')?.click(),700);
+};
+supabase.auth.onAuthStateChange((event,session)=>{
+  if(event==='SIGNED_OUT') location.href='login.html';
+});
+start().catch(e=>{console.error(e);show('Attendance page could not load: '+(e?.message||'Unknown error'));});
+</script>
+</body>
+</html>
