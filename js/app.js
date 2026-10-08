@@ -800,6 +800,10 @@ function initReportFeature() {
       submitButton.innerHTML = '<span class="material-symbols-outlined text-[17px]">send</span>Send Report';
     }
   });
+
+  if (sessionStorage.getItem('campus_report_prefill') === 'attendance') {
+    setTimeout(() => openModal(), 0);
+  }
 }
 
 function updateSidebarBadges() {
