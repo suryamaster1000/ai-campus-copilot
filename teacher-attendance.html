@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Teacher Attendance — AI Campus Copilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>
+    body{font-family:Inter,system-ui,sans-serif}
+    #attendanceStudentList{scrollbar-width:thin}
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+<header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <a href="teacher-dashboard.html" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-blue-50 hover:text-blue-700" aria-label="Back to Teacher Dashboard">←</a>
+      <div class="min-w-0">
+        <div class="font-extrabold truncate">AI Campus Copilot</div>
+        <div class="text-xs text-slate-500">Teacher Portal • Attendance Workspace</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="teacherName" class="hidden sm:block text-sm font-semibold"></span>
+      <button id="logout" type="button" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">Logout</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto p-5 space-y-5">
+  <div id="status" class="hidden rounded-xl px-4 py-3 text-sm"></div>
+
+  <section class="rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 text-white p-6">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+      <div>
+        <div class="text-xs font-bold uppercase tracking-wider text-blue-200">Teacher Only</div>
+        <h1 class="text-2xl lg:text-3xl font-extrabold mt-1">Attendance Workspace</h1>
+        <p id="assigned" class="text-sm text-blue-100 mt-2">Loading assigned section...</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="teacher-dashboard.html" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold hover:bg-blue-50">Teacher Dashboard</a>
+        <a href="teacher-management.html" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/15 border border-white/20 text-xs font-bold hover:bg-white/20">Manage Section</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-extrabold">Create / Edit Attendance</h2>
+          <span id="attendanceModeBadge" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">NOT STARTED</span>
+        </div>
+        <p class="text-sm text-slate-500 mt-1">Choose a date and subject. The system checks the assigned section timetable before allowing attendance.</p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-3 xl:min-w-[500px]">
+        <label class="block">
+          <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Date</span>
+          <input id="attendanceDate" type="date" class="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold" />
+        </label>
+        <label class="block">
+          <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Subject</span>
+          <select id="attendanceSubject" class="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold">
+            <option value="">Loading subjects...</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div id="attendanceClassCard" class="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div id="attendanceClassTitle" class="text-sm font-extrabold text-slate-900">Select a date and subject</div>
+          <div id="attendanceClassMeta" class="text-xs text-slate-500 mt-1">The timetable will be checked before attendance can be recorded.</div>
+        </div>
+        <span id="attendanceExistingBadge" class="hidden px-2.5 py-1 rounded-full bg-white text-indigo-700 border border-indigo-100 text-[10px] font-bold">Attendance already saved</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="flex items-center justify-between gap-3 flex-wrap">
+      <div>
+        <h2 class="font-extrabold">Student Attendance</h2>
+        <p class="text-xs text-slate-500 mt-1">Mark every assigned-section student before saving.</p>
+      </div>
+      <div class="relative w-full sm:w-[320px]">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+        <input id="attendanceStudentSearch" type="search" autocomplete="off" placeholder="Search name, roll number or email..."
+          class="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 text-xs outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+      </div>
+    </div>
+
+    <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</div><div id="attendanceTotalCount" class="text-xl font-extrabold mt-1">0</div></div>
+      <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3"><div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Present</div><div id="attendancePresentCount" class="text-xl font-extrabold mt-1 text-emerald-700">0</div></div>
+      <div class="rounded-xl bg-red-50 border border-red-200 p-3"><div class="text-[10px] font-bold uppercase tracking-wider text-red-600">Absent</div><div id="attendanceAbsentCount" class="text-xl font-extrabold mt-1 text-red-700">0</div></div>
+      <div class="rounded-xl bg-amber-50 border border-amber-200 p-3"><div class="text-[10px] font-bold uppercase tracking-wider text-amber-600">Not Marked</div><div id="attendanceUnmarkedCount" class="text-xl font-extrabold mt-1 text-amber-700">0</div></div>
+    </div>
+
+    <div id="attendanceSummary" class="mt-3 text-xs text-slate-500">Select a date and subject to start attendance.</div>
+
+    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/70 p-2">
+      <div id="attendanceStudentList" class="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+        <div class="text-sm text-slate-500 p-4">Select a date and subject to start attendance.</div>
+      </div>
+    </div>
+
+    <div id="attendanceActions" class="hidden mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div class="flex flex-wrap gap-2">
+        <button id="markAllPresent" type="button" class="px-4 py-2.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold">Mark All Present</button>
+        <button id="markAllAbsent" type="button" class="px-4 py-2.5 rounded-xl bg-red-100 text-red-800 text-xs font-bold">Mark All Absent</button>
+      </div>
+      <button id="saveAttendance" type="button" disabled class="px-5 py-2.5 rounded-xl bg-blue-700 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed">Save Attendance</button>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div>
+        <h2 class="font-extrabold">Attendance Overview</h2>
+        <p class="text-sm text-slate-500 mt-1">Subject-wise attendance records for your assigned section.</p>
+      </div>
+      <button id="refreshOverview" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-xs font-bold">Refresh Overview</button>
+    </div>
+    <div class="mt-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="rounded-xl bg-blue-50 border border-blue-100 p-3"><div class="text-[10px] font-bold uppercase tracking-wider text-blue-600">Records</div><div id="overviewRecords" class="text-xl font-extrabold text-blue-900 mt-1">0</div></div>
+      <div class="rounded-xl bg-emerald-50 border border-emerald-200 p-3"><div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Present</div><div id="overviewPresent" class="text-xl font-extrabold text-emerald-700 mt-1">0</div></div>
+      <div class="rounded-xl bg-red-50 border border-red-200 p-3"><div class="text-[10px] font-bold uppercase tracking-wider text-red-600">Absent</div><div id="overviewAbsent" class="text-xl font-extrabold text-red-700 mt-1">0</div></div>
+      <div class="rounded-xl bg-slate-50 border border-slate-200 p-3"><div class="text-[10px] font-bold uppercase tracking-wider text-slate-600">Overall Rate</div><div id="overviewRate" class="text-xl font-extrabold mt-1">—</div></div>
+    </div>
+    <div id="attendanceOverview" class="mt-4 overflow-x-auto">
+      <div class="text-sm text-slate-500">Loading overview...</div>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { supabase } from './js/supabase.js';
+
+const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
+const TEACHER_ROLES=['teacher','faculty','instructor'];
+let assignedSection='';
+let assignedSubject='';
+let assignedSubjectInfo=null;
+let classStudents=[];
+let attendanceRows=[];
+let attendanceDraft=new Map();
+let subjectList=[];
+
+function show(message,ok=false){
+  const el=document.getElementById('status');
+  el.textContent=message;
+  el.className='rounded-xl px-4 py-3 text-sm '+(ok?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200');
+  el.classList.remove('hidden');
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function todayLocal(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function timeout(p,ms=8000){return Promise.race([p,new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error('Request timed out')}),ms))]);}
+function formatTime(value){
+  if(!value)return '—';
+  const [h,m]=String(value).slice(0,5).split(':').map(Number);
+  if(Number.isNaN(h)||Number.isNaN(m))return String(value).slice(0,5);
+  const d=new Date();d.setHours(h,m,0,0);
+  return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+}
+function getDayFromDate(value){
+  const d=new Date(String(value||'')+'T00:00:00');
+  return Number.isNaN(d.getTime())?'': ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
+}
+
+document.getElementById('logout').onclick=async()=>{await supabase.auth.signOut();location.href='teacher-login.html';};
+
+async function loadSubjects(){
+  const select=document.getElementById('attendanceSubject');
+  select.innerHTML='<option value="">Loading subjects...</option>';
+
+  if(assignedSubject && assignedSubjectInfo){
+    subjectList=[assignedSubjectInfo];
+    select.innerHTML='<option value="'+esc(assignedSubjectInfo.id)+'">'+esc((assignedSubjectInfo.code?assignedSubjectInfo.code+' — ':'')+(assignedSubjectInfo.name||'Subject'))+'</option>';
+    select.value=assignedSubject;
+    return;
+  }
+
+  const {data,error}=await timeout(
+    supabase.from('timetable')
+      .select('subject_id,subjects(id,name,code)')
+      .eq('section',assignedSection)
+      .not('subject_id','is',null)
+  );
+
+  if(error){
+    select.innerHTML='<option value="">Unable to load subjects</option>';
+    show('Subjects could not be loaded: '+error.message);
+    return;
+  }
+
+  const seen=new Set();
+  subjectList=[];
+  for(const row of data||[]){
+    const subject=Array.isArray(row.subjects)?row.subjects[0]:row.subjects;
+    if(subject&&!seen.has(subject.id)){seen.add(subject.id);subjectList.push(subject);}
+  }
+
+  subjectList.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+  select.innerHTML=subjectList.length
+    ? '<option value="">Select a subject...</option>'+subjectList.map(s=>'<option value="'+esc(s.id)+'">'+esc((s.code?s.code+' — ':'')+(s.name||'Subject'))+'</option>').join('')
+    : '<option value="">No subjects found</option>';
+}
+
+async function loadAttendanceForSelection(){
+  const date=document.getElementById('attendanceDate').value;
+  const subjectId=document.getElementById('attendanceSubject').value;
+  const list=document.getElementById('attendanceStudentList');
+  const actions=document.getElementById('attendanceActions');
+  const title=document.getElementById('attendanceClassTitle');
+  const meta=document.getElementById('attendanceClassMeta');
+  const badge=document.getElementById('attendanceExistingBadge');
+  const mode=document.getElementById('attendanceModeBadge');
+
+  attendanceRows=[];
+  attendanceDraft=new Map();
+  if(badge)badge.classList.add('hidden');
+  if(mode){mode.textContent='NOT STARTED';mode.className='px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold';}
+
+  if(!date||!subjectId){
+    if(title)title.textContent='Select a date and subject';
+    if(meta)meta.textContent='The timetable will be checked before attendance can be recorded.';
+    list.innerHTML='<div class="text-sm text-slate-500 p-4">Select a date and subject to start attendance.</div>';
+    actions.classList.add('hidden');
+    renderAttendanceEditor();
+    return;
+  }
+
+  const day=getDayFromDate(date);
+  const subjectName=subjectList.find(s=>s.id===subjectId)?.name||'Selected subject';
+  if(title)title.textContent=assignedSection+' • '+day+' • '+date;
+  if(meta)meta.textContent='Checking '+subjectName+' against the '+assignedSection+' timetable...';
+
+  const {data:scheduled,error:scheduledError}=await timeout(
+    supabase.from('timetable')
+      .select('id,start_time,end_time,room,notes,subjects(name,code)')
+      .eq('section',assignedSection)
+      .eq('subject_id',subjectId)
+      .eq('day_of_week',day)
+      .order('start_time')
+  );
+
+  if(scheduledError){
+    show('Timetable check failed: '+scheduledError.message);
+    list.innerHTML='<div class="text-sm text-red-600 p-4">Could not verify the scheduled class.</div>';
+    actions.classList.add('hidden');
+    renderAttendanceEditor();
+    return;
+  }
+
+  if(!scheduled?.length){
+    if(meta)meta.textContent='No '+subjectName+' class is scheduled for '+day+'. Attendance is disabled for this date.';
+    list.innerHTML='<div class="rounded-xl border border-amber-200 bg-amber-50 p-8 text-center"><div class="text-3xl">📅</div><div class="text-sm font-bold text-amber-900 mt-2">No class scheduled</div><div class="text-xs text-amber-800 mt-1">Attendance can only be recorded for a class listed in the assigned section timetable.</div></div>';
+    actions.classList.add('hidden');
+    renderAttendanceEditor();
+    return;
+  }
+
+  const classRow=scheduled[0];
+  const subject=Array.isArray(classRow.subjects)?classRow.subjects[0]:classRow.subjects;
+  if(title)title.textContent=(subject?.code?subject.code+' — ':'')+(subject?.name||subjectName);
+  if(meta)meta.textContent=assignedSection+' • '+day+' • '+date+' • '+formatTime(classRow.start_time)+' – '+formatTime(classRow.end_time)+(classRow.room?' • Room '+classRow.room:'')+' • Scheduled class';
+
+  const {data,error}=await timeout(
+    supabase.from('attendance')
+      .select('id,user_id,status,marked_by,marked_at,classes_held,classes_attended')
+      .eq('section',assignedSection)
+      .eq('subject_id',subjectId)
+      .eq('attendance_date',date)
+  );
+
+  if(error){
+    show('Attendance could not be loaded: '+error.message);
+    list.innerHTML='<div class="text-sm text-red-600 p-4">Attendance records could not be loaded.</div>';
+    actions.classList.add('hidden');
+    renderAttendanceEditor();
+    return;
+  }
+
+  attendanceRows=data||[];
+  attendanceDraft=new Map(classStudents.map(p=>[p.id,attendanceRows.find(r=>r.user_id===p.id)?.status||'']));
+
+  if(attendanceRows.length){
+    if(badge)badge.classList.remove('hidden');
+    if(mode){mode.textContent='EDITING SAVED ATTENDANCE';mode.className='px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold';}
+  }else if(mode){
+    mode.textContent='NEW ATTENDANCE';
+    mode.className='px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold';
+  }
+
+  renderAttendanceEditor();
+  actions.classList.remove('hidden');
+}
+
+function renderAttendanceEditor(){
+  const values=[...attendanceDraft.values()];
+  const present=values.filter(v=>v==='present').length;
+  const absent=values.filter(v=>v==='absent').length;
+  const total=classStudents.length;
+  const unmarked=Math.max(0,total-present-absent);
+
+  document.getElementById('attendanceTotalCount').textContent=String(total);
+  document.getElementById('attendancePresentCount').textContent=String(present);
+  document.getElementById('attendanceAbsentCount').textContent=String(absent);
+  document.getElementById('attendanceUnmarkedCount').textContent=String(unmarked);
+  document.getElementById('attendanceSummary').textContent=total
+    ? (unmarked?unmarked+' students still need a status before saving.':'All students are marked. Ready to save.')
+    : 'No students found for this section.';
+
+  const save=document.getElementById('saveAttendance');
+  if(save)save.disabled=!(total>0&&unmarked===0);
+
+  const search=document.getElementById('attendanceStudentSearch');
+  const query=String(search?.value||'').trim().toLowerCase();
+  const filtered=classStudents.filter(p=>[p.name,p.email,p.roll_number,p.program,p.term].some(v=>String(v||'').toLowerCase().includes(query)));
+
+  const list=document.getElementById('attendanceStudentList');
+  if(!filtered.length){
+    list.innerHTML='<div class="rounded-xl border border-slate-200 bg-white p-8 text-center"><div class="text-2xl">🔎</div><div class="text-sm font-bold text-slate-800 mt-2">No matching students</div><div class="text-xs text-slate-500 mt-1">Try another name, roll number or email.</div></div>';
+  }else{
+    list.innerHTML=filtered.map(p=>{
+      const value=attendanceDraft.get(p.id)||'';
+      const initials=String(p.name||'Student').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'ST';
+      return '<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 rounded-xl border '+(value==='present'?'border-emerald-200 bg-emerald-50/40':value==='absent'?'border-red-200 bg-red-50/40':'border-slate-200 bg-white')+'">'+
+        '<div class="flex items-center gap-3 min-w-0"><div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-black flex-shrink-0">'+esc(initials)+'</div><div class="min-w-0"><div class="font-bold text-sm truncate">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-0.5 truncate">'+esc(p.roll_number||'No roll number')+(p.email?' • '+esc(p.email):'')+'</div></div></div>'+
+        '<div class="flex items-center gap-2 shrink-0">'+
+          '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold '+(value==='present'?'bg-emerald-600 text-white':value==='absent'?'bg-red-600 text-white':'bg-amber-100 text-amber-800')+'">'+(value==='present'?'Present':value==='absent'?'Absent':'Not Marked')+'</span>'+
+          '<button type="button" data-att="present" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='present'?'bg-emerald-600 text-white':'bg-emerald-100 text-emerald-800')+'">Present</button>'+
+          '<button type="button" data-att="absent" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='absent'?'bg-red-600 text-white':'bg-red-100 text-red-800')+'">Absent</button>'+
+          '<button type="button" data-delete-attendance="'+esc(p.id)+'" class="px-2.5 py-2 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold">Delete</button>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  document.querySelectorAll('[data-att]').forEach(button=>button.onclick=()=>{
+    attendanceDraft.set(button.dataset.id,button.dataset.att);
+    renderAttendanceEditor();
+  });
+
+  document.querySelectorAll('[data-delete-attendance]').forEach(button=>button.onclick=async()=>{
+    const row=attendanceRows.find(r=>r.user_id===button.dataset.deleteAttendance);
+    if(!row)return;
+    if(!confirm('Delete attendance for this student?'))return;
+    const {error}=await supabase.from('attendance').delete().eq('id',row.id);
+    if(error){show('Attendance was not deleted: '+error.message);return;}
+    show('Attendance deleted.',true);
+    await loadAttendanceForSelection();
+    await loadOverview();
+  });
+}
+
+async function saveAttendance(){
+  const date=document.getElementById('attendanceDate').value;
+  const subjectId=document.getElementById('attendanceSubject').value;
+  if(!date||!subjectId||!classStudents.length)return;
+
+  const unmarked=classStudents.filter(p=>!attendanceDraft.get(p.id));
+  if(unmarked.length){
+    show('Please mark every student as Present or Absent before saving.');
+    return;
+  }
+
+  const day=getDayFromDate(date);
+  const {data:scheduled,error:scheduledError}=await timeout(
+    supabase.from('timetable').select('id').eq('section',assignedSection).eq('subject_id',subjectId).eq('day_of_week',day).limit(1)
+  );
+  if(scheduledError||!scheduled?.length){
+    show('Attendance cannot be saved because this subject is not scheduled for the selected date.');
+    return;
+  }
+
+  const {data:{user}={}}=await supabase.auth.getUser();
+  if(!user){show('Session expired. Please log in again.');return;}
+
+  const existing=new Map(attendanceRows.map(r=>[r.user_id,r]));
+  const inserts=[];const updates=[];
+  for(const p of classStudents){
+    const status=attendanceDraft.get(p.id);
+    const old=existing.get(p.id);
+    const payload={user_id:p.id,subject_id:subjectId,classes_held:1,classes_attended:status==='present'?1:0,attendance_date:date,status,section:assignedSection,marked_by:user.id,marked_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    if(old)updates.push({id:old.id,payload});else inserts.push(payload);
+  }
+
+  const button=document.getElementById('saveAttendance');
+  button.disabled=true;
+  button.textContent='Saving...';
+
+  try{
+    if(inserts.length){
+      const {error}=await supabase.from('attendance').insert(inserts);
+      if(error)throw error;
+    }
+    for(const item of updates){
+      const {error}=await supabase.from('attendance').update(item.payload).eq('id',item.id);
+      if(error)throw error;
+    }
+    show('Attendance saved for '+classStudents.length+' students.',true);
+    await Promise.all([loadAttendanceForSelection(),loadOverview()]);
+  }catch(e){
+    show('Attendance was not saved: '+(e?.message||'Unknown error'));
+  }finally{
+    button.disabled=false;
+    button.textContent='Save Attendance';
+  }
+}
+
+async function loadStudents(){
+  const {data,error}=await timeout(
+    supabase.from('profiles')
+      .select('id,name,email,roll_number,section,program,term,cgpa')
+      .eq('section',assignedSection)
+      .order('name')
+  );
+  if(error){
+    show('Student data could not be loaded: '+error.message);
+    document.getElementById('attendanceStudentList').innerHTML='<div class="text-sm text-red-600 p-4">Student data could not be loaded.</div>';
+    return;
+  }
+  classStudents=data||[];
+  renderAttendanceEditor();
+}
+
+async function loadOverview(){
+  const {data,error}=await timeout(
+    supabase.from('attendance')
+      .select('user_id,subject_id,attendance_date,status,subjects(name,code)')
+      .eq('section',assignedSection)
+      .order('attendance_date',{ascending:false})
+  );
+  if(error){
+    document.getElementById('attendanceOverview').innerHTML='<div class="text-sm text-red-600">Unable to load attendance overview: '+esc(error.message)+'</div>';
+    return;
+  }
+
+  const rows=data||[];
+  const total=rows.length;
+  const present=rows.filter(r=>String(r.status||'').toLowerCase()==='present').length;
+  const absent=rows.filter(r=>String(r.status||'').toLowerCase()==='absent').length;
+  const rate=total?((present/total)*100).toFixed(1)+'%':'—';
+
+  document.getElementById('overviewRecords').textContent=String(total);
+  document.getElementById('overviewPresent').textContent=String(present);
+  document.getElementById('overviewAbsent').textContent=String(absent);
+  document.getElementById('overviewRate').textContent=rate;
+
+  const bySubject=new Map();
+  for(const r of rows){
+    const subject=Array.isArray(r.subjects)?r.subjects[0]:r.subjects;
+    const key=r.subject_id;
+    const item=bySubject.get(key)||{code:subject?.code||'',name:subject?.name||'Subject',records:0,present:0,absent:0};
+    item.records++;
+    if(String(r.status||'').toLowerCase()==='present')item.present++;
+    if(String(r.status||'').toLowerCase()==='absent')item.absent++;
+    bySubject.set(key,item);
+  }
+
+  const items=[...bySubject.values()];
+  document.getElementById('attendanceOverview').innerHTML=items.length
+    ? '<table class="min-w-full text-sm"><thead><tr class="text-left text-xs text-slate-500 border-b"><th class="p-3">Subject</th><th class="p-3">Records</th><th class="p-3">Present</th><th class="p-3">Absent</th><th class="p-3">Rate</th></tr></thead><tbody>'+
+      items.map(x=>'<tr class="border-b last:border-0"><td class="p-3 font-bold">'+esc(x.code?x.code+' — ':'')+esc(x.name)+'</td><td class="p-3">'+x.records+'</td><td class="p-3">'+x.present+'</td><td class="p-3">'+x.absent+'</td><td class="p-3 font-bold">'+((x.present/x.records)*100).toFixed(1)+'%</td></tr>').join('')+
+      '</tbody></table>'
+    : '<div class="text-sm text-slate-500">No attendance records yet.</div>';
+}
+
+document.getElementById('attendanceDate').value=todayLocal();
+document.getElementById('attendanceDate').max=todayLocal();
+document.getElementById('attendanceDate').addEventListener('change',loadAttendanceForSelection);
+document.getElementById('attendanceSubject').addEventListener('change',loadAttendanceForSelection);
+document.getElementById('attendanceStudentSearch').addEventListener('input',renderAttendanceEditor);
+document.getElementById('markAllPresent').onclick=()=>{classStudents.forEach(p=>attendanceDraft.set(p.id,'present'));renderAttendanceEditor();};
+document.getElementById('markAllAbsent').onclick=()=>{classStudents.forEach(p=>attendanceDraft.set(p.id,'absent'));renderAttendanceEditor();};
+document.getElementById('saveAttendance').onclick=saveAttendance;
+document.getElementById('refreshOverview').onclick=loadOverview;
+
+async function start(){
+  const {data:{user}={}}=await timeout(supabase.auth.getUser());
+  if(!user){location.href='teacher-login.html';return;}
+
+  const {data:row,error}=await timeout(
+    supabase.from('admin_users')
+      .select('role,assigned_section,assigned_subject,subjects:assigned_subject(id,name,code)')
+      .eq('user_id',user.id)
+      .maybeSingle()
+  );
+  if(error){
+    show('Teacher access could not be verified: '+error.message);
+    return;
+  }
+
+  const role=String(row?.role||'').toLowerCase();
+  const authorized=user.id===OWNER||TEACHER_ROLES.includes(role);
+  if(!authorized){
+    await supabase.auth.signOut();
+    location.href='teacher-login.html';
+    return;
+  }
+
+  assignedSection=String(row?.assigned_section||'').trim();
+  assignedSubject=String(row?.assigned_subject||'').trim();
+  assignedSubjectInfo=Array.isArray(row?.subjects)?row.subjects[0]:row?.subjects;
+
+  if(!assignedSection){
+    show('This teacher account does not have an assigned section. Attendance cannot be opened until a section is assigned.');
+    document.getElementById('assigned').textContent='No assigned section';
+    return;
+  }
+
+  const displayName=String(user.user_metadata?.name||user.email||'Teacher').trim();
+  document.getElementById('teacherName').textContent=displayName;
+  const subjectLabel=assignedSubjectInfo?.code?assignedSubjectInfo.code+' — '+assignedSubjectInfo.name:(assignedSubjectInfo?.name||'All subjects in assigned section');
+  document.getElementById('assigned').textContent='Assigned section: '+assignedSection+' • Subject: '+subjectLabel+' • Teacher attendance access';
+  await Promise.allSettled([loadStudents(),loadSubjects(),loadOverview()]);
+  await loadAttendanceForSelection();
+}
+
+start().catch(e=>{console.error(e);show('Teacher attendance page could not load: '+(e?.message||'Unknown error'));});
+</script>
+</body>
+</html>
