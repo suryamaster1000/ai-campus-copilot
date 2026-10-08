@@ -42,14 +42,12 @@ export function renderStudyAssistant(container) {
           </div>
         </div>
 
-        <!-- Course Tabs -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-1">
-          ${liveModules.map(m => `
-            <button class="course-tab-btn px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-2 ${m.code === selectedCourseCode ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant'}" data-code="${m.code}">
-              <span>${m.code}</span>
-              <span class="text-[11px] font-normal opacity-90">${m.name}</span>
-            </button>
-          `).join('')}
+        <!-- Course Selector -->
+        <div class="max-w-xl">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1.5">Select Course</label>
+          <select id="courseSelect" class="w-full h-11 px-3 rounded-xl border border-surface-container-high bg-surface-container-lowest text-sm font-bold text-on-surface outline-none focus:border-primary">
+            ${liveModules.map(m => `<option value="${m.code}" ${m.code === selectedCourseCode ? 'selected' : ''}>${m.code} — ${m.name}</option>`).join('')}
+          </select>
         </div>
 
         <!-- Main Content Area -->
@@ -212,13 +210,8 @@ export function renderStudyAssistant(container) {
       </div>
     `;
 
-    // Tab buttons
-    container.querySelectorAll('.course-tab-btn').forEach(btn => {
-      btn.onclick = () => {
-        selectedCourseCode = btn.getAttribute('data-code');
-        render();
-      };
-    });
+    // Course selector
+    container.querySelector('#courseSelect')?.addEventListener('change', (event) => { selectedCourseCode = event.target.value; render(); });
 
     // Explain unit button
     container.querySelectorAll('.study-explain-unit-btn').forEach(btn => {
