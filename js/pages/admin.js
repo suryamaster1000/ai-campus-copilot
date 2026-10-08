@@ -535,8 +535,8 @@ export function renderAdminPanel(container) {
           <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Select student</label>
           <select id="sectionStudentSelect" class="w-full px-3 py-3 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary">
             <option value="">Select a student...</option>
-            ${students.map(student => \`<option value="${escReportValue(student.id)}">${escReportValue(student.name || 'Student')} — ${escReportValue(student.roll_number || 'No roll number')}${student.email ? ' • ' + escReportValue(student.email) : ''}</option>\`).join('')}
-          </select>
+            ${students.map(student => '<option value="' + escReportValue(student.id) + '">' + escReportValue(student.name || 'Student') + ' — ' + escReportValue(student.roll_number || 'No roll number') + (student.email ? ' • ' + escReportValue(student.email) : '') + '</option>').join('')}
+</select>
           <div class="mt-2 text-[11px] text-on-surface-variant">Choose a student from the dropdown to view their details and manage their campus access.</div>
         </div>
         <div class="flex items-end">
