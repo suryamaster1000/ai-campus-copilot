@@ -81,9 +81,11 @@ export function renderDashboard(container) {
               <div class="bg-emerald-500 h-full rounded-full" style="width: ${Math.min(100, Math.max(0, attendanceValue))}%"></div>
             </div>
           </div>
-          <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs text-on-surface-variant">
-            <span>No courses loaded</span>
-    <span class="text-amber-600 font-semibold">No attendance recorded</span>
+          <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs text-on-surface-variant gap-2">
+            <span>Personal attendance</span>
+            <a href="attendance.html" class="text-primary font-bold hover:underline flex items-center gap-1">
+              View Attendance <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+            </a>
           </div>
         </div>
 
