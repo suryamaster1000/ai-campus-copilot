@@ -137,6 +137,16 @@ async function start(){
   const {data:{user}={}}=await timeout(supabase.auth.getUser());
   if(!user){location.href='login.html';return;}
   currentUser=user;
+
+  const {data:access}=await timeout(
+    supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle()
+  );
+  const role=String(access?.role||'').toLowerCase();
+  if(['teacher','faculty','instructor'].includes(role)){
+    location.href='teacher-dashboard.html';
+    return;
+  }
+
   const {data:me,error}=await timeout(supabase.from('profiles').select('id,name,email,section,program,term').eq('id',user.id).maybeSingle());
   if(error||!me){location.href='login.html?error=auth-check';return;}
   profile=me;
