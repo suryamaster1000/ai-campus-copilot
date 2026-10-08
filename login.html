@@ -468,6 +468,39 @@ async function allowUser(user) {
 }
 
 
+async function getTeacherAccess(user) {
+  if (!user?.id) return null;
+  const { data, error } = await supabase
+    .from('admin_users')
+    .select('user_id,role,assigned_section')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  if (error) {
+    console.error('Teacher portal role check failed:', error);
+    return null;
+  }
+  return data || null;
+}
+
+function isTeacherRole(access) {
+  return ['teacher', 'faculty', 'instructor'].includes(String(access?.role || '').toLowerCase());
+}
+
+async function redirectTeacherSession(user) {
+  const access = await getTeacherAccess(user);
+  if (!isTeacherRole(access)) return false;
+
+  if (!String(access?.assigned_section || '').trim()) {
+    await supabase.auth.signOut();
+    hideLoading();
+    showError('Your teacher account needs an assigned section before the Teacher Portal can be opened.');
+    return true;
+  }
+
+  window.location.replace('teacher-dashboard.html');
+  return true;
+}
+
 async function allowAdminOnly(user) {
   if (!user?.id) return false;
   if (user.id === OWNER_USER_ID) return true;
@@ -999,6 +1032,11 @@ supabase.auth.onAuthStateChange(
       !passwordRecovery
     ) {
 
+      /* TEACHER ACCOUNTS ALWAYS USE THE SEPARATE TEACHER PORTAL */
+      if (await redirectTeacherSession(session.user)) {
+        return;
+      }
+
       const allowed =
         googleAdminLogin
           ? await allowAdminOnly(session.user)
@@ -1109,6 +1147,11 @@ supabase.auth.onAuthStateChange(
 
 
   /* USER AUTHORIZATION */
+
+  /* Existing teacher sessions must never be redirected into the student portal. */
+  if (await redirectTeacherSession(user)) {
+    return;
+  }
 
   const allowed =
     googleAdminLogin
