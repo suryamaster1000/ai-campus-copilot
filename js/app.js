@@ -3,6 +3,7 @@ import { supabase } from './supabase.js';
 import { campusData } from './data.js';
 import { initCommandPalette } from './components/command-palette.js?v=20261003-live1';
 import { showToast } from './components/toast.js?v=20261003-live1';
+import { initErrorReportUI } from './error-reporter.js?v=20261008-error1';
 
 // ─── Supabase Auth Guard ───────────────────────────────────────────────────
 let currentUser = null;
@@ -491,6 +492,7 @@ async function startApp() {
   initHeaderActions();
   initNotificationsDropdown();
   initReportFeature();
+  initErrorReportUI();
   updateSidebarBadges();
 
   const palette = initCommandPalette(
