@@ -196,32 +196,68 @@
   </section>
 
   <section class="bg-white rounded-2xl border border-slate-200 p-5">
-    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
       <div>
-        <h2 class="font-extrabold">Take Attendance</h2>
-        <p class="text-sm text-slate-500 mt-1">Mark Present or Absent for students in your assigned section. Existing records can be edited or deleted for your assigned section.</p>
+        <div class="flex items-center gap-2 flex-wrap">
+          <h2 class="font-extrabold">Take Attendance</h2>
+          <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold">TEACHER ONLY</span>
+        </div>
+        <p class="text-sm text-slate-500 mt-1">Create or edit attendance for your assigned section. Attendance is tied to the selected date and subject.</p>
       </div>
       <div class="grid sm:grid-cols-2 gap-2 lg:min-w-[430px]">
         <div>
           <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Date</label>
-          <input id="attendanceDate" type="date" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm" />
+          <input id="attendanceDate" type="date" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold" />
         </div>
         <div>
           <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Subject</label>
-          <select id="attendanceSubject" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm"><option value="">Loading subjects...</option></select>
+          <select id="attendanceSubject" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold"><option value="">Loading subjects...</option></select>
         </div>
       </div>
     </div>
-    <div class="mt-4 rounded-xl bg-slate-50 border border-slate-200 px-3 py-2.5">
-      <div class="text-[11px] text-slate-500">Class summary</div>
-      <div id="attendanceSummary" class="text-sm font-extrabold mt-1">Select a date and subject.</div>
+
+    <div id="attendanceClassCard" class="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div id="attendanceClassTitle" class="text-sm font-extrabold text-slate-900">Select a date and subject</div>
+          <div id="attendanceClassMeta" class="text-xs text-slate-500 mt-1">The timetable will be checked before attendance can be recorded.</div>
+        </div>
+        <span id="attendanceExistingBadge" class="hidden px-2.5 py-1 rounded-full bg-white text-indigo-700 border border-indigo-100 text-[10px] font-bold">Already saved</span>
+      </div>
     </div>
+
+    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="rounded-xl bg-white border border-slate-200 px-3 py-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</div>
+          <div id="attendanceTotalCount" class="text-lg font-extrabold text-slate-900">0</div>
+        </div>
+        <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Present</div>
+          <div id="attendancePresentCount" class="text-lg font-extrabold text-emerald-700">0</div>
+        </div>
+        <div class="rounded-xl bg-red-50 border border-red-200 px-3 py-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-red-600">Absent</div>
+          <div id="attendanceAbsentCount" class="text-lg font-extrabold text-red-700">0</div>
+        </div>
+        <div class="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-amber-600">Not Marked</div>
+          <div id="attendanceUnmarkedCount" class="text-lg font-extrabold text-amber-700">0</div>
+        </div>
+      </div>
+      <div id="attendanceSummary" class="text-xs text-slate-500 mt-3">Select a date and subject to start attendance.</div>
+    </div>
+
     <div id="attendanceStudents" class="mt-4 space-y-2">
       <div class="text-sm text-slate-500">Select a date and subject to start attendance.</div>
     </div>
-    <div id="attendanceActions" class="hidden mt-4 flex items-center justify-end gap-2">
-      <button id="markAllPresent" type="button" class="px-4 py-2.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold">Mark All Present</button>
-      <button id="saveAttendance" type="button" class="px-5 py-2.5 rounded-xl bg-blue-700 text-white text-xs font-bold">Save Attendance</button>
+
+    <div id="attendanceActions" class="hidden mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+      <div class="flex flex-wrap gap-2">
+        <button id="markAllPresent" type="button" class="px-4 py-2.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold">Mark All Present</button>
+        <button id="markAllAbsent" type="button" class="px-4 py-2.5 rounded-xl bg-red-100 text-red-800 text-xs font-bold">Mark All Absent</button>
+      </div>
+      <button id="saveAttendance" type="button" disabled class="px-5 py-2.5 rounded-xl bg-blue-700 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed">Save Attendance</button>
     </div>
   </section>
 
@@ -609,51 +645,165 @@ async function loadSubjects(){
   select.innerHTML=subjectList.length?'<option value="">Select a subject...</option>'+subjectList.map(s=>'<option value="'+esc(s.id)+'">'+esc((s.code?s.code+' — ':'')+(s.name||'Subject'))+'</option>').join(''):'<option value="">No subjects found</option>';
 }
 
+function getAttendanceDayFromDate(dateValue){
+  const d=new Date(String(dateValue||'')+'T00:00:00');
+  return Number.isNaN(d.getTime()) ? '' : ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][d.getDay()];
+}
+
 async function loadAttendanceForSelection(){
   const date=document.getElementById('attendanceDate').value;
   const subjectId=document.getElementById('attendanceSubject').value;
   const box=document.getElementById('attendanceStudents');
   const actions=document.getElementById('attendanceActions');
-  if(!date||!subjectId){box.innerHTML='<div class="text-sm text-slate-500">Select a date and subject to start attendance.</div>';actions.classList.add('hidden');return;}
-  const {data,error}=await timeout(supabase.from('attendance').select('id,user_id,status,marked_by,marked_at,classes_held,classes_attended').eq('section',assignedSection).eq('subject_id',subjectId).eq('attendance_date',date));
-  if(error){show('Attendance could not be loaded: '+error.message);return;}
+  const classTitle=document.getElementById('attendanceClassTitle');
+  const classMeta=document.getElementById('attendanceClassMeta');
+  const existingBadge=document.getElementById('attendanceExistingBadge');
+
+  attendanceRows=[];
+  attendanceDraft=new Map();
+
+  if(existingBadge) existingBadge.classList.add('hidden');
+  if(!date||!subjectId){
+    if(classTitle) classTitle.textContent='Select a date and subject';
+    if(classMeta) classMeta.textContent='The timetable will be checked before attendance can be recorded.';
+    box.innerHTML='<div class="text-sm text-slate-500">Select a date and subject to start attendance.</div>';
+    actions.classList.add('hidden');
+    renderAttendanceEditor();
+    return;
+  }
+
+  const day=getAttendanceDayFromDate(date);
+  if(classTitle) classTitle.textContent=assignedSection+' • '+day+' • '+date;
+  if(classMeta) classMeta.textContent='Checking the timetable for '+day+'...';
+
+  const {data:scheduled,error:scheduledError}=await timeout(
+    supabase.from('timetable').select('id,start_time,end_time,room,notes,subjects(name,code)')
+      .eq('section',assignedSection).eq('subject_id',subjectId).eq('day_of_week',day)
+      .order('start_time')
+  );
+
+  if(scheduledError){
+    show('Timetable check failed: '+scheduledError.message);
+    if(classMeta) classMeta.textContent='Could not verify the scheduled class.';
+    actions.classList.add('hidden');
+    return;
+  }
+
+  if(!scheduled?.length){
+    if(classMeta) classMeta.textContent='No '+(subjectList.find(s=>s.id===subjectId)?.name||'selected subject')+' class is scheduled for '+day+'. Attendance is disabled for this date.';
+    box.innerHTML='<div class="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center"><div class="text-2xl">📅</div><div class="text-sm font-bold text-amber-900 mt-2">No class scheduled</div><div class="text-xs text-amber-800 mt-1">Attendance can only be recorded for a timetable class in the assigned section.</div></div>';
+    actions.classList.add('hidden');
+    renderAttendanceEditor();
+    return;
+  }
+
+  const classRow=scheduled[0];
+  const subject=Array.isArray(classRow.subjects)?classRow.subjects[0]:classRow.subjects;
+  if(classMeta) classMeta.textContent=(subject?.code?subject.code+' • ':'')+(subject?.name||'Class')+' • '+formatTime(classRow.start_time)+' – '+formatTime(classRow.end_time)+(classRow.room?' • Room '+classRow.room:'')+' • Scheduled class';
+
+  const {data,error}=await timeout(
+    supabase.from('attendance').select('id,user_id,status,marked_by,marked_at,classes_held,classes_attended')
+      .eq('section',assignedSection).eq('subject_id',subjectId).eq('attendance_date',date)
+  );
+  if(error){show('Attendance could not be loaded: '+error.message);actions.classList.add('hidden');return;}
+
   attendanceRows=data||[];
-  attendanceDraft=new Map(classStudents.map(p=>[p.id,attendanceRows.find(r=>r.user_id===p.id)?.status||'present']));
+  attendanceDraft=new Map(classStudents.map(p=>[p.id,attendanceRows.find(r=>r.user_id===p.id)?.status||'']));
+  if(attendanceRows.length && existingBadge) existingBadge.classList.remove('hidden');
+
   renderAttendanceEditor();
   actions.classList.remove('hidden');
 }
+
 function renderAttendanceEditor(){
   const present=[...attendanceDraft.values()].filter(v=>v==='present').length;
   const absent=[...attendanceDraft.values()].filter(v=>v==='absent').length;
-  document.getElementById('attendanceSummary').textContent=present+' present • '+absent+' absent • '+classStudents.length+' total';
+  const unmarked=Math.max(0,classStudents.length-present-absent);
+  const total=classStudents.length;
+
+  document.getElementById('attendanceTotalCount').textContent=String(total);
+  document.getElementById('attendancePresentCount').textContent=String(present);
+  document.getElementById('attendanceAbsentCount').textContent=String(absent);
+  document.getElementById('attendanceUnmarkedCount').textContent=String(unmarked);
+  document.getElementById('attendanceSummary').textContent=total
+    ? (unmarked?unmarked+' students still need a status before saving.':'All students are marked. Ready to save.')
+    : 'No students found for this section.';
+
+  const save=document.getElementById('saveAttendance');
+  if(save) save.disabled=!(total>0&&unmarked===0);
+
   document.getElementById('attendanceStudents').innerHTML=classStudents.length?classStudents.map(p=>{
-    const value=attendanceDraft.get(p.id)||'present';
-    return '<div class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50"><div class="min-w-0"><div class="font-bold text-sm">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-0.5">'+esc(p.roll_number||'')+'</div></div><div class="flex gap-2"><button type="button" data-att="present" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='present'?'bg-emerald-600 text-white':'bg-emerald-100 text-emerald-800')+'">Present</button><button type="button" data-att="absent" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='absent'?'bg-red-600 text-white':'bg-red-100 text-red-800')+'">Absent</button><button type="button" data-delete-attendance="'+esc(p.id)+'" class="px-2 py-2 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold">Delete</button></div></div>';
+    const value=attendanceDraft.get(p.id)||'';
+    const initials=String(p.name||'Student').split(/\\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'ST';
+    return '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border '+(value==='present'?'border-emerald-200 bg-emerald-50/40':value==='absent'?'border-red-200 bg-red-50/40':'border-slate-200 bg-slate-50')+'">'+
+      '<div class="flex items-center gap-3 min-w-0"><div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-black flex-shrink-0">'+esc(initials)+'</div><div class="min-w-0"><div class="font-bold text-sm truncate">'+esc(p.name||'Student')+'</div><div class="text-xs text-slate-500 mt-0.5">'+esc(p.roll_number||'')+(p.email?' • '+esc(p.email):'')+'</div></div></div>'+
+      '<div class="flex items-center gap-2 shrink-0">'+
+        '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold '+(value==='present'?'bg-emerald-600 text-white':value==='absent'?'bg-red-600 text-white':'bg-amber-100 text-amber-800')+'">'+(value==='present'?'Present':value==='absent'?'Absent':'Not Marked')+'</span>'+
+        '<button type="button" data-att="present" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='present'?'bg-emerald-600 text-white':'bg-emerald-100 text-emerald-800')+'">Present</button>'+
+        '<button type="button" data-att="absent" data-id="'+esc(p.id)+'" class="px-3 py-2 rounded-lg text-xs font-bold '+(value==='absent'?'bg-red-600 text-white':'bg-red-100 text-red-800')+'">Absent</button>'+
+        '<button type="button" data-delete-attendance="'+esc(p.id)+'" class="px-2.5 py-2 rounded-lg bg-slate-200 text-slate-700 text-xs font-bold">Delete</button>'+
+      '</div></div>';
   }).join(''):'<div class="text-sm text-slate-500">No students found.</div>';
-  document.querySelectorAll('[data-att]').forEach(b=>b.onclick=()=>{attendanceDraft.set(b.dataset.id,b.dataset.att);renderAttendanceEditor();});document.querySelectorAll('[data-delete-attendance]').forEach(b=>b.onclick=async()=>{const row=attendanceRows.find(r=>r.user_id===b.dataset.deleteAttendance);if(!row)return;if(!confirm('Delete attendance for this student?'))return;const {error}=await supabase.from('attendance').delete().eq('id',row.id);if(error){show('Attendance was not deleted: '+error.message);return;}show('Attendance deleted.',true);await loadAttendanceForSelection();await loadOverview();});
+
+  document.querySelectorAll('[data-att]').forEach(b=>b.onclick=()=>{
+    attendanceDraft.set(b.dataset.id,b.dataset.att);
+    renderAttendanceEditor();
+  });
+
+  document.querySelectorAll('[data-delete-attendance]').forEach(b=>b.onclick=async()=>{
+    const row=attendanceRows.find(r=>r.user_id===b.dataset.deleteAttendance);
+    if(!row)return;
+    if(!confirm('Delete attendance for this student?'))return;
+    const {error}=await supabase.from('attendance').delete().eq('id',row.id);
+    if(error){show('Attendance was not deleted: '+error.message);return;}
+    show('Attendance deleted.',true);
+    await loadAttendanceForSelection();
+    await loadOverview();
+  });
 }
 
 async function saveAttendance(){
   const date=document.getElementById('attendanceDate').value;
   const subjectId=document.getElementById('attendanceSubject').value;
   if(!date||!subjectId||!classStudents.length)return;
+
+  const unmarked=[...classStudents].filter(p=>!attendanceDraft.get(p.id));
+  if(unmarked.length){
+    show('Please mark every student as Present or Absent before saving.');
+    return;
+  }
+
   const {data:{user}={}}=await supabase.auth.getUser();
   if(!user){show('Session expired. Please log in again.');return;}
+
   const existing=new Map(attendanceRows.map(r=>[r.user_id,r]));
   const inserts=[];const updates=[];
   for(const p of classStudents){
-    const statusValue=attendanceDraft.get(p.id)||'present';
+    const statusValue=attendanceDraft.get(p.id);
     const old=existing.get(p.id);
     const payload={user_id:p.id,subject_id:subjectId,classes_held:1,classes_attended:statusValue==='present'?1:0,attendance_date:date,status:statusValue,section:assignedSection,marked_by:user.id,marked_at:new Date().toISOString(),updated_at:new Date().toISOString()};
     if(old)updates.push({id:old.id,payload});else inserts.push(payload);
   }
-  const button=document.getElementById('saveAttendance');button.disabled=true;button.textContent='Saving...';
+
+  const button=document.getElementById('saveAttendance');
+  button.disabled=true;button.textContent='Saving...';
+
   try{
-    if(inserts.length){const {error}=await supabase.from('attendance').insert(inserts);if(error)throw error;}
-    for(const item of updates){const {error}=await supabase.from('attendance').update(item.payload).eq('id',item.id);if(error)throw error;}
+    if(inserts.length){
+      const {error}=await supabase.from('attendance').insert(inserts);
+      if(error)throw error;
+    }
+    for(const item of updates){
+      const {error}=await supabase.from('attendance').update(item.payload).eq('id',item.id);
+      if(error)throw error;
+    }
     show('Attendance saved for '+classStudents.length+' students.',true);
     await Promise.all([loadAttendanceForSelection(),loadOverview()]);
-  }catch(e){show('Attendance was not saved: '+(e?.message||'Unknown error'));}finally{button.disabled=false;button.textContent='Save Attendance';}
+  }catch(e){
+    show('Attendance was not saved: '+(e?.message||'Unknown error'));
+  }finally{
+    button.textContent='Save Attendance';
+  }
 }
 
 async function loadOverview(){
@@ -671,6 +821,7 @@ async function loadOverview(){
 document.getElementById('attendanceDate').addEventListener('change',loadAttendanceForSelection);
 document.getElementById('attendanceSubject').addEventListener('change',loadAttendanceForSelection);
 document.getElementById('markAllPresent').onclick=()=>{classStudents.forEach(p=>attendanceDraft.set(p.id,'present'));renderAttendanceEditor();};
+document.getElementById('markAllAbsent').onclick=()=>{classStudents.forEach(p=>attendanceDraft.set(p.id,'absent'));renderAttendanceEditor();};
 document.getElementById('saveAttendance').onclick=saveAttendance;
 document.getElementById('refreshOverview').onclick=loadOverview;
 document.getElementById('refreshSharedData').onclick=loadSharedData;
