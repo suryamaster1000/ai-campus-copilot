@@ -164,13 +164,11 @@ export function renderTimetable(container) {
             </button>
           </div>
 
-          <div class="mt-3 flex items-center gap-2 flex-wrap">
-            <span class="text-xs text-outline font-medium mr-1">Filter:</span>
-            ${['All', 'Lecture', 'Lab', 'Tutorial'].map(filter => `
-              <button class="filter-pill-btn px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${activeFilter === filter ? 'bg-primary text-on-primary' : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'}" data-filter="${filter}">
-                ${filter}
-              </button>
-            `).join('')}
+          <div class="mt-3 max-w-sm">
+            <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1.5">Class Type Filter</label>
+            <select id="timetableFilterSelect" class="w-full h-10 px-3 rounded-xl border border-surface-container-high bg-surface-container-lowest text-xs font-bold text-on-surface outline-none focus:border-primary">
+              ${['All', 'Lecture', 'Lab', 'Tutorial'].map(filter => `<option value="${filter}" ${activeFilter === filter ? 'selected' : ''}>${filter}</option>`).join('')}
+            </select>
           </div>
         </div>
 
@@ -395,12 +393,7 @@ export function renderTimetable(container) {
       };
     }
 
-    container.querySelectorAll('.filter-pill-btn').forEach(btn => {
-      btn.onclick = () => {
-        activeFilter = btn.getAttribute('data-filter') || 'All';
-        render();
-      };
-    });
+    container.querySelector('#timetableFilterSelect')?.addEventListener('change', (event) => { activeFilter = event.target.value || 'All'; render(); });
 
     const dlBtn = container.querySelector('#downloadTimetableBtn');
     if (dlBtn) {
