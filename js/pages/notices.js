@@ -54,11 +54,7 @@ export function renderNotices(container) {
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <!-- Category Pills -->
           <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
-            ${['All', 'Examinations', 'Academic', 'Facilities', 'Placements'].map(cat => `
-              <button class="notice-cat-pill px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeCategory === cat ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant'}" data-cat="${cat}">
-                ${cat}
-              </button>
-            `).join('')}
+            <select id="noticeCategorySelect" class="w-full sm:w-auto h-10 px-3 rounded-xl border border-surface-container-high bg-surface-container-lowest text-xs font-bold text-on-surface outline-none focus:border-primary">${['All', 'Examinations', 'Academic', 'Facilities', 'Placements'].map(cat => `<option value="${cat}" ${activeCategory === cat ? 'selected' : ''}>${cat}</option>`).join('')}</select>
           </div>
 
           <!-- Search Input -->
@@ -136,12 +132,7 @@ export function renderNotices(container) {
     `;
 
     // Category button events
-    container.querySelectorAll('.notice-cat-pill').forEach(btn => {
-      btn.onclick = () => {
-        activeCategory = btn.getAttribute('data-cat');
-        render();
-      };
-    });
+    container.querySelector('#noticeCategorySelect')?.addEventListener('change', (event) => { activeCategory = event.target.value; render(); });
 
     // Search input
     const searchInput = document.getElementById('noticeSearchInput');
