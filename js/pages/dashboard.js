@@ -3,14 +3,25 @@ import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 
 export function renderDashboard(container) {
-  const todayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
-  const todaySchedule = campusData.timetable.find(d => d.day === todayName) || campusData.timetable[0] || { classes: [] };
-  const currentClass = todaySchedule.classes?.[0] || null;
-  const attendanceValue = parseFloat(campusData.student.attendanceOverall) || 0;
-  const primarySubject = campusData.studyModules?.[0];
-  const nextExam = campusData.exams?.[0];
-  const upcomingTasks = campusData.tasks.filter(t => t.status !== 'completed').slice(0, 3);
-  const urgentNotices = campusData.notices.slice(0, 2);
+  const now = new Date();
+  const todayName = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(now);
+  const safeTimetable = Array.isArray(campusData.timetable) ? campusData.timetable : [];
+  const todaySchedule = safeTimetable.find(d => d.day === todayName) || { classes: [] };
+  const parseStartMinutes = (value) => {
+    const match = String(value || '').match(/(\d{1,2}):(\d{2})/);
+    if (!match) return Number.POSITIVE_INFINITY;
+    return Number(match[1]) * 60 + Number(match[2]);
+  };
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const todayClasses = Array.isArray(todaySchedule.classes) ? todaySchedule.classes : [];
+  const currentClass = todayClasses.find(cls => parseStartMinutes(cls.time) >= currentMinutes) || todayClasses[0] || null;
+  const attendanceValue = parseFloat(campusData.student?.attendanceOverall) || 0;
+  const primarySubject = Array.isArray(campusData.studyModules) ? campusData.studyModules[0] : null;
+  const nextExam = Array.isArray(campusData.exams) ? campusData.exams[0] : null;
+  const safeTasks = Array.isArray(campusData.tasks) ? campusData.tasks : [];
+  const upcomingTasks = safeTasks.filter(t => t && t.status !== 'completed').slice(0, 3);
+  const safeNotices = Array.isArray(campusData.notices) ? campusData.notices : [];
+  const urgentNotices = safeNotices.slice(0, 2);
 
   container.innerHTML = `
     <div class="max-w-[1720px] mx-auto py-space-sm space-y-space-md animate-fade-in">
@@ -20,13 +31,13 @@ export function renderDashboard(container) {
         <div class="space-y-1">
           <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold backdrop-blur-md">
             <span class="material-symbols-outlined text-[15px] material-symbols-filled text-amber-300">verified</span>
-            <span>Academic data will appear here</span>
+            <span>Live student workspace</span>
           </div>
           <h1 class="font-headline-lg text-2xl lg:text-3xl font-extrabold tracking-tight">
             Welcome to AI Campus Copilot 👋
           </h1>
           <p class="font-body-md text-sm text-white/90">
-            Your dashboard will populate automatically when your student and academic data is connected.
+            Your live student profile, attendance, timetable, notices and tasks are shown here.
           </p>
         </div>
         <div class="flex items-center gap-2 self-stretch sm:self-auto flex-wrap">
@@ -70,7 +81,7 @@ export function renderDashboard(container) {
         <div class="bg-surface-container-lowest p-space-md rounded-2xl shadow-sm border border-surface-container-high hover:border-primary/40 transition-all flex flex-col justify-between">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-outline uppercase tracking-wider">Attendance Status</span>
-            <span class="px-2 py-0.5 rounded-full bg-surface-container text-outline text-[11px] font-bold">No data</span>
+            <span class="px-2 py-0.5 rounded-full bg-surface-container text-outline text-[11px] font-bold">${campusData.student?.attendanceOverall ? 'Live' : 'No data'}</span>
           </div>
           <div class="my-2">
             <div class="flex items-baseline gap-2">
@@ -120,11 +131,11 @@ export function renderDashboard(container) {
           </div>
           <div class="my-2">
             <div class="flex items-baseline gap-2">
-              <span class="font-headline-lg text-3xl font-extrabold text-on-surface">${campusData.student.cgpa}</span>
+              <span class="font-headline-lg text-3xl font-extrabold text-on-surface">${campusData.student?.cgpa || '—'}</span>
               <span class="text-xs text-outline font-medium">Current scale</span>
             </div>
             <p class="text-xs text-on-surface-variant mt-2">
-              ${campusData.student.creditsCompleted} of ${campusData.student.totalCredits} credits completed
+              ${campusData.student?.creditsCompleted || 0} of ${campusData.student?.totalCredits || 0} credits completed
             </p>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs text-outline">
