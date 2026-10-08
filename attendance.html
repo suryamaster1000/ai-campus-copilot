@@ -134,13 +134,15 @@ async function loadAttendance(){
   render();
 }
 async function start(){
-  const {data:{user}={}}=await timeout(supabase.auth.getUser());
+  const authResult=await timeout(supabase.auth.getUser());
+  const user=authResult?.data?.user;
   if(!user){location.href='login.html';return;}
   currentUser=user;
 
-  const {data:access}=await timeout(
+  const accessResult=await timeout(
     supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle()
   );
+  const access=accessResult?.data;
   const role=String(access?.role||'').toLowerCase();
   if(['teacher','faculty','instructor'].includes(role)){
     location.href='teacher-dashboard.html';
