@@ -160,7 +160,6 @@ document.getElementById('attendanceSearch').addEventListener('input',renderHisto
 document.getElementById('reportAttendanceBtn').onclick=()=>{
   sessionStorage.setItem('campus_report_prefill','attendance');
   location.href='index.html#dashboard';
-  setTimeout(()=>document.querySelector('[data-report-button]')?.click(),700);
 };
 supabase.auth.onAuthStateChange((event,session)=>{
   if(event==='SIGNED_OUT') location.href='login.html';
