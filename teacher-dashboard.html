@@ -464,7 +464,8 @@ async function loadSharedData(){
 }
 
 async function start(){
-  const {data:{user}={}}=await timeout(supabase.auth.getUser());
+  const authResult=await timeout(supabase.auth.getUser());
+  const user=authResult?.data?.user;
   if(!user){location.href='teacher-login.html';return;}
   const {data:row,error}=await timeout(supabase.from('admin_users').select('role,assigned_section,assigned_subject,subjects:assigned_subject(id,name,code)').eq('user_id',user.id).maybeSingle());
   if(error){
