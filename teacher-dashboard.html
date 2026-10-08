@@ -17,10 +17,19 @@
 </header>
 
 <main class="max-w-6xl mx-auto p-5 space-y-5">
-  <section class="rounded-3xl bg-gradient-to-r from-slate-950 to-blue-800 text-white p-6">
-    <div class="text-xs font-bold uppercase tracking-wider text-blue-200">Authorized Teacher</div>
-    <h1 class="text-2xl font-extrabold mt-1">Teacher Dashboard</h1>
-    <p id="assigned" class="text-sm text-blue-100 mt-2">Loading assigned section...</p>
+  <section class="rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 text-white p-6">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+      <div>
+        <div class="text-xs font-bold uppercase tracking-wider text-blue-200">Authorized Teacher</div>
+        <h1 class="text-2xl lg:text-3xl font-extrabold mt-1">Welcome, <span id="teacherGreeting">Teacher</span></h1>
+        <p id="assigned" class="text-sm text-blue-100 mt-2">Loading assigned section...</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="#attendance" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/15 border border-white/20 text-xs font-bold hover:bg-white/20">Take Attendance</a>
+        <a href="#subject-notes" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/15 border border-white/20 text-xs font-bold hover:bg-white/20">Post Notes</a>
+        <a href="teacher-management.html" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold hover:bg-blue-50">Manage Section</a>
+      </div>
+    </div>
   </section>
 
   <div id="status" class="hidden rounded-xl px-4 py-3 text-sm"></div>
@@ -34,13 +43,29 @@
   </section>
 
   <section id="shared-data" class="space-y-5">
-    <div class="flex items-end justify-between gap-3">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
       <div>
         <h2 class="text-xl font-extrabold">Live Shared Campus Data</h2>
         <p class="text-sm text-slate-500 mt-1">The same live Supabase data used by the student portal, shown here for your assigned section.</p>
       </div>
-      <button id="refreshSharedData" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-xs font-bold">Refresh</button>
+      <div class="flex items-center gap-2">
+        <span id="lastSync" class="text-[11px] text-slate-400"></span>
+        <button id="refreshSharedData" type="button" class="px-3 py-2 rounded-lg bg-slate-100 text-xs font-bold">Refresh</button>
+      </div>
     </div>
+
+    <section class="bg-white rounded-2xl border border-blue-100 p-5">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div>
+          <h3 class="font-extrabold">Today at a glance</h3>
+          <p id="todayDateLabel" class="text-xs text-slate-500 mt-1">Loading today's schedule...</p>
+        </div>
+        <div id="nextClass" class="rounded-xl bg-blue-50 border border-blue-100 px-3 py-2 text-xs font-bold text-blue-800">Checking next class...</div>
+      </div>
+      <div id="todayClasses" class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="text-sm text-slate-500">Loading today's classes...</div>
+      </div>
+    </section>
 
     <div class="grid xl:grid-cols-3 gap-5">
       <section class="bg-white rounded-2xl border border-slate-200 p-5 xl:col-span-2">
@@ -224,6 +249,48 @@ function renderSharedTimetable(){
       }).join('')+'</div></div>';
   }).join('');
   document.getElementById('timetableMeta').textContent=sharedTimetableRows.length+' timetable entries • '+assignedSection+' • live from Supabase';
+  renderTodaySummary();
+}
+function renderTodaySummary(){
+  const list=document.getElementById('todayClasses');
+  const next=document.getElementById('nextClass');
+  const dateLabel=document.getElementById('todayDateLabel');
+  if(!list||!next||!dateLabel) return;
+  const now=new Date();
+  const today=now.toLocaleDateString('en-US',{weekday:'long'});
+  dateLabel.textContent=now.toLocaleDateString([], {weekday:'long',day:'numeric',month:'short',year:'numeric'})+' • '+assignedSection;
+  const rows=sharedTimetableRows
+    .filter(r=>(r.day_of_week||'')===today)
+    .sort((a,b)=>String(a.start_time||'').localeCompare(String(b.start_time||'')));
+  if(!rows.length){
+    list.innerHTML='<div class="sm:col-span-2 lg:col-span-3 text-sm text-slate-500">No classes scheduled for today.</div>';
+    next.textContent='No more classes today';
+    return;
+  }
+  list.innerHTML=rows.map((r,index)=>{
+    const subject=Array.isArray(r.subjects)?r.subjects[0]:r.subjects;
+    const title=subject?.name||r.notes||'Class';
+    const code=subject?.code||'';
+    const start=String(r.start_time||'').slice(0,5);
+    const end=String(r.end_time||'').slice(0,5);
+    return '<div class="rounded-xl border '+(index===0?'border-blue-200 bg-blue-50/60':'border-slate-200 bg-slate-50')+' px-3 py-3"><div class="text-[11px] font-bold text-slate-500">'+esc(formatTime(start))+' – '+esc(formatTime(end))+'</div><div class="text-sm font-extrabold mt-1 truncate">'+esc(code?code+' — ':'')+esc(title)+'</div><div class="text-[11px] text-slate-500 mt-1">'+esc(r.room||'Room not set')+'</div></div>';
+  }).join('');
+  const minutes=now.getHours()*60+now.getMinutes();
+  const current=rows.find(r=>minutes>=toMinutes(r.start_time)&&minutes<toMinutes(r.end_time));
+  const nextRow=current||rows.find(r=>toMinutes(r.start_time)>=minutes);
+  if(current){
+    const subject=Array.isArray(current.subjects)?current.subjects[0]:current.subjects;
+    next.textContent='In progress: '+(subject?.code||subject?.name||'Class')+' • ends '+formatTime(current.end_time);
+  }else if(nextRow){
+    const subject=Array.isArray(nextRow.subjects)?nextRow.subjects[0]:nextRow.subjects;
+    next.textContent='Next: '+(subject?.code||subject?.name||'Class')+' • '+formatTime(nextRow.start_time);
+  }else{
+    next.textContent='All classes completed for today';
+  }
+}
+function toMinutes(value){
+  const [h,m]=String(value||'').slice(0,5).split(':').map(Number);
+  return Number.isFinite(h)&&Number.isFinite(m)?h*60+m:9999;
 }
 function renderSharedNotices(){
   const box=document.getElementById('sharedNotices');
@@ -264,6 +331,9 @@ async function loadSharedData(){
     sharedEvents=(eventsRes.data||[]).filter(e=>!e.display_until||new Date(e.display_until).getTime()>now);
     renderSharedEvents();
   }
+  const sync=document.getElementById('lastSync');
+  if(sync) sync.textContent='Synced '+new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+  renderTodaySummary();
 }
 
 async function start(){
@@ -283,7 +353,9 @@ async function start(){
   assignedSubjectInfo=Array.isArray(row?.subjects)?row.subjects[0]:row?.subjects;
   if(user.id!==OWNER && !assignedSection){await supabase.auth.signOut();location.href='teacher-login.html?error=no-section';return;}
 
-  document.getElementById('teacherName').textContent=user.email||'Faculty';
+  const displayName=String(user.user_metadata?.name||user.email||'Teacher').trim();
+  document.getElementById('teacherName').textContent=displayName;
+  document.getElementById('teacherGreeting').textContent=displayName.split(/\s+/)[0]||'Teacher';
   const subjectLabel=assignedSubjectInfo?.code ? assignedSubjectInfo.code+' — '+assignedSubjectInfo.name : (assignedSubjectInfo?.name || 'All subjects in assigned section');
   document.getElementById('assigned').textContent='Assigned section: '+assignedSection+' • Subject: '+subjectLabel+' • Teaching access enabled';
   document.getElementById('sectionCard').textContent=assignedSection || 'All Sections';
