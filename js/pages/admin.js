@@ -529,27 +529,84 @@ export function renderAdminPanel(container) {
       return;
     }
 
-    body.innerHTML = students.map(student => '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-surface-container-low border border-surface-container-high">' +
-      '<div class="min-w-0">' +
-        '<div class="text-sm font-bold">' + escReportValue(student.name || 'Student') + '</div>' +
-        '<div class="text-[11px] text-on-surface-variant mt-1">' + escReportValue(student.email || '') + ' • ' + escReportValue(student.roll_number || 'No roll number') + ' • ' + escReportValue(student.section || '') + '</div>' +
-      '</div>' +
-      '<button type="button" data-remove-student="' + escReportValue(student.id) + '" class="px-3 py-2 rounded-lg bg-error-container text-on-error-container text-xs font-bold">Remove Student</button>' +
-    '</div>').join('');
+    body.innerHTML = `
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+        <div>
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Select student</label>
+          <select id="sectionStudentSelect" class="w-full px-3 py-3 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary">
+            <option value="">Select a student...</option>
+            ${students.map(student => \`<option value="${escReportValue(student.id)}">${escReportValue(student.name || 'Student')} — ${escReportValue(student.roll_number || 'No roll number')}${student.email ? ' • ' + escReportValue(student.email) : ''}</option>\`).join('')}
+          </select>
+          <div class="mt-2 text-[11px] text-on-surface-variant">Choose a student from the dropdown to view their details and manage their campus access.</div>
+        </div>
+        <div class="flex items-end">
+          <button id="removeSelectedStudentBtn" type="button" disabled class="w-full lg:w-auto px-4 py-3 rounded-xl bg-error-container text-on-error-container text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed">Remove Student</button>
+        </div>
+      </div>
+      <div id="selectedSectionStudentDetails" class="mt-3"></div>
+    `;
 
-    body.querySelectorAll('[data-remove-student]').forEach(button => {
-      button.addEventListener('click', async () => {
-        if (!confirm('Remove this student from campus access? They will be signed out and their profile will be removed.')) return;
-        button.disabled = true;
-        const { data, error } = await supabase.functions.invoke('remove-student-account', { body: { student_id: button.dataset.removeStudent } });
+    const studentSelect = document.getElementById('sectionStudentSelect');
+    const removeSelectedStudentBtn = document.getElementById('removeSelectedStudentBtn');
+    const selectedStudentDetails = document.getElementById('selectedSectionStudentDetails');
+
+    const renderSelectedStudent = () => {
+      const selectedId = studentSelect?.value;
+      const student = students.find(item => item.id === selectedId);
+      if (!student) {
+        if (selectedStudentDetails) {
+          selectedStudentDetails.innerHTML = '<div class="p-3 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface-variant">Select a student to view their details.</div>';
+        }
+        if (removeSelectedStudentBtn) removeSelectedStudentBtn.disabled = true;
+        return;
+      }
+
+      if (selectedStudentDetails) {
+        selectedStudentDetails.innerHTML = `
+          <div class="p-4 rounded-2xl border border-primary/20 bg-surface-container-low">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-sm font-bold">${escReportValue(student.name || 'Student')}</span>
+              <span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">${escReportValue(student.section || section)}</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-[11px]">
+              <div><span class="font-bold">Email:</span> ${escReportValue(student.email || '—')}</div>
+              <div><span class="font-bold">Roll / Admission:</span> ${escReportValue(student.roll_number || '—')}</div>
+              <div><span class="font-bold">Program:</span> ${escReportValue(student.program || '—')}</div>
+              <div><span class="font-bold">Term:</span> ${escReportValue(student.term || '—')}</div>
+            </div>
+          </div>`;
+      }
+      if (removeSelectedStudentBtn) removeSelectedStudentBtn.disabled = false;
+    };
+
+    studentSelect?.addEventListener('change', renderSelectedStudent);
+    renderSelectedStudent();
+
+    removeSelectedStudentBtn?.addEventListener('click', async () => {
+      const studentId = studentSelect?.value;
+      if (!studentId) {
+        showToast('Select a student first.', 'error');
+        return;
+      }
+      const student = students.find(item => item.id === studentId);
+      if (!student) return;
+      if (!confirm('Remove ' + (student.name || 'this student') + ' from campus access? They will be signed out and their profile will be removed.')) return;
+
+      removeSelectedStudentBtn.disabled = true;
+      removeSelectedStudentBtn.textContent = 'Removing...';
+      try {
+        const { data, error } = await supabase.functions.invoke('remove-student-account', { body: { student_id: studentId } });
         if (error || data?.error) {
           showToast(data?.error || error?.message || 'Could not remove student.', 'error');
-          button.disabled = false;
+          removeSelectedStudentBtn.disabled = false;
+          removeSelectedStudentBtn.textContent = 'Remove Student';
           return;
         }
         showToast('Student removed from campus access.', 'success');
         await loadSectionStudents();
-      });
+      } finally {
+        if (removeSelectedStudentBtn) removeSelectedStudentBtn.textContent = 'Remove Student';
+      }
     });
   }
 
