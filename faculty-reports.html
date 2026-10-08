@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Faculty Reports — AI Campus Copilot</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>body{font-family:Inter,system-ui,sans-serif}</style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+<header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200">
+<div class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+<div><div class="font-extrabold">AI Campus Copilot</div><div class="text-xs text-slate-500">Faculty Portal • Owner Reports</div></div>
+<a href="teacher-dashboard.html" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">Back to Portal</a>
+</div></header>
+<main class="max-w-5xl mx-auto p-5 space-y-5">
+<section class="rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 text-white p-6">
+<div class="text-xs font-bold uppercase tracking-wider text-blue-200">Faculty → Owner</div>
+<h1 class="text-2xl lg:text-3xl font-extrabold mt-1">Report to Owner</h1>
+<p class="text-sm text-blue-100 mt-2">Send an academic, technical, student, attendance, or campus issue directly to the owner/admin.</p>
+</section>
+<div id="status" class="hidden rounded-xl px-4 py-3 text-sm"></div>
+<section class="bg-white rounded-2xl border border-slate-200 p-5">
+<div class="grid md:grid-cols-2 gap-4">
+<label class="block"><span class="text-xs font-bold text-slate-600">Category</span>
+<select id="category" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm"><option value="academic">Academic</option><option value="attendance">Attendance</option><option value="student">Student</option><option value="technical">Technical</option><option value="campus">Campus</option><option value="other">Other</option></select></label>
+<label class="block"><span class="text-xs font-bold text-slate-600">Priority</span>
+<select id="priority" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm"><option value="low">Low</option><option value="normal" selected>Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
+</div>
+<label class="block mt-4"><span class="text-xs font-bold text-slate-600">Subject</span><input id="subject" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm" placeholder="Short title of the issue"></label>
+<label class="block mt-4"><span class="text-xs font-bold text-slate-600">Details</span><textarea id="details" rows="7" class="mt-1 w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm" placeholder="Explain the issue, student/section involved, and any action needed..."></textarea></label>
+<label class="block mt-4"><span class="text-xs font-bold text-slate-600">Affected page / area <span class="font-normal text-slate-400">(optional)</span></span><input id="page" class="mt-1 w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm" placeholder="e.g. Attendance, Faculty Portal"></label>
+<button id="send" class="mt-5 w-full md:w-auto px-6 py-3 rounded-xl bg-blue-700 text-white text-sm font-bold hover:bg-blue-800">Send Report to Owner</button>
+</section>
+<section class="rounded-2xl bg-blue-50 border border-blue-100 p-5 text-sm text-blue-900">
+<strong>Routing:</strong> this report is addressed to the project owner/admin and can be reviewed from the existing admin reports area.
+</section>
+</main>
+<script type="module">
+import { supabase } from './js/supabase.js';
+const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
+const ROLES=['teacher','faculty','instructor'];
+const $=id=>document.getElementById(id);
+function show(msg,ok=false){const e=$('status');e.textContent=msg;e.className='rounded-xl px-4 py-3 text-sm '+(ok?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200');e.classList.remove('hidden');}
+function timeout(p,ms=8000){return Promise.race([p,new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error('Request timed out')}),ms))]);}
+async function start(){
+ const auth=await timeout(supabase.auth.getUser()); const user=auth?.data?.user;
+ if(!user){location.href='teacher-login.html';return;}
+ const access=await timeout(supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle());
+ const role=String(access?.data?.role||'').toLowerCase();
+ if(user.id!==OWNER&&!ROLES.includes(role)){await supabase.auth.signOut();location.href='teacher-login.html';return;}
+ $('send').onclick=async()=>{
+   const subject=$('subject').value.trim(), details=$('details').value.trim();
+   if(!subject||!details){show('Please enter a subject and details.');return;}
+   const btn=$('send');btn.disabled=true;btn.textContent='Sending...';
+   try{
+     const {error}=await supabase.rpc('create_student_report',{p_recipient_id:OWNER,p_category:$('category').value,p_subject:subject,p_details:details,p_affected_page:$('page').value.trim()||null,p_priority:$('priority').value});
+     if(error) throw error;
+     $('subject').value='';$('details').value='';$('page').value='';
+     show('Report sent to the owner successfully.',true);
+   }catch(e){show('Report could not be sent: '+(e?.message||'Unknown error'));}
+   finally{btn.disabled=false;btn.textContent='Send Report to Owner';}
+ };
+}
+start().catch(e=>show('Faculty report portal could not load: '+(e?.message||'Unknown error')));
+</script>
+</body></html>
