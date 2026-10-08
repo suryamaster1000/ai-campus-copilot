@@ -13,7 +13,6 @@ export function renderTasks(container) {
       return t.status === activeTab;
     });
 
-    const safeTasks = Array.isArray(campusData.tasks) ? campusData.tasks : [];
     const pendingCount = safeTasks.filter(t => t.status !== 'completed').length;
 
     container.innerHTML = `
