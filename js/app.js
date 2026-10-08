@@ -233,9 +233,22 @@ async function handleAuthSession(session) {
   const adminRole = String(adminAccess?.role || '').toLowerCase();
   isOwner = isOwner || adminRole === 'owner';
 
-  // Teacher/faculty accounts never enter the student application.
-  // Their dedicated portal starts at teacher-login.html and uses the same Supabase project/data.
-  isAdmin = isOwner || (adminAccess?.user_id === currentUser.id && ['admin','teacher','faculty','instructor'].includes(adminRole));
+  // HARD PORTAL BOUNDARY:
+  // Teacher/faculty/instructor accounts belong only to the dedicated Teacher Portal.
+  // Never render the student application for these roles, even when they already
+  // have a valid Supabase session or open index.html directly.
+  if (['teacher', 'faculty', 'instructor'].includes(adminRole)) {
+    if (!window.location.pathname.endsWith('/teacher-dashboard.html') &&
+        !window.location.pathname.endsWith('/teacher-management.html') &&
+        !window.location.pathname.endsWith('/teacher-login.html')) {
+      authRedirectInProgress = true;
+      window.location.replace('teacher-dashboard.html');
+    }
+    adminAccessReady = false;
+    return false;
+  }
+
+  isAdmin = isOwner || (adminAccess?.user_id === currentUser.id && ['admin'].includes(adminRole));
 
   // Never create an approval record here. Only the registration/approval flow
   // or an authorized administrator should create the student's profile.
