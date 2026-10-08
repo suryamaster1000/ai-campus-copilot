@@ -41,12 +41,9 @@ export function renderEvents(container) {
         </div>
 
         <!-- Filter Pills -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-1">
-          ${['All', 'Registered', 'Hackathon', 'Tech Talk', 'Cultural', 'Career'].map(f => `
-            <button class="event-filter-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeFilter === f ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant'}" data-filter="${f}">
-              ${f === 'Registered' ? '⭐ My Registrations' : f}
-            </button>
-          `).join('')}
+        <div class="w-full sm:w-auto">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1.5">Event Filter</label>
+          <select id="eventFilterSelect" class="w-full sm:w-64 h-10 px-3 rounded-xl border border-surface-container-high bg-surface-container-lowest text-xs font-bold text-on-surface outline-none focus:border-primary">${['All', 'Registered', 'Hackathon', 'Tech Talk', 'Cultural', 'Career'].map(f => `<option value="${f}" ${activeFilter === f ? 'selected' : ''}>${f === 'Registered' ? '⭐ My Registrations' : f}</option>`).join('')}</select>
         </div>
 
         <!-- Events Grid -->
@@ -113,12 +110,7 @@ export function renderEvents(container) {
     `;
 
     // Filter button clicks
-    container.querySelectorAll('.event-filter-btn').forEach(btn => {
-      btn.onclick = () => {
-        activeFilter = btn.getAttribute('data-filter');
-        render();
-      };
-    });
+    container.querySelector('#eventFilterSelect')?.addEventListener('change', (event) => { activeFilter = event.target.value; render(); });
 
     // Register button clicks
     container.querySelectorAll('.event-reg-btn').forEach(btn => {
