@@ -84,14 +84,14 @@ export function renderStudyAssistant(container) {
                 <h3 class="font-label-md text-xs font-bold text-outline uppercase tracking-wider">Curriculum Modules &amp; Learning Objectives</h3>
                 <div class="space-y-2">
                   ${(Array.isArray(course.units) && course.units.length ? course.units : [{ title: 'Syllabus details not connected yet', status: 'Live syllabus data pending' }]).map((unit, idx) => `
-                    <div class="p-3.5 rounded-xl border ${unit.status.includes('Current') ? 'bg-primary-fixed/15 border-primary shadow-sm' : 'bg-surface-container-low border-surface-container-high'} flex items-center justify-between gap-3">
+                    <div class="p-3.5 rounded-xl border ${String(unit.status || '').includes('Current') ? 'bg-primary-fixed/15 border-primary shadow-sm' : 'bg-surface-container-low border-surface-container-high'} flex items-center justify-between gap-3">
                       <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg ${unit.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : unit.status.includes('Current') ? 'bg-primary text-white' : 'bg-surface-container text-outline'} flex items-center justify-center text-xs font-bold flex-shrink-0">
-                          ${unit.status === 'Completed' ? '<span class="material-symbols-outlined text-[18px]">check</span>' : idx + 1}
+                        <div class="w-8 h-8 rounded-lg ${String(unit.status || '') === 'Completed' ? 'bg-emerald-100 text-emerald-800' : String(unit.status || '').includes('Current') ? 'bg-primary text-white' : 'bg-surface-container text-outline'} flex items-center justify-center text-xs font-bold flex-shrink-0">
+                          ${String(unit.status || '') === 'Completed' ? '<span class="material-symbols-outlined text-[18px]">check</span>' : idx + 1}
                         </div>
                         <div>
                           <h4 class="font-label-md text-sm font-semibold text-on-surface">${unit.title}</h4>
-                          <span class="text-xs ${unit.status.includes('Current') ? 'text-primary font-bold' : 'text-outline'}">${unit.status}</span>
+                          <span class="text-xs ${String(unit.status || '').includes('Current') ? 'text-primary font-bold' : 'text-outline'}">${unit.status}</span>
                         </div>
                       </div>
                       <button class="study-explain-unit-btn px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold rounded-lg transition-colors flex items-center gap-1" data-unit="${unit.title}">
@@ -343,7 +343,8 @@ export function renderStudyAssistant(container) {
       const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
       card.innerHTML = '<div class="flex items-center justify-between gap-3"><div><div class="flex items-center gap-2"><span class="material-symbols-outlined text-primary">menu_book</span><h2 class="font-headline-md text-base font-bold">Subject Notes</h2></div><p class="text-xs text-on-surface-variant mt-1">Notes posted by faculty for Section '+esc(section)+'.</p></div><span class="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">'+rows.length+'</span></div>' +
         (rows.length ? '<div class="mt-4 grid gap-3 md:grid-cols-2">' + rows.map(n => {
-          const subject = n.subjects?.code ? n.subjects.code+' — '+n.subjects.name : (n.subjects?.name || 'Subject');
+          const subjectRow = Array.isArray(n.subjects) ? n.subjects[0] : n.subjects;
+          const subject = subjectRow?.code ? subjectRow.code+' — '+subjectRow.name : (subjectRow?.name || 'Subject');
           const body = String(n.content || '');
           return '<article class="p-4 rounded-xl border border-surface-container-high bg-surface-container-low"><div class="flex items-start justify-between gap-2"><div><span class="text-[10px] font-bold text-primary">'+esc(subject)+'</span><h3 class="text-sm font-bold mt-1">'+esc(n.title)+'</h3></div></div><p class="text-xs text-on-surface-variant mt-2 whitespace-pre-wrap">'+esc(body)+'</p>' + (n.source_url ? '<a target="_blank" rel="noopener noreferrer" href="'+esc(n.source_url)+'" class="inline-flex items-center gap-1 mt-3 text-xs font-bold text-primary hover:underline">Open resource <span class="material-symbols-outlined text-[15px]">open_in_new</span></a>' : '') + '</article>';
         }).join('') + '</div>' : '<div class="mt-4 p-4 rounded-xl bg-surface-container-low text-xs text-on-surface-variant">No faculty notes have been posted for your section yet.</div>');
