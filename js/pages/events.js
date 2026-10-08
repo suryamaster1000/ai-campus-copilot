@@ -10,7 +10,8 @@ export function renderEvents(container) {
   }
 
   function render() {
-    const filteredEvents = campusData.events.filter(e => {
+    const safeEvents = Array.isArray(campusData.events) ? campusData.events : [];
+  const filteredEvents = safeEvents.filter(e => {
       if (activeFilter === "All") return true;
       if (activeFilter === "Registered") return window._registeredEvents.has(e.id);
       return (e.category || e.type || 'Campus Event').toLowerCase() === activeFilter.toLowerCase();
