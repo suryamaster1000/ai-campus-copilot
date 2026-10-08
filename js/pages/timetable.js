@@ -3,7 +3,7 @@ import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const WEEKDAY_NAMES = DAY_NAMES.slice(1);
+const WEEKDAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 function getLocalDateInputValue(date = new Date()) {
   const y = date.getFullYear();
