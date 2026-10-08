@@ -633,7 +633,7 @@ export function renderAdminPanel(container) {
 
     const { data: reports, error } = await supabase
       .from('student_reports')
-      .select('id,reporter_id,category,subject,details,affected_page,priority,status,admin_note,created_at,updated_at')
+      .select('id,reporter_id,reporter_snapshot,category,subject,details,affected_page,priority,status,admin_note,created_at,updated_at')
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -677,8 +677,16 @@ export function renderAdminPanel(container) {
     };
 
     body.innerHTML = visibleReports.map(r => {
-      const p = profileMap.get(r.reporter_id) || {};
+      const snapshot = r.reporter_snapshot && typeof r.reporter_snapshot === 'object' ? r.reporter_snapshot : {};
+      const p = { ...(profileMap.get(r.reporter_id) || {}), ...snapshot };
       const created = r.created_at ? new Date(r.created_at).toLocaleString() : '';
+      const reporterRole = p.role || 'student';
+      const reporterName = p.name || 'Unknown reporter';
+      const reporterEmail = p.email || '';
+      const reporterSection = p.section || '';
+      const reporterRoll = p.roll_number || '';
+      const reporterProgram = p.program || '';
+      const reporterTerm = p.term || '';
       return '<article class="p-4 rounded-2xl border border-surface-container-high bg-surface-container-low" data-report-id="' + escReportValue(r.id) + '">' +
         '<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">' +
           '<div class="min-w-0 flex-1">' +
@@ -687,8 +695,21 @@ export function renderAdminPanel(container) {
               '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-fixed text-on-primary-fixed">' + escReportValue(categoryLabels[r.category] || r.category || 'Report') + '</span>' +
               '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold ' + (priorityClasses[r.priority] || priorityClasses.medium) + '">' + escReportValue(String(r.priority || 'medium').toUpperCase()) + '</span>' +
             '</div>' +
-            '<div class="text-[11px] text-on-surface-variant mt-1">' + escReportValue(p.name || 'Student') + ' • ' + escReportValue(p.email || '') + (p.section ? ' • Section ' + escReportValue(p.section) : '') + (p.roll_number ? ' • ' + escReportValue(p.roll_number) : '') + '</div>' +
-            '<div class="text-[11px] text-outline mt-0.5">' + escReportValue(created) + (r.affected_page ? ' • Page: ' + escReportValue(r.affected_page) : '') + '</div>' +
+            '<div class="mt-3 p-3 rounded-xl bg-white border border-primary/20">' +
+              '<div class="flex flex-wrap items-center gap-2">' +
+                '<span class="text-xs font-bold uppercase tracking-wider text-outline">Reporter Details</span>' +
+                '<span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">' + escReportValue(String(reporterRole).toUpperCase()) + '</span>' +
+              '</div>' +
+              '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5 mt-2 text-[11px]">' +
+                '<div><span class="font-bold">Name:</span> ' + escReportValue(reporterName) + '</div>' +
+                '<div><span class="font-bold">Email:</span> ' + escReportValue(reporterEmail || 'Not available') + '</div>' +
+                '<div><span class="font-bold">Section / Class:</span> ' + escReportValue(reporterSection || 'Not available') + '</div>' +
+                '<div><span class="font-bold">Roll / Admission:</span> ' + escReportValue(reporterRoll || 'Not available') + '</div>' +
+                '<div><span class="font-bold">Program:</span> ' + escReportValue(reporterProgram || 'Not available') + '</div>' +
+                '<div><span class="font-bold">Term / Year:</span> ' + escReportValue(reporterTerm || 'Not available') + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="text-[11px] text-outline mt-2">' + escReportValue(created) + (r.affected_page ? ' • Page: ' + escReportValue(r.affected_page) : '') + '</div>' +
           '</div>' +
           '<select data-report-status="' + escReportValue(r.id) + '" class="px-3 py-2 rounded-lg border border-surface-container-high bg-white text-xs font-semibold">' +
             '<option value="open"' + (r.status === 'open' ? ' selected' : '') + '>Open</option>' +
