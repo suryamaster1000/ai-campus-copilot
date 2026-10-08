@@ -605,6 +605,8 @@ function initReportFeature() {
   if (!reportButtons.length) return;
   if (document.getElementById('studentReportModal')) return;
 
+  const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
+
   document.body.insertAdjacentHTML('beforeend', `
     <div id="studentReportModal" class="fixed inset-0 z-[80] hidden items-center justify-center p-4">
       <div data-report-backdrop class="absolute inset-0 bg-black/45 backdrop-blur-sm"></div>
@@ -613,9 +615,9 @@ function initReportFeature() {
           <div>
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-error">report_problem</span>
-              <h2 id="studentReportTitle" class="text-lg font-bold text-on-surface">Report to Teacher</h2>
+              <h2 id="studentReportTitle" class="text-lg font-bold text-on-surface">Report to Owner</h2>
             </div>
-            <p class="text-xs text-on-surface-variant mt-1">Send a report directly to an authorized teacher assigned to your section.</p>
+            <p class="text-xs text-on-surface-variant mt-1">Send your report directly to the project owner/admin. Your assigned teacher is not the recipient of this report.</p>
           </div>
           <button type="button" data-report-close class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container">
             <span class="material-symbols-outlined text-[20px]">close</span>
@@ -623,12 +625,9 @@ function initReportFeature() {
         </div>
 
         <form id="studentReportForm" class="p-5 space-y-4">
-          <div>
-            <label class="block text-[11px] font-bold text-on-surface mb-1">Send to</label>
-            <select id="reportRecipient" required class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">
-              <option value="">Loading teachers...</option>
-            </select>
-            <p id="reportRecipientHint" class="text-[10px] text-on-surface-variant mt-1"></p>
+          <div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-[11px] text-blue-800">
+            <div class="font-bold">Recipient</div>
+            <div class="mt-1">Project Owner / Admin</div>
           </div>
 
           <div>
@@ -649,7 +648,7 @@ function initReportFeature() {
 
           <div>
             <label class="block text-[11px] font-bold text-on-surface mb-1">Details</label>
-            <textarea id="reportDetails" rows="6" maxlength="5000" required placeholder="Explain what happened and what you need the teacher to check." class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary"></textarea>
+            <textarea id="reportDetails" rows="6" maxlength="5000" required placeholder="Explain what happened and what you need the owner/admin to check." class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary"></textarea>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -675,8 +674,8 @@ function initReportFeature() {
 
           <div class="flex items-center justify-end gap-2 pt-1">
             <button type="button" data-report-close class="px-4 py-2.5 rounded-xl bg-surface-container text-on-surface text-xs font-bold">Cancel</button>
-            <button id="submitStudentReportBtn" type="submit" disabled class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed">
-              <span class="material-symbols-outlined text-[17px]">send</span>Send Report
+            <button id="submitStudentReportBtn" type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold">
+              <span class="material-symbols-outlined text-[17px]">send</span>Send Report to Owner
             </button>
           </div>
         </form>
@@ -688,47 +687,12 @@ function initReportFeature() {
   const form = document.getElementById('studentReportForm');
   const pageInput = document.getElementById('reportPage');
   const subjectInput = document.getElementById('reportSubject');
-  const recipientInput = document.getElementById('reportRecipient');
-  const recipientHint = document.getElementById('reportRecipientHint');
   const recipientError = document.getElementById('reportRecipientError');
   const submitButton = document.getElementById('submitStudentReportBtn');
-  let recipients = [];
 
   const closeModal = () => {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-  };
-
-  const loadRecipients = async () => {
-    recipientInput.innerHTML = '<option value="">Loading teachers...</option>';
-    recipientInput.disabled = true;
-    submitButton.disabled = true;
-    recipientError.classList.add('hidden');
-
-    const { data, error } = await supabase.rpc('get_student_report_recipients');
-    if (error) {
-      console.error('Teacher recipient lookup failed:', error);
-      recipientInput.innerHTML = '<option value="">Teachers could not be loaded</option>';
-      recipientHint.textContent = 'Please try again later.';
-      recipientError.textContent = error.message || 'Could not load teachers for your section.';
-      recipientError.classList.remove('hidden');
-      return;
-    }
-
-    recipients = data || [];
-    recipientInput.innerHTML = recipients.length
-      ? recipients.map((teacher, index) => `
-          <option value="${teacher.user_id}" ${index === 0 ? 'selected' : ''}>
-            ${String(teacher.name || 'Teacher')}${teacher.subject_code ? ' — ' + String(teacher.subject_code) : ''}
-          </option>
-        `).join('')
-      : '<option value="">No authorized teacher is assigned to your section</option>';
-
-    recipientInput.disabled = recipients.length === 0;
-    submitButton.disabled = recipients.length === 0;
-    recipientHint.textContent = recipients.length
-      ? 'Only teachers assigned to your section appear here.'
-      : '';
   };
 
   const openModal = async () => {
@@ -744,9 +708,9 @@ function initReportFeature() {
       subjectInput.value = 'Attendance issue';
       sessionStorage.removeItem('campus_report_prefill');
     }
+    recipientError.classList.add('hidden');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    await loadRecipients();
     setTimeout(() => subjectInput?.focus(), 0);
   };
 
@@ -760,10 +724,10 @@ function initReportFeature() {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (!currentUser || submitButton.disabled || !recipientInput.value) return;
+    if (!currentUser || submitButton.disabled) return;
 
     const payload = {
-      recipient_id: recipientInput.value,
+      recipient_id: OWNER_USER_ID,
       category: document.getElementById('reportCategory').value,
       subject: subjectInput.value.trim(),
       details: document.getElementById('reportDetails').value.trim(),
@@ -793,13 +757,13 @@ function initReportFeature() {
       form.reset();
       pageInput.value = currentRoute ? currentRoute.replace(/-/g, ' ') : '';
       closeModal();
-      showToast('Report sent to your assigned teacher.', 'success');
+      showToast('Report sent to the owner successfully.', 'success');
     } catch (error) {
       showToast(error?.message || 'Could not send the report.', 'error');
     } finally {
-      submitButton.disabled = recipients.length === 0;
+      submitButton.disabled = false;
       submitButton.classList.remove('opacity-70');
-      submitButton.innerHTML = '<span class="material-symbols-outlined text-[17px]">send</span>Send Report';
+      submitButton.innerHTML = '<span class="material-symbols-outlined text-[17px]">send</span>Send Report to Owner';
     }
   });
 
