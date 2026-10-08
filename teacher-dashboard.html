@@ -25,7 +25,7 @@
         <p id="assigned" class="text-sm text-blue-100 mt-2">Loading assigned section...</p>
       </div>
       <div class="flex flex-wrap gap-2">
-        <a href="#attendance" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/15 border border-white/20 text-xs font-bold hover:bg-white/20">Take Attendance</a>
+        <a href="teacher-attendance.html" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/15 border border-white/20 text-xs font-bold hover:bg-white/20">Take Attendance</a>
         <a href="#subject-notes" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/15 border border-white/20 text-xs font-bold hover:bg-white/20">Post Notes</a>
         <a href="teacher-management.html" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold hover:bg-blue-50">Manage Section</a>
       </div>
@@ -187,7 +187,7 @@
       <p class="text-sm text-slate-500 mt-1">Teaching and academic tools for the assigned section.</p>
       <div class="grid grid-cols-2 gap-3 mt-4">
         <a href="#students" class="p-4 rounded-xl bg-blue-50 text-blue-800 font-bold text-sm">Students</a>
-        <a href="#attendance" class="p-4 rounded-xl bg-indigo-50 text-indigo-800 font-bold text-sm">Attendance</a>
+        <a href="teacher-attendance.html" class="p-4 rounded-xl bg-indigo-50 text-indigo-800 font-bold text-sm">Attendance</a>
         <a href="#subject-notes" class="p-4 rounded-xl bg-amber-50 text-amber-800 font-bold text-sm">Subject Notes</a>
         <a href="#teacher-admin" class="p-4 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm">Manage Section</a>
         <a href="#campus-tools" class="p-4 rounded-xl bg-slate-100 text-slate-800 font-bold text-sm">Campus Tools</a>
@@ -195,79 +195,37 @@
     </div>
   </section>
 
-  <section class="bg-white rounded-2xl border border-slate-200 p-5">
-    <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+  <section id="attendance" class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
       <div>
         <div class="flex items-center gap-2 flex-wrap">
-          <h2 class="font-extrabold">Take Attendance</h2>
-          <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold">TEACHER ONLY</span>
+          <h2 class="font-extrabold">Attendance Workspace</h2>
+          <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold">SEPARATE PAGE</span>
         </div>
-        <p class="text-sm text-slate-500 mt-1">Create or edit attendance for your assigned section. Attendance is tied to the selected date and subject.</p>
+        <p class="text-sm text-slate-500 mt-1">Take, edit and review attendance in a dedicated Teacher Portal page.</p>
       </div>
-      <div class="grid sm:grid-cols-2 gap-2 lg:min-w-[430px]">
-        <div>
-          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Date</label>
-          <input id="attendanceDate" type="date" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold" />
-        </div>
-        <div>
-          <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Subject</label>
-          <select id="attendanceSubject" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-semibold"><option value="">Loading subjects...</option></select>
-        </div>
-      </div>
+      <a href="teacher-attendance.html" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-700 text-white text-xs font-bold hover:bg-blue-800 transition-colors">
+        Open Attendance
+        <span>→</span>
+      </a>
     </div>
-
-    <div id="attendanceClassCard" class="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <div id="attendanceClassTitle" class="text-sm font-extrabold text-slate-900">Select a date and subject</div>
-          <div id="attendanceClassMeta" class="text-xs text-slate-500 mt-1">The timetable will be checked before attendance can be recorded.</div>
-        </div>
-        <span id="attendanceExistingBadge" class="hidden px-2.5 py-1 rounded-full bg-white text-indigo-700 border border-indigo-100 text-[10px] font-bold">Already saved</span>
+    <div class="mt-4 grid sm:grid-cols-3 gap-3">
+      <div class="rounded-xl bg-blue-50 border border-blue-100 p-3">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-blue-600">Section</div>
+        <div id="attendanceWorkspaceSection" class="text-sm font-extrabold text-blue-900 mt-1">—</div>
       </div>
-    </div>
-
-    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <div class="flex flex-wrap items-center gap-3">
-        <div class="rounded-xl bg-white border border-slate-200 px-3 py-2">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total</div>
-          <div id="attendanceTotalCount" class="text-lg font-extrabold text-slate-900">0</div>
-        </div>
-        <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Present</div>
-          <div id="attendancePresentCount" class="text-lg font-extrabold text-emerald-700">0</div>
-        </div>
-        <div class="rounded-xl bg-red-50 border border-red-200 px-3 py-2">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-red-600">Absent</div>
-          <div id="attendanceAbsentCount" class="text-lg font-extrabold text-red-700">0</div>
-        </div>
-        <div class="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-amber-600">Not Marked</div>
-          <div id="attendanceUnmarkedCount" class="text-lg font-extrabold text-amber-700">0</div>
-        </div>
+      <div class="rounded-xl bg-slate-50 border border-slate-200 p-3">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Today's Status</div>
+        <div id="attendanceWorkspaceStatus" class="text-sm font-extrabold text-slate-800 mt-1">Open attendance to mark</div>
       </div>
-      <div id="attendanceSummary" class="text-xs text-slate-500 mt-3">Select a date and subject to start attendance.</div>
-    </div>
-
-    <div id="attendanceStudents" class="mt-4 space-y-2">
-      <div class="text-sm text-slate-500">Select a date and subject to start attendance.</div>
-    </div>
-
-    <div id="attendanceActions" class="hidden mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
-      <div class="flex flex-wrap gap-2">
-        <button id="markAllPresent" type="button" class="px-4 py-2.5 rounded-xl bg-emerald-100 text-emerald-800 text-xs font-bold">Mark All Present</button>
-        <button id="markAllAbsent" type="button" class="px-4 py-2.5 rounded-xl bg-red-100 text-red-800 text-xs font-bold">Mark All Absent</button>
+      <div class="rounded-xl bg-emerald-50 border border-emerald-100 p-3">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Student Count</div>
+        <div id="attendanceWorkspaceCount" class="text-sm font-extrabold text-emerald-800 mt-1">—</div>
       </div>
-      <button id="saveAttendance" type="button" disabled class="px-5 py-2.5 rounded-xl bg-blue-700 text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed">Save Attendance</button>
     </div>
   </section>
 
-  <section class="bg-white rounded-2xl border border-slate-200 p-5">
-    <div class="flex items-center justify-between gap-3">
-      <div><h2 class="font-extrabold">Attendance Overview</h2><p class="text-sm text-slate-500 mt-1">Subject-wise attendance percentage for your assigned section.</p></div>
-      <button id="refreshOverview" class="px-3 py-2 rounded-lg bg-slate-100 text-xs font-bold">Refresh</button>
-    </div>
-    <div id="attendanceOverview" class="mt-4 overflow-x-auto"><div class="text-sm text-slate-500">Loading...</div></div>
-  </section>
+
 
   <section id="subject-notes" class="bg-white rounded-2xl border border-amber-200 p-5">
     <div id="teacherSubjectNotes"></div>
@@ -526,6 +484,9 @@ async function start(){
   const displayName=String(user.user_metadata?.name||user.email||'Teacher').trim();
   document.getElementById('teacherName').textContent=displayName;
   document.getElementById('teacherGreeting').textContent=displayName.split(/\s+/)[0]||'Teacher';
+  const workspaceSection=document.getElementById('attendanceWorkspaceSection');
+  const workspaceCount=document.getElementById('attendanceWorkspaceCount');
+  if(workspaceSection) workspaceSection.textContent=assignedSection || 'Not assigned';
   const subjectLabel=assignedSubjectInfo?.code ? assignedSubjectInfo.code+' — '+assignedSubjectInfo.name : (assignedSubjectInfo?.name || 'All subjects in assigned section');
   document.getElementById('assigned').textContent='Assigned section: '+assignedSection+' • Subject: '+subjectLabel+' • Teaching access enabled';
   document.getElementById('sectionCard').textContent=assignedSection || 'All Sections';
