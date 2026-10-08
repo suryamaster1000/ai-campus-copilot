@@ -14,32 +14,74 @@
   </div>
 </header>
 <main class="max-w-6xl mx-auto p-5 space-y-5">
-  <section class="rounded-3xl bg-gradient-to-r from-slate-950 to-blue-800 text-white p-6">
-    <div class="text-xs font-bold uppercase tracking-wider text-blue-200">Teacher Only</div>
-    <h1 class="text-2xl font-extrabold mt-1">Manage Assigned Section</h1>
-    <p id="scope" class="text-sm text-blue-100 mt-2">Checking authorization...</p>
+  <section class="rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 text-white p-6">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div>
+        <div class="text-xs font-bold uppercase tracking-wider text-blue-200">Teacher Only</div>
+        <h1 class="text-2xl lg:text-3xl font-extrabold mt-1">Manage Assigned Section</h1>
+        <p id="scope" class="text-sm text-blue-100 mt-2">Checking authorization...</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <a href="teacher-dashboard.html" class="px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-xs font-bold hover:bg-white/15">← Dashboard</a>
+        <button id="refresh" type="button" class="px-3 py-2 rounded-xl bg-white text-slate-900 text-xs font-bold hover:bg-blue-50">Refresh All</button>
+      </div>
+    </div>
   </section>
   <div id="status" class="hidden rounded-xl px-4 py-3 text-sm"></div>
+  <section class="grid sm:grid-cols-3 gap-4">
+    <div class="bg-white rounded-2xl border border-slate-200 p-4"><div class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Students</div><div id="summaryStudents" class="text-2xl font-extrabold mt-1">—</div><div class="text-[11px] text-slate-400 mt-1" id="summaryStudentsText">Assigned section</div></div>
+    <div class="bg-white rounded-2xl border border-amber-200 p-4"><div class="text-[11px] uppercase tracking-wider font-bold text-amber-700">Pending</div><div id="summaryPending" class="text-2xl font-extrabold mt-1 text-amber-700">—</div><div class="text-[11px] text-slate-400 mt-1">Awaiting approval</div></div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-4"><div class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Teachers</div><div id="summaryTeachers" class="text-2xl font-extrabold mt-1">—</div><div class="text-[11px] text-slate-400 mt-1">In your section</div></div>
+  </section>
   <section class="grid lg:grid-cols-2 gap-5">
     <div class="bg-white rounded-2xl border border-slate-200 p-5">
-      <div class="flex items-center justify-between"><div><h2 class="font-extrabold">Students</h2><p class="text-xs text-slate-500 mt-1">Only your assigned section</p></div><span id="studentCount" class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">0</span></div>
-      <div id="students" class="mt-4 space-y-2"></div>
+      <div class="flex items-center justify-between gap-3">
+        <div><h2 class="font-extrabold">Students</h2><p class="text-xs text-slate-500 mt-1">Only your assigned section</p></div>
+        <span id="studentCount" class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">0</span>
+      </div>
+      <div class="mt-4 relative">
+        <input id="studentSearch" type="search" maxlength="80" placeholder="Search name, email or roll number..." class="w-full px-3 py-2.5 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-blue-500">
+        <button id="clearStudentSearch" type="button" class="hidden absolute right-2 top-1.5 px-2 py-1 text-slate-400 hover:text-slate-700 text-sm">×</button>
+      </div>
+      <div id="students" class="mt-3 space-y-2"></div>
     </div>
     <div class="bg-white rounded-2xl border border-slate-200 p-5">
-      <div class="flex items-center justify-between"><div><h2 class="font-extrabold">Pending Approvals</h2><p class="text-xs text-slate-500 mt-1">Approve students for your section</p></div><span id="pendingCount" class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">0</span></div>
-      <div id="pending" class="mt-4 space-y-2"></div>
+      <div class="flex items-center justify-between gap-3">
+        <div><h2 class="font-extrabold">Pending Approvals</h2><p class="text-xs text-slate-500 mt-1">Approve students for your section</p></div>
+        <span id="pendingCount" class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold">0</span>
+      </div>
+      <div class="mt-4 relative">
+        <input id="pendingSearch" type="search" maxlength="80" placeholder="Search student or admission no..." class="w-full px-3 py-2.5 pr-10 rounded-xl border border-slate-200 bg-amber-50/40 text-sm outline-none focus:border-amber-500">
+        <button id="clearPendingSearch" type="button" class="hidden absolute right-2 top-1.5 px-2 py-1 text-slate-400 hover:text-slate-700 text-sm">×</button>
+      </div>
+      <div id="pending" class="mt-3 space-y-2"></div>
     </div>
   </section>
   <section class="bg-white rounded-2xl border border-slate-200 p-5">
-    <div class="flex items-center justify-between gap-3"><div><h2 class="font-extrabold">Teachers in My Section</h2><p class="text-xs text-slate-500 mt-1">Add or remove teacher accounts for this section</p></div><button id="refresh" class="px-3 py-2 rounded-lg bg-slate-100 text-xs font-bold">Refresh</button></div>
-    <form id="teacherForm" class="mt-4 grid md:grid-cols-5 gap-3">
-      <input id="teacherName" required placeholder="Teacher name" class="px-3 py-2.5 rounded-xl border text-sm">
-      <input id="teacherEmail" required type="email" placeholder="Teacher email" class="px-3 py-2.5 rounded-xl border text-sm">
-      <input id="teacherPassword" required minlength="8" type="password" placeholder="Initial password" class="px-3 py-2.5 rounded-xl border text-sm">
-      <select id="teacherSubject" required class="px-3 py-2.5 rounded-xl border text-sm"><option value="">Loading subjects...</option></select>
-      <button class="px-4 py-2.5 rounded-xl bg-blue-700 text-white text-sm font-bold">Add Teacher</button>
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div><h2 class="font-extrabold">Teachers in My Section</h2><p class="text-xs text-slate-500 mt-1">Add or remove teacher accounts for the assigned section</p></div>
+      <span id="teacherScopeBadge" class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold">SECTION ONLY</span>
+    </div>
+    <form id="teacherForm" class="mt-4 rounded-2xl bg-slate-50 border border-slate-200 p-4">
+      <div class="grid md:grid-cols-2 gap-3">
+        <input id="teacherName" required maxlength="100" placeholder="Teacher name" class="w-full px-3 py-2.5 rounded-xl border bg-white text-sm">
+        <input id="teacherEmail" required maxlength="254" type="email" placeholder="Teacher email" class="w-full px-3 py-2.5 rounded-xl border bg-white text-sm">
+        <div class="relative">
+          <input id="teacherPassword" required minlength="8" maxlength="72" type="password" placeholder="Initial password (8+ characters)" class="w-full px-3 py-2.5 pr-24 rounded-xl border bg-white text-sm">
+          <button id="toggleTeacherPassword" type="button" class="absolute right-2 top-2 px-2 py-1 text-[11px] font-bold text-blue-700">Show</button>
+        </div>
+        <select id="teacherSubject" required class="w-full px-3 py-2.5 rounded-xl border bg-white text-sm"><option value="">Loading subjects...</option></select>
+      </div>
+      <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="text-[11px] text-slate-500">New teacher accounts are created in your assigned section.</div>
+        <button id="addTeacherBtn" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-blue-700 text-white text-sm font-bold">Create Teacher Account</button>
+      </div>
     </form>
-    <div id="teachers" class="mt-4 space-y-2"></div>
+    <div class="mt-4 relative">
+      <input id="teacherSearch" type="search" maxlength="80" placeholder="Search teachers or subjects..." class="w-full px-3 py-2.5 pr-10 rounded-xl border border-slate-200 bg-slate-50 text-sm outline-none focus:border-blue-500">
+      <button id="clearTeacherSearch" type="button" class="hidden absolute right-2 top-1.5 px-2 py-1 text-slate-400 hover:text-slate-700 text-sm">×</button>
+    </div>
+    <div id="teachers" class="mt-3 space-y-2"></div>
   </section>
 </main>
 <script type="module">
@@ -47,7 +89,7 @@ import { supabase } from './js/supabase.js';
 const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let user=null,access=null,section='',subjects=[];
+let user=null,access=null,section='',subjects=[];let studentRows=[],pendingRows=[],teacherRows=[];
 function timeout(p,ms=8000,label='Request'){return Promise.race([p,new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error(label+' timed out')}),ms))]);}
 async function functionTimeout(p,ms=15000,label='Action'){return Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' timed out')),ms))]);}
 function msg(t,ok=false){$('status').textContent=t;$('status').className='rounded-xl px-4 py-3 text-sm '+(ok?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200');}
@@ -66,44 +108,95 @@ async function start(){
 }
 async function loadSubjects(){
   const r=await timeout(supabase.from('subjects').select('id,name,code,term').order('term').order('code'),8000,'Subjects request');
-  subjects=r.data||[];$('teacherSubject').innerHTML='<option value="">Select subject...</option>'+subjects.map(s=>'<option value="'+esc(s.id)+'">'+esc((s.code?s.code+' — ':'')+s.name)+'</option>').join('');
+  if(r.error){$('teacherSubject').innerHTML='<option value="">Unable to load subjects</option>';return;}
+  subjects=r.data||[];$('teacherSubject').innerHTML=subjects.length?'<option value="">Select subject...</option>'+subjects.map(s=>'<option value="'+esc(s.id)+'">'+esc((s.code?s.code+' — ':'')+s.name)+'</option>').join(''):'<option value="">No subjects found</option>';
 }
 async function loadStudents(){
   $('students').innerHTML='<div class="text-sm text-slate-500">Loading students...</div>';
-  let q=supabase.from('profiles').select('id,name,email,roll_number,section,program,term').eq('section',section).neq('program','Faculty').order('name');
+  const q=supabase.from('profiles').select('id,name,email,roll_number,section,program,term').eq('section',section).neq('program','Faculty').order('name');
   const r=await timeout(q,8000,'Students request');
   if(r.error){
-    $('studentCount').textContent='—';
+    $('studentCount').textContent='—';$('summaryStudents').textContent='—';
     $('students').innerHTML='<div class="text-sm text-red-600">Student data could not be loaded: '+esc(r.error.message||'Unknown error')+'</div>';
-    msg(r.error.message||'Student data could not be loaded.');
-    return;
+    msg(r.error.message||'Student data could not be loaded.');return;
   }
-  const rows=r.data||[];$('studentCount').textContent=rows.length;
-  $('students').innerHTML=rows.length?rows.map(s=>'<div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border"><div><div class="text-sm font-bold">'+esc(s.name||'Student')+'</div><div class="text-[11px] text-slate-500">'+esc(s.email||'')+' • '+esc(s.roll_number||'')+' • '+esc(s.section||'')+'</div></div><button data-remove-student="'+esc(s.id)+'" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold">Remove</button></div>').join(''):'<div class="text-sm text-slate-500">No students in this section.</div>';
-  document.querySelectorAll('[data-remove-student]').forEach(b=>b.onclick=async()=>{if(!confirm('Remove this student from campus access?'))return;b.disabled=true;try{const r=await Promise.race([supabase.functions.invoke('remove-student-account',{body:{student_id:b.dataset.removeStudent}}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Student removal timed out')),15000))]);if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Could not remove student.');msg('Student removed.',true);await loadStudents();}catch(e){msg(e?.message||'Could not remove student.');}finally{b.disabled=false;}});
+  studentRows=r.data||[];
+  $('studentCount').textContent=String(studentRows.length);$('summaryStudents').textContent=String(studentRows.length);
+  $('summaryStudentsText').textContent=section+' • assigned section';
+  renderStudentList();
+}
+function renderStudentList(){
+  const term=String($('studentSearch')?.value||'').trim().toLowerCase();
+  const rows=studentRows.filter(s=>[s.name,s.email,s.roll_number,s.program].some(v=>String(v||'').toLowerCase().includes(term)));
+  $('clearStudentSearch')?.classList.toggle('hidden',!term);
+  $('students').innerHTML=rows.length?rows.map(s=>{
+    const initials=String(s.name||'Student').split(/\s+/).filter(Boolean).slice(0,2).map(v=>v[0]).join('').toUpperCase();
+    return '<div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200"><div class="flex items-center gap-3 min-w-0"><div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-extrabold shrink-0">'+esc(initials||'S')+'</div><div class="min-w-0"><div class="text-sm font-bold truncate">'+esc(s.name||'Student')+'</div><div class="text-[11px] text-slate-500 truncate">'+esc(s.roll_number||'No roll')+(s.email?' • '+esc(s.email):'')+'</div></div></div><button type="button" data-remove-student="'+esc(s.id)+'" class="shrink-0 px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold">Remove</button></div>';
+  }).join(''):'<div class="text-sm text-slate-500">'+(term?'No matching students.':'No students in this section.')+'</div>';
+  document.querySelectorAll('[data-remove-student]').forEach(b=>b.onclick=async()=>{if(!confirm('Remove this student from campus access?'))return;b.disabled=true;b.textContent='Removing...';try{const r=await functionTimeout(supabase.functions.invoke('remove-student-account',{body:{student_id:b.dataset.removeStudent}}),15000,'Student removal');if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Could not remove student.');msg('Student removed successfully.',true);await loadStudents();}catch(e){msg(e?.message||'Could not remove student.');}finally{b.disabled=false;b.textContent='Remove';}});
 }
 async function loadPending(){
   $('pending').innerHTML='<div class="text-sm text-slate-500">Loading pending approvals...</div>';
   const r=await timeout(supabase.from('student_registrations').select('id,student_name,email,admission_no,section,status,created_at').eq('section',section).eq('status','pending').order('created_at',{ascending:false}),8000,'Pending approvals request');
   if(r.error){$('pending').innerHTML='<div class="text-sm text-red-600">Unable to load pending registrations: '+esc(r.error.message||'Unknown error')+'</div>';return;}
-  const rows=r.data||[];$('pendingCount').textContent=rows.length;
-  $('pending').innerHTML=rows.length?rows.map(s=>'<div class="p-3 rounded-xl bg-amber-50 border border-amber-100"><div class="text-sm font-bold">'+esc(s.student_name||'Student')+'</div><div class="text-[11px] text-slate-600 mt-1">'+esc(s.email||'')+' • '+esc(s.admission_no||'')+' • '+esc(s.section||'')+'</div><button data-approve="'+esc(s.id)+'" class="mt-2 px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">Approve & Create Account</button></div>').join(''):'<div class="text-sm text-slate-500">No pending students.</div>';
-  document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{if(!confirm('Approve this student and create their campus account?'))return;b.disabled=true;b.textContent='Approving...';try{const r=await Promise.race([supabase.functions.invoke('approve-student-registration',{body:{registration_id:b.dataset.approve}}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Student approval timed out')),15000))]);if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Approval failed.');msg('Student approved successfully.',true);await Promise.allSettled([loadPending(),loadStudents()]);}catch(e){msg(e?.message||'Approval failed.');}finally{b.disabled=false;b.textContent='Approve & Create Account';}});
+  pendingRows=r.data||[];$('pendingCount').textContent=String(pendingRows.length);$('summaryPending').textContent=String(pendingRows.length);renderPendingList();
+}
+function renderPendingList(){
+  const term=String($('pendingSearch')?.value||'').trim().toLowerCase();
+  const rows=pendingRows.filter(s=>[s.student_name,s.email,s.admission_no].some(v=>String(v||'').toLowerCase().includes(term)));
+  $('clearPendingSearch')?.classList.toggle('hidden',!term);
+  $('pending').innerHTML=rows.length?rows.map(s=>'<div class="p-3 rounded-xl bg-amber-50 border border-amber-100"><div class="flex items-start justify-between gap-3"><div><div class="text-sm font-bold">'+esc(s.student_name||'Student')+'</div><div class="text-[11px] text-slate-600 mt-1">'+esc(s.email||'')+' • '+esc(s.admission_no||'')+'</div></div><span class="px-2 py-1 rounded-full bg-white/70 text-amber-700 text-[10px] font-bold">PENDING</span></div><button type="button" data-approve="'+esc(s.id)+'" class="mt-3 px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">Approve & Create Account</button></div>').join(''):'<div class="text-sm text-slate-500">'+(term?'No matching pending registrations.':'No pending students.')+'</div>';
+  document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=async()=>{if(!confirm('Approve this student and create their campus account?'))return;b.disabled=true;b.textContent='Approving...';try{const r=await functionTimeout(supabase.functions.invoke('approve-student-registration',{body:{registration_id:b.dataset.approve}}),15000,'Student approval');if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Approval failed.');msg('Student approved successfully.',true);await Promise.allSettled([loadPending(),loadStudents()]);}catch(e){msg(e?.message||'Approval failed.');}finally{b.disabled=false;b.textContent='Approve & Create Account';}});
 }
 async function loadTeachers(){
   $('teachers').innerHTML='<div class="text-sm text-slate-500">Loading teachers...</div>';
   const r=await timeout(supabase.from('admin_users').select('user_id,role,assigned_section,assigned_subject,subjects:assigned_subject(id,name,code)').in('role',['teacher','faculty','instructor']).order('authorized_at'),8000,'Teacher accounts request');
   if(r.error){
     $('teachers').innerHTML='<div class="text-sm text-red-600">Teacher data could not be loaded: '+esc(r.error.message||'Unknown error')+'</div>';
-    msg(r.error.message||'Teacher data could not be loaded.');
-    return;
+    msg(r.error.message||'Teacher data could not be loaded.');return;
   }
-  const rows=(r.data||[]).filter(x=>x.assigned_section===section);$('teachers').innerHTML=rows.length?rows.map(t=>'<div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border"><div><div class="text-sm font-bold">'+esc(t.subjects?.code?t.subjects.code+' — '+t.subjects.name:t.subjects?.name||'No subject')+'</div><div class="text-[11px] text-slate-500">'+esc(t.assigned_section||'')+' • '+esc(t.user_id)+'</div></div>'+(t.user_id!==user.id?'<button data-remove-teacher="'+esc(t.user_id)+'" class="px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold">Remove</button>':'<span class="text-[11px] text-slate-500">You</span>')+'</div>').join(''):'<div class="text-sm text-slate-500">No other teachers in this section.</div>';
-  document.querySelectorAll('[data-remove-teacher]').forEach(b=>b.onclick=async()=>{if(!confirm('Remove this teacher account?'))return;b.disabled=true;try{const r=await Promise.race([supabase.functions.invoke('remove-teacher-account',{body:{teacher_id:b.dataset.removeTeacher}}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Teacher removal timed out')),15000))]);if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Could not remove teacher.');msg('Teacher removed.',true);await loadTeachers();}catch(e){msg(e?.message||'Could not remove teacher.');}finally{b.disabled=false;}});
+  teacherRows=(r.data||[]).filter(x=>x.assigned_section===section);
+  $('summaryTeachers').textContent=String(teacherRows.length);
+  renderTeacherList();
 }
-$('teacherForm').onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;const payload={name:$('teacherName').value.trim(),email:$('teacherEmail').value.trim(),password:$('teacherPassword').value,section,subject_id:$('teacherSubject').value};try{const r=await Promise.race([supabase.functions.invoke('create-teacher-account',{body:payload}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Teacher creation timed out')),15000))]);if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Could not create teacher.');msg('Teacher account created.',true);e.target.reset();await Promise.allSettled([loadSubjects(),loadTeachers()]);}catch(error){msg(error?.message||'Could not create teacher.');}finally{b.disabled=false;}};
+function renderTeacherList(){
+  const term=String($('teacherSearch')?.value||'').trim().toLowerCase();
+  const rows=teacherRows.filter(t=>[t.subjects?.name,t.subjects?.code,t.assigned_section].some(v=>String(v||'').toLowerCase().includes(term)));
+  $('clearTeacherSearch')?.classList.toggle('hidden',!term);
+  $('teachers').innerHTML=rows.length?rows.map(t=>{
+    const subject=t.subjects?.code?t.subjects.code+' — '+t.subjects.name:(t.subjects?.name||'No subject assigned');
+    const mine=t.user_id===user.id;
+    return '<div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200"><div class="min-w-0"><div class="text-sm font-bold truncate">'+esc(subject)+'</div><div class="text-[11px] text-slate-500 mt-1 truncate">'+esc(t.assigned_section||section)+' • '+(mine?'Your account':'Teacher account')+'</div></div>'+(mine?'<span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold shrink-0">YOU</span>':'<button type="button" data-remove-teacher="'+esc(t.user_id)+'" class="shrink-0 px-3 py-2 rounded-lg bg-red-50 text-red-700 text-xs font-bold">Remove</button>')+'</div>';
+  }).join(''):'<div class="text-sm text-slate-500">'+(term?'No matching teachers.':'No other teachers in this section.')+'</div>';
+  document.querySelectorAll('[data-remove-teacher]').forEach(b=>b.onclick=async()=>{if(!confirm('Remove this teacher account?'))return;b.disabled=true;b.textContent='Removing...';try{const r=await functionTimeout(supabase.functions.invoke('remove-teacher-account',{body:{teacher_id:b.dataset.removeTeacher}}),15000,'Teacher removal');if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Could not remove teacher.');msg('Teacher removed successfully.',true);await loadTeachers();}catch(e){msg(e?.message||'Could not remove teacher.');}finally{b.disabled=false;b.textContent='Remove';}});
+}
+$('teacherForm').onsubmit=async e=>{
+  e.preventDefault();
+  const b=$('addTeacherBtn');b.disabled=true;b.textContent='Creating...';
+  const payload={name:$('teacherName').value.trim(),email:$('teacherEmail').value.trim(),password:$('teacherPassword').value,section,subject_id:$('teacherSubject').value};
+  try{
+    if(!payload.name||!payload.email||!payload.password||!payload.subject_id)throw new Error('Complete all teacher fields.');
+    if(payload.password.length<8)throw new Error('Password must be at least 8 characters.');
+    const r=await functionTimeout(supabase.functions.invoke('create-teacher-account',{body:payload}),15000,'Teacher creation');
+    if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Could not create teacher.');
+    msg('Teacher account created successfully for '+section+'.',true);
+    e.target.reset();
+    $('teacherPassword').type='password';$('toggleTeacherPassword').textContent='Show';
+    await Promise.allSettled([loadSubjects(),loadTeachers()]);
+  }catch(error){msg(error?.message||'Could not create teacher.');}
+  finally{b.disabled=false;b.textContent='Create Teacher Account';}
+};
 $('refresh').onclick=()=>Promise.allSettled([loadSubjects(),loadStudents(),loadPending(),loadTeachers()]);
 $('logout').onclick=async()=>{await supabase.auth.signOut();location.href='teacher-login.html';};
+
+$('studentSearch').addEventListener('input',renderStudentList);
+$('pendingSearch').addEventListener('input',renderPendingList);
+$('teacherSearch').addEventListener('input',renderTeacherList);
+$('clearStudentSearch').onclick=()=>{$('studentSearch').value='';renderStudentList();};
+$('clearPendingSearch').onclick=()=>{$('pendingSearch').value='';renderPendingList();};
+$('clearTeacherSearch').onclick=()=>{$('teacherSearch').value='';renderTeacherList();};
+$('toggleTeacherPassword').onclick=()=>{const input=$('teacherPassword');const visible=input.type==='text';input.type=visible?'password':'text';$('toggleTeacherPassword').textContent=visible?'Show':'Hide';};
+
 start().catch(e=>msg(e?.message||'Teacher management failed.'));
 </script>
 </body>
