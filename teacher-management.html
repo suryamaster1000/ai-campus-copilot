@@ -86,6 +86,8 @@
 </main>
 <script type="module">
 import { supabase } from './js/supabase.js';
+import { initErrorReportUI } from './js/error-reporter.js?v=20261008-error1';
+initErrorReportUI();
 const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
