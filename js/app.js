@@ -425,7 +425,7 @@ export { currentUser };
 
 import { renderDashboard } from './pages/dashboard.js?v=20261005-live5';
 import { renderAiAssistant } from './pages/ai-assistant.js?v=20261005-live4';
-import { renderTimetable } from './pages/timetable.js?v=20261003-live2';
+import { renderTimetable } from './pages/timetable.js?v=20261008-live1';
 import { renderNotices } from './pages/notices.js?v=20261003-live2';
 import { renderStudyAssistant } from './pages/study.js?v=20261005-live2';
 import { renderCampusGuide } from './pages/campus-guide.js?v=20261005-live2';
