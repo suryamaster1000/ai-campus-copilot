@@ -735,6 +735,13 @@ function initReportFeature() {
       return;
     }
     pageInput.value = currentRoute ? currentRoute.replace(/-/g, ' ') : '';
+    const reportPrefill = sessionStorage.getItem('campus_report_prefill');
+    const categoryInput = document.getElementById('reportCategory');
+    if (reportPrefill === 'attendance' && categoryInput) {
+      categoryInput.value = 'other';
+      subjectInput.value = 'Attendance issue';
+      sessionStorage.removeItem('campus_report_prefill');
+    }
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     await loadRecipients();
