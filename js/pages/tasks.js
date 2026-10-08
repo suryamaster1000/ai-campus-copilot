@@ -38,18 +38,17 @@ export function renderTasks(container) {
           </div>
         </div>
 
-        <!-- Status Filter Tabs -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-1">
-          ${[
-            { id: 'All', label: 'All Tasks' },
-            { id: 'todo', label: 'To Do' },
-            { id: 'in-progress', label: 'In Progress' },
-            { id: 'completed', label: 'Completed' }
-          ].map(tab => `
-            <button class="task-status-btn px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-primary text-on-primary shadow-sm' : 'bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant'}" data-status="${tab.id}">
-              ${tab.label}
-            </button>
-          `).join('')}
+        <!-- Status Filter -->
+        <div class="w-full sm:w-auto">
+          <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1.5">Task Status</label>
+          <select id="taskStatusSelect" class="w-full sm:w-64 h-10 px-3 rounded-xl border border-surface-container-high bg-surface-container-lowest text-xs font-bold text-on-surface outline-none focus:border-primary">
+            ${[
+              { id: 'All', label: 'All Tasks' },
+              { id: 'todo', label: 'To Do' },
+              { id: 'in-progress', label: 'In Progress' },
+              { id: 'completed', label: 'Completed' }
+            ].map(tab => `<option value="${tab.id}" ${activeTab === tab.id ? 'selected' : ''}>${tab.label}</option>`).join('')}
+          </select>
         </div>
 
         <!-- Task List Cards -->
@@ -134,33 +133,7 @@ export function renderTasks(container) {
     `;
 
     // Tab buttons
-    container.querySelectorAll('.task-status-btn').forEach(btn => {
-      btn.onclick = () => {
-        activeTab = btn.getAttribute('data-status');
-        render();
-      };
-    });
-
-    // Checkbox toggle
-    container.querySelectorAll('.task-chk-toggle').forEach(chk => {
-      chk.onchange = async () => {
-        const id = chk.getAttribute('data-id');
-        const target = campusData.tasks.find(t => t.id === id);
-        if (!target) return;
-        const nextStatus = chk.checked ? 'completed' : 'todo';
-        try {
-          await toggleTaskInSupabase(id, nextStatus);
-          target.status = nextStatus;
-          showToast(chk.checked ? `Task marked completed!` : `Task reopened`, 'success');
-          window.dispatchEvent(new CustomEvent('campus:tasksUpdated'));
-          render();
-        } catch (error) {
-          chk.checked = !chk.checked;
-          console.error('Task update failed:', error);
-          showToast('Could not update task', 'error');
-        }
-      };
-    });
+    container.querySelector('#taskStatusSelect')?.addEventListener('change', (event) => { activeTab = event.target.value; renderTasks(container); });});
 
     // Delete task
     container.querySelectorAll('.task-delete-btn').forEach(btn => {
