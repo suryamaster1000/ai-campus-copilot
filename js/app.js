@@ -603,20 +603,133 @@ function initReportFeature() {
   if (!reportButtons.length) return;
   if (document.getElementById('studentReportModal')) return;
 
-  document.body.insertAdjacentHTML('beforeend', "<div id=\"studentReportModal\" class=\"fixed inset-0 z-[80] hidden items-center justify-center p-4\"><div data-report-backdrop class=\"absolute inset-0 bg-black/45 backdrop-blur-sm\"></div><section role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"studentReportTitle\" class=\"relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-surface-container-lowest rounded-2xl border border-surface-container-high shadow-2xl\"><div class=\"p-5 border-b border-surface-container-high flex items-start justify-between gap-3\"><div><div class=\"flex items-center gap-2\"><span class=\"material-symbols-outlined text-error\">report_problem</span><h2 id=\"studentReportTitle\" class=\"text-lg font-bold text-on-surface\">Report an Issue</h2></div><p class=\"text-xs text-on-surface-variant mt-1\">Send a bug report, person-related report, or other concern to the project owner and the authorized admin for your section.</p></div><button type=\"button\" data-report-close class=\"p-2 rounded-lg text-on-surface-variant hover:bg-surface-container\"><span class=\"material-symbols-outlined text-[20px]\">close</span></button></div><form id=\"studentReportForm\" class=\"p-5 space-y-4\"><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Report type</label><select id=\"reportCategory\" required class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"><option value=\"bug\">Bug / App problem</option><option value=\"person\">Report a person</option><option value=\"content\">Report content / notice / event</option><option value=\"account\">Account / login problem</option><option value=\"other\">Other concern</option></select></div><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Subject</label><input id=\"reportSubject\" type=\"text\" maxlength=\"160\" required placeholder=\"Briefly describe the issue\" class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"></div><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Details</label><textarea id=\"reportDetails\" rows=\"6\" maxlength=\"5000\" required placeholder=\"Explain what happened, what you expected, and any useful details.\" class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"></textarea></div><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-3\"><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Page / area</label><input id=\"reportPage\" type=\"text\" maxlength=\"120\" class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"></div><div><label class=\"block text-[11px] font-bold text-on-surface mb-1\">Priority</label><select id=\"reportPriority\" class=\"w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary\"><option value=\"low\">Low</option><option value=\"medium\" selected>Medium</option><option value=\"high\">High</option></select></div></div><div class=\"p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800\">Please do not include passwords, verification codes, API keys, or other private credentials in a report.</div><div class=\"flex items-center justify-end gap-2 pt-1\"><button type=\"button\" data-report-close class=\"px-4 py-2.5 rounded-xl bg-surface-container text-on-surface text-xs font-bold\">Cancel</button><button id=\"submitStudentReportBtn\" type=\"submit\" class=\"inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold\"><span class=\"material-symbols-outlined text-[17px]\">send</span>Send Report</button></div></form></section></div>");
+  document.body.insertAdjacentHTML('beforeend', `
+    <div id="studentReportModal" class="fixed inset-0 z-[80] hidden items-center justify-center p-4">
+      <div data-report-backdrop class="absolute inset-0 bg-black/45 backdrop-blur-sm"></div>
+      <section role="dialog" aria-modal="true" aria-labelledby="studentReportTitle" class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-surface-container-lowest rounded-2xl border border-surface-container-high shadow-2xl">
+        <div class="p-5 border-b border-surface-container-high flex items-start justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-error">report_problem</span>
+              <h2 id="studentReportTitle" class="text-lg font-bold text-on-surface">Report to Teacher</h2>
+            </div>
+            <p class="text-xs text-on-surface-variant mt-1">Send a report directly to an authorized teacher assigned to your section.</p>
+          </div>
+          <button type="button" data-report-close class="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+
+        <form id="studentReportForm" class="p-5 space-y-4">
+          <div>
+            <label class="block text-[11px] font-bold text-on-surface mb-1">Send to</label>
+            <select id="reportRecipient" required class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">
+              <option value="">Loading teachers...</option>
+            </select>
+            <p id="reportRecipientHint" class="text-[10px] text-on-surface-variant mt-1"></p>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-on-surface mb-1">Report type</label>
+            <select id="reportCategory" required class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">
+              <option value="bug">Bug / App problem</option>
+              <option value="person">Report a person</option>
+              <option value="content">Content / notice / event</option>
+              <option value="account">Account / login problem</option>
+              <option value="other">Attendance / Other concern</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-on-surface mb-1">Subject</label>
+            <input id="reportSubject" type="text" maxlength="160" required placeholder="Briefly describe the issue" class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-on-surface mb-1">Details</label>
+            <textarea id="reportDetails" rows="6" maxlength="5000" required placeholder="Explain what happened and what you need the teacher to check." class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary"></textarea>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-on-surface mb-1">Page / area</label>
+              <input id="reportPage" type="text" maxlength="120" class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-on-surface mb-1">Priority</label>
+              <select id="reportPriority" class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+            Do not include passwords, verification codes, API keys, or other private credentials.
+          </div>
+
+          <div id="reportRecipientError" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-[11px] text-red-700"></div>
+
+          <div class="flex items-center justify-end gap-2 pt-1">
+            <button type="button" data-report-close class="px-4 py-2.5 rounded-xl bg-surface-container text-on-surface text-xs font-bold">Cancel</button>
+            <button id="submitStudentReportBtn" type="submit" disabled class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+              <span class="material-symbols-outlined text-[17px]">send</span>Send Report
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  `);
 
   const modal = document.getElementById('studentReportModal');
   const form = document.getElementById('studentReportForm');
   const pageInput = document.getElementById('reportPage');
   const subjectInput = document.getElementById('reportSubject');
+  const recipientInput = document.getElementById('reportRecipient');
+  const recipientHint = document.getElementById('reportRecipientHint');
+  const recipientError = document.getElementById('reportRecipientError');
   const submitButton = document.getElementById('submitStudentReportBtn');
+  let recipients = [];
 
   const closeModal = () => {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
   };
 
-  const openModal = () => {
+  const loadRecipients = async () => {
+    recipientInput.innerHTML = '<option value="">Loading teachers...</option>';
+    recipientInput.disabled = true;
+    submitButton.disabled = true;
+    recipientError.classList.add('hidden');
+
+    const { data, error } = await supabase.rpc('get_student_report_recipients');
+    if (error) {
+      console.error('Teacher recipient lookup failed:', error);
+      recipientInput.innerHTML = '<option value="">Teachers could not be loaded</option>';
+      recipientHint.textContent = 'Please try again later.';
+      recipientError.textContent = error.message || 'Could not load teachers for your section.';
+      recipientError.classList.remove('hidden');
+      return;
+    }
+
+    recipients = data || [];
+    recipientInput.innerHTML = recipients.length
+      ? recipients.map((teacher, index) => `
+          <option value="${teacher.user_id}" ${index === 0 ? 'selected' : ''}>
+            ${String(teacher.name || 'Teacher')}${teacher.subject_code ? ' — ' + String(teacher.subject_code) : ''}
+          </option>
+        `).join('')
+      : '<option value="">No authorized teacher is assigned to your section</option>';
+
+    recipientInput.disabled = recipients.length === 0;
+    submitButton.disabled = recipients.length === 0;
+    recipientHint.textContent = recipients.length
+      ? 'Only teachers assigned to your section appear here.'
+      : '';
+  };
+
+  const openModal = async () => {
     if (!currentUser) {
       showToast('Please sign in before sending a report.', 'error');
       return;
@@ -624,6 +737,7 @@ function initReportFeature() {
     pageInput.value = currentRoute ? currentRoute.replace(/-/g, ' ') : '';
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    await loadRecipients();
     setTimeout(() => subjectInput?.focus(), 0);
   };
 
@@ -637,16 +751,15 @@ function initReportFeature() {
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (!currentUser || submitButton.disabled) return;
+    if (!currentUser || submitButton.disabled || !recipientInput.value) return;
 
     const payload = {
-      reporter_id: currentUser.id,
+      recipient_id: recipientInput.value,
       category: document.getElementById('reportCategory').value,
       subject: subjectInput.value.trim(),
       details: document.getElementById('reportDetails').value.trim(),
       affected_page: pageInput.value.trim() || null,
-      priority: document.getElementById('reportPriority').value,
-      status: 'open'
+      priority: document.getElementById('reportPriority').value
     };
 
     if (!payload.subject || !payload.details) {
@@ -659,16 +772,23 @@ function initReportFeature() {
     submitButton.innerHTML = '<span class="material-symbols-outlined text-[17px] animate-spin">progress_activity</span>Sending...';
 
     try {
-      const { error } = await supabase.from('student_reports').insert(payload);
+      const { error } = await supabase.rpc('create_student_report', {
+        p_recipient_id: payload.recipient_id,
+        p_category: payload.category,
+        p_subject: payload.subject,
+        p_details: payload.details,
+        p_affected_page: payload.affected_page,
+        p_priority: payload.priority
+      });
       if (error) throw error;
       form.reset();
       pageInput.value = currentRoute ? currentRoute.replace(/-/g, ' ') : '';
       closeModal();
-      showToast('Report sent to the project owner and your authorized admin.', 'success');
+      showToast('Report sent to your assigned teacher.', 'success');
     } catch (error) {
       showToast(error?.message || 'Could not send the report.', 'error');
     } finally {
-      submitButton.disabled = false;
+      submitButton.disabled = recipients.length === 0;
       submitButton.classList.remove('opacity-70');
       submitButton.innerHTML = '<span class="material-symbols-outlined text-[17px]">send</span>Send Report';
     }
