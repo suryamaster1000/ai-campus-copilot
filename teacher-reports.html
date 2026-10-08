@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Teacher Reports — AI Campus Copilot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <style>body{font-family:Inter,system-ui,sans-serif}</style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+<header class="sticky top-0 z-20 bg-white/95 backdrop-blur border-b border-slate-200">
+  <div class="max-w-7xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <a href="teacher-dashboard.html" class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 hover:bg-blue-50 hover:text-blue-700" aria-label="Back to Teacher Dashboard">←</a>
+      <div class="min-w-0"><div class="font-extrabold truncate">AI Campus Copilot</div><div class="text-xs text-slate-500">Teacher Portal • Student Reports</div></div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="hidden sm:block text-right"><div id="teacherName" class="text-sm font-semibold">Teacher</div><div id="teacherSection" class="text-[11px] text-slate-500">Loading...</div></div>
+      <button id="logout" type="button" class="px-3 py-2 rounded-lg bg-slate-900 text-white text-xs font-bold">Logout</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto p-5 space-y-5">
+  <div id="status" class="hidden rounded-xl px-4 py-3 text-sm"></div>
+
+  <section class="rounded-3xl bg-gradient-to-r from-slate-950 via-blue-950 to-blue-800 text-white p-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <div class="text-xs font-bold uppercase tracking-wider text-blue-200">Teacher Only</div>
+        <h1 class="text-2xl lg:text-3xl font-extrabold mt-1">Student Reports</h1>
+        <p id="assigned" class="text-sm text-blue-100 mt-2">Reports addressed to you from your assigned section.</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="refreshReports" type="button" class="px-4 py-2.5 rounded-xl bg-white/15 border border-white/20 text-xs font-bold hover:bg-white/20">Refresh</button>
+        <a href="teacher-dashboard.html" class="inline-flex items-center px-4 py-2.5 rounded-xl bg-white text-slate-900 text-xs font-bold hover:bg-blue-50">Dashboard</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="bg-white rounded-2xl border border-slate-200 p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total</div><div id="countTotal" class="text-2xl font-extrabold mt-2">0</div></div>
+    <div class="bg-blue-50 rounded-2xl border border-blue-100 p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-blue-600">Open</div><div id="countOpen" class="text-2xl font-extrabold mt-2 text-blue-900">0</div></div>
+    <div class="bg-amber-50 rounded-2xl border border-amber-200 p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-amber-600">In Review</div><div id="countReview" class="text-2xl font-extrabold mt-2 text-amber-800">0</div></div>
+    <div class="bg-emerald-50 rounded-2xl border border-emerald-200 p-4"><div class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Resolved</div><div id="countResolved" class="text-2xl font-extrabold mt-2 text-emerald-700">0</div></div>
+  </section>
+
+  <section class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div><h2 class="font-extrabold">Reports Received</h2><p class="text-sm text-slate-500 mt-1">Only reports assigned to your teacher account are visible.</p></div>
+      <div class="relative w-full sm:w-[320px]">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+        <input id="reportSearch" type="search" autocomplete="off" placeholder="Search student or report..."
+          class="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 bg-slate-50 text-xs outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+      </div>
+    </div>
+    <div id="reportsList" class="mt-4 space-y-3"><div class="text-sm text-slate-500">Loading reports...</div></div>
+  </section>
+</main>
+
+<script type="module">
+import { supabase } from './js/supabase.js';
+
+const OWNER='53d68054-50f2-41b5-a666-5789db48ae02';
+const ROLES=['teacher','faculty','instructor'];
+let teacher=null;
+let reports=[];
+
+function show(message,ok=false){
+  const el=document.getElementById('status');
+  el.textContent=message;
+  el.className='rounded-xl px-4 py-3 text-sm '+(ok?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200');
+  el.classList.remove('hidden');
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function timeout(p,ms=8000){return Promise.race([p,new Promise(resolve=>setTimeout(()=>resolve({data:null,error:new Error('Request timed out')}),ms))]);}
+function formatDate(v){const d=new Date(v);return Number.isNaN(d.getTime())?String(v||''):d.toLocaleString([],{day:'2-digit',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'});}
+function statusBadge(status){
+  const map={open:'bg-blue-100 text-blue-800',in_review:'bg-amber-100 text-amber-800',resolved:'bg-emerald-100 text-emerald-800',rejected:'bg-slate-200 text-slate-700'};
+  return '<span class="px-2.5 py-1 rounded-full text-[10px] font-bold '+(map[status]||map.open)+'">'+esc(String(status||'open').replace('_',' '))+'</span>';
+}
+function render(){
+  const q=String(document.getElementById('reportSearch').value||'').trim().toLowerCase();
+  const filtered=reports.filter(r=>{
+    const p=r.reporter||{};
+    return !q||[p.name,p.email,p.roll_number,r.subject,r.category,r.details].some(v=>String(v||'').toLowerCase().includes(q));
+  });
+  const total=reports.length, open=reports.filter(r=>r.status==='open').length, review=reports.filter(r=>r.status==='in_review').length, resolved=reports.filter(r=>r.status==='resolved').length;
+  document.getElementById('countTotal').textContent=String(total);
+  document.getElementById('countOpen').textContent=String(open);
+  document.getElementById('countReview').textContent=String(review);
+  document.getElementById('countResolved').textContent=String(resolved);
+
+  const box=document.getElementById('reportsList');
+  if(!filtered.length){box.innerHTML='<div class="rounded-xl border border-slate-200 bg-slate-50 p-8 text-center"><div class="text-2xl">📭</div><div class="text-sm font-bold text-slate-800 mt-2">No reports found</div><div class="text-xs text-slate-500 mt-1">'+(q?'Try another search.':'No students have sent you a report yet.')+'</div></div>';return;}
+  box.innerHTML=filtered.map(r=>{
+    const p=r.reporter||{};
+    const cat=r.category==='other'?'Attendance / Other':String(r.category||'Other');
+    return '<article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3"><div class="min-w-0"><div class="flex items-center gap-2 flex-wrap">'+statusBadge(r.status)+'<span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">'+esc(cat)+'</span><span class="text-[10px] text-slate-400">'+esc(formatDate(r.created_at))+'</span></div><h3 class="text-sm font-extrabold text-slate-900 mt-2">'+esc(r.subject)+'</h3><div class="text-xs text-slate-500 mt-1">'+esc(p.name||'Student')+(p.roll_number?' • '+esc(p.roll_number):'')+(p.email?' • '+esc(p.email):'')+'</div></div><div class="flex gap-2 shrink-0"><button type="button" data-action="in_review" data-id="'+esc(r.id)+'" class="px-3 py-2 rounded-lg bg-amber-100 text-amber-800 text-xs font-bold">In Review</button><button type="button" data-action="resolved" data-id="'+esc(r.id)+'" class="px-3 py-2 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold">Resolve</button></div></div><div class="mt-3 rounded-xl bg-slate-50 border border-slate-200 p-3"><div class="text-[11px] text-slate-500">Details</div><p class="text-sm text-slate-700 mt-1 whitespace-pre-line">'+esc(r.details)+'</p></div>'+(r.admin_note?'<div class="mt-3 rounded-xl bg-blue-50 border border-blue-100 p-3"><div class="text-[11px] text-blue-600 font-bold">Teacher note</div><p class="text-xs text-blue-900 mt-1 whitespace-pre-line">'+esc(r.admin_note)+'</p></div>':'')+'</article>';
+  }).join('');
+
+  box.querySelectorAll('[data-action]').forEach(btn=>btn.onclick=async()=>{
+    const id=btn.dataset.id;
+    const next=btn.dataset.action;
+    const row=reports.find(x=>x.id===id);
+    if(!row)return;
+    const note=prompt('Optional note for the student:',row.admin_note||'');
+    if(note===null)return;
+    const {error}=await supabase.from('student_reports').update({status:next,admin_note:note.trim()||null,resolved_by:next==='resolved'?teacher.id:null,resolved_at:next==='resolved'?new Date().toISOString():null}).eq('id',id);
+    if(error){show('Report could not be updated: '+error.message);return;}
+    show(next==='resolved'?'Report marked resolved.':'Report moved to In Review.',true);
+    await loadReports();
+  });
+}
+async function loadReports(){
+  const {data,error}=await timeout(
+    supabase.from('student_reports').select('id,reporter_id,recipient_id,category,subject,details,affected_page,priority,status,admin_note,resolved_at,created_at,updated_at,reporter:profiles!student_reports_reporter_id_fkey(name,email,roll_number,section)').eq('recipient_id',teacher.id).order('created_at',{ascending:false}).limit(100)
+  );
+  if(error){show('Reports could not be loaded: '+error.message);return;}
+  reports=data||[];
+  render();
+}
+async function start(){
+  const {data:{user}={}}=await timeout(supabase.auth.getUser());
+  if(!user){location.href='teacher-login.html';return;}
+  const {data:access,error}=await timeout(supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle());
+  const role=String(access?.role||'').toLowerCase();
+  if(error||!access||(user.id!==OWNER&&!ROLES.includes(role))){await supabase.auth.signOut();location.href='teacher-login.html';return;}
+  if(user.id!==OWNER&&!access.assigned_section){location.href='teacher-login.html?error=no-section';return;}
+  teacher=user;
+  document.getElementById('teacherName').textContent=user.user_metadata?.name||user.email||'Teacher';
+  document.getElementById('teacherSection').textContent=access.assigned_section?('Section '+access.assigned_section):'Owner';
+  document.getElementById('assigned').textContent=access.assigned_section?'Reports addressed to you from '+access.assigned_section+'.':'Owner report oversight.';
+  await loadReports();
+}
+document.getElementById('logout').onclick=async()=>{await supabase.auth.signOut();location.href='teacher-login.html';};
+document.getElementById('refreshReports').onclick=loadReports;
+document.getElementById('reportSearch').addEventListener('input',render);
+start().catch(e=>{console.error(e);show('Teacher reports page could not load: '+(e?.message||'Unknown error'));});
+</script>
+</body>
+</html>
