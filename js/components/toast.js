@@ -1,5 +1,6 @@
-// Simple & Elegant Toast Feedback System
+import { submitAppErrorReport } from '../error-reporter.js?v=20261008-error1';
 
+// Simple & Elegant Toast Feedback System
 export function showToast(message, type = 'info', duration = 3000) {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -13,33 +14,35 @@ export function showToast(message, type = 'info', duration = 3000) {
 
   let iconName = 'info';
   let iconColor = 'text-primary-fixed';
-
-  if (type === 'success') {
-    iconName = 'check_circle';
-    iconColor = 'text-emerald-400';
-  } else if (type === 'warning') {
-    iconName = 'warning';
-    iconColor = 'text-amber-400';
-  } else if (type === 'error') {
-    iconName = 'error';
-    iconColor = 'text-error';
-  }
+  if (type === 'success') { iconName = 'check_circle'; iconColor = 'text-emerald-400'; }
+  else if (type === 'warning') { iconName = 'warning'; iconColor = 'text-amber-400'; }
+  else if (type === 'error') { iconName = 'error'; iconColor = 'text-error'; }
 
   toast.innerHTML = `
     <span class="material-symbols-outlined text-[20px] ${iconColor} flex-shrink-0">${iconName}</span>
-    <span class="flex-1">${message}</span>
+    <span class="flex-1"></span>
+    ${type === 'error' ? '<button data-report-toast-error type="button" class="text-xs font-bold text-white/90 hover:text-white whitespace-nowrap">Report</button>' : ''}
     <button class="text-outline hover:text-white transition-colors" type="button" aria-label="Close">
       <span class="material-symbols-outlined text-[16px]">close</span>
-    </button>
-  `;
+    </button>`;
+  toast.querySelector('.flex-1').textContent = message;
 
-  const closeBtn = toast.querySelector('button');
-  closeBtn.addEventListener('click', () => {
-    toast.remove();
-  });
+  const closeBtn = toast.querySelector('button[aria-label="Close"]');
+  closeBtn.addEventListener('click', () => toast.remove());
+
+  const reportBtn = toast.querySelector('[data-report-toast-error]');
+  if (reportBtn) {
+    reportBtn.addEventListener('click', async () => {
+      reportBtn.disabled = true;
+      reportBtn.textContent = 'Sending...';
+      const result = await submitAppErrorReport(new Error(String(message)), 'Visible error toast');
+      if (result.ok) reportBtn.textContent = 'Reported ✓';
+      else if (result.unauthenticated) { reportBtn.textContent = 'Sign in'; reportBtn.disabled = false; }
+      else { reportBtn.textContent = 'Try again'; reportBtn.disabled = false; }
+    });
+  }
 
   container.appendChild(toast);
-
   setTimeout(() => {
     if (toast.parentNode) {
       toast.style.opacity = '0';
