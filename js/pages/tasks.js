@@ -133,7 +133,7 @@ export function renderTasks(container) {
     `;
 
     // Tab buttons
-    container.querySelector('#taskStatusSelect')?.addEventListener('change', (event) => { activeTab = event.target.value; renderTasks(container); });});
+    container.querySelector('#taskStatusSelect')?.addEventListener('change', (event) => { activeTab = event.target.value; renderTasks(container); });
 
     // Delete task
     container.querySelectorAll('.task-delete-btn').forEach(btn => {
