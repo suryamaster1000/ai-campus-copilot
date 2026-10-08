@@ -7,7 +7,8 @@ export function renderTasks(container) {
   let activeTab = "All"; // "All", "todo", "in-progress", "completed"
 
   function render() {
-    const filteredTasks = campusData.tasks.filter(t => {
+    const safeTasks = Array.isArray(campusData.tasks) ? campusData.tasks : [];
+    const filteredTasks = safeTasks.filter(t => {
       if (activeTab === "All") return true;
       return t.status === activeTab;
     });
