@@ -378,7 +378,8 @@ async function saveAttendance(){
     return;
   }
 
-  const {data:{user}={}}=await supabase.auth.getUser();
+  const authResult=await supabase.auth.getUser();
+  const user=authResult?.data?.user;
   if(!user){show('Session expired. Please log in again.');return;}
 
   const existing=new Map(attendanceRows.map(r=>[r.user_id,r]));
@@ -482,7 +483,8 @@ document.getElementById('saveAttendance').onclick=saveAttendance;
 document.getElementById('refreshOverview').onclick=loadOverview;
 
 async function start(){
-  const {data:{user}={}}=await timeout(supabase.auth.getUser());
+  const authResult=await timeout(supabase.auth.getUser());
+  const user=authResult?.data?.user;
   if(!user){location.href='teacher-login.html';return;}
 
   const {data:row,error}=await timeout(
