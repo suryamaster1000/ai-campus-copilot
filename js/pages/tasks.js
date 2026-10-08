@@ -13,7 +13,8 @@ export function renderTasks(container) {
       return t.status === activeTab;
     });
 
-    const pendingCount = campusData.tasks.filter(t => t.status !== 'completed').length;
+    const safeTasks = Array.isArray(campusData.tasks) ? campusData.tasks : [];
+    const pendingCount = safeTasks.filter(t => t.status !== 'completed').length;
 
     container.innerHTML = `
       <div class="max-w-[1720px] mx-auto py-space-sm space-y-space-md animate-fade-in">
