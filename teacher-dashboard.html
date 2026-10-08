@@ -69,14 +69,59 @@
 
     <div class="grid xl:grid-cols-3 gap-5">
       <section class="bg-white rounded-2xl border border-slate-200 p-5 xl:col-span-2">
-        <div class="flex items-center justify-between gap-3">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div>
             <h3 id="timetableTitle" class="font-extrabold">Assigned Section Timetable</h3>
             <p id="timetableMeta" class="text-xs text-slate-500 mt-1">Loading live timetable...</p>
           </div>
-          <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold">LIVE</span>
+          <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold self-start">LIVE</span>
         </div>
-        <div id="sharedTimetable" class="mt-4 space-y-4">
+
+        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+          <div class="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+            <label class="block">
+              <span class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                <span class="text-blue-600">📅</span> Select Date
+              </span>
+              <input id="teacherTimetableDate" type="date"
+                class="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+            </label>
+
+            <label class="block">
+              <span class="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                <span class="text-blue-600">☀️</span> Select Day
+              </span>
+              <select id="teacherTimetableDay"
+                class="w-full h-11 px-3 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+              </select>
+            </label>
+
+            <button id="teacherTimetableToday" type="button"
+              class="h-11 inline-flex items-center justify-center gap-1.5 px-4 rounded-xl bg-blue-700 text-white text-xs font-bold hover:bg-blue-800 transition-colors">
+              Today
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-2">The current day is selected automatically. Change the date or day to view another day's section timetable.</p>
+        </div>
+
+        <div id="teacherSelectedTimetableHeader" class="mt-4 rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <div id="teacherSelectedTimetableTitle" class="text-sm font-extrabold text-slate-900">Today's Timetable</div>
+              <div id="teacherSelectedTimetableMeta" class="text-[11px] text-slate-500 mt-0.5"></div>
+            </div>
+            <span id="teacherSelectedTimetableCount" class="px-2.5 py-1 rounded-full bg-white text-blue-700 text-[10px] font-bold border border-blue-100">0 Classes</span>
+          </div>
+        </div>
+
+        <div id="sharedTimetable" class="mt-4 space-y-2">
           <div class="text-sm text-slate-500">Loading timetable...</div>
         </div>
       </section>
@@ -224,33 +269,100 @@ function formatDate(value){
   const d=new Date(value);
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString([], {day:'numeric',month:'short',year:'numeric'});
 }
+const TEACHER_DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+function teacherLocalDate(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function teacherDayFromDate(value){
+  const d=new Date(String(value||'')+'T00:00:00');
+  return Number.isNaN(d.getTime()) ? TEACHER_DAYS[new Date().getDay()] : TEACHER_DAYS[d.getDay()];
+}
+
+function teacherDateForDay(day){
+  const today=new Date();
+  const targetIndex=TEACHER_DAYS.indexOf(day);
+  const diff=targetIndex-new Date().getDay();
+  const d=new Date(today);
+  d.setDate(today.getDate()+diff);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+let teacherSelectedDate=teacherLocalDate();
+let teacherSelectedDay=teacherDayFromDate(teacherSelectedDate);
+
 function renderSharedTimetable(){
   const box=document.getElementById('sharedTimetable');
-  const byDay=new Map();
-  const order=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  for(const r of sharedTimetableRows){
-    const day=r.day_of_week||'Unscheduled';
-    if(!byDay.has(day)) byDay.set(day,[]);
-    byDay.get(day).push(r);
+  const dateInput=document.getElementById('teacherTimetableDate');
+  const daySelect=document.getElementById('teacherTimetableDay');
+  const selectedTitle=document.getElementById('teacherSelectedTimetableTitle');
+  const selectedMeta=document.getElementById('teacherSelectedTimetableMeta');
+  const selectedCount=document.getElementById('teacherSelectedTimetableCount');
+
+  if(dateInput) dateInput.value=teacherSelectedDate;
+  if(daySelect) daySelect.value=teacherSelectedDay;
+
+  const rows=sharedTimetableRows
+    .filter(r=>String(r.day_of_week||'').toLowerCase()===teacherSelectedDay.toLowerCase())
+    .sort((a,b)=>String(a.start_time||'').localeCompare(String(b.start_time||'')));
+
+  const isToday=teacherSelectedDate===teacherLocalDate();
+  const displayDate=new Date(teacherSelectedDate+'T00:00:00');
+  const formattedDate=Number.isNaN(displayDate.getTime())?teacherSelectedDate:displayDate.toLocaleDateString([], {day:'numeric',month:'short',year:'numeric'});
+
+  if(selectedTitle) selectedTitle.textContent=teacherSelectedDay+', '+formattedDate+(isToday?' • Today':'');
+  if(selectedMeta) selectedMeta.textContent=assignedSection+' • Assigned section schedule';
+  if(selectedCount) selectedCount.textContent=rows.length+' '+(rows.length===1?'Class':'Classes');
+
+  if(!rows.length){
+    box.innerHTML='<div class="rounded-xl border border-slate-200 bg-slate-50 p-10 text-center"><div class="text-3xl">📅</div><div class="text-sm font-bold text-slate-800 mt-2">No classes scheduled</div><div class="text-xs text-slate-500 mt-1">No timetable is available for '+esc(teacherSelectedDay)+'.</div></div>';
+  }else{
+    box.innerHTML=rows.map((r,index)=>{
+      const subject=r.subjects||{};
+      const subjectInfo=Array.isArray(subject)?subject[0]:subject;
+      const name=subjectInfo?.name;
+      const code=subjectInfo?.code;
+      return '<div class="rounded-xl border '+(index===0&&isToday?'border-blue-200 bg-blue-50/40':'border-slate-200 bg-white')+' px-4 py-3">'+
+        '<div class="grid grid-cols-1 sm:grid-cols-[150px_minmax(0,1fr)_110px] gap-2 items-center">'+
+          '<div><div class="text-xs font-extrabold text-slate-700">'+esc(formatTime(r.start_time))+' – '+esc(formatTime(r.end_time))+'</div><div class="text-[10px] text-slate-500 mt-1">'+(isToday?(index===0?'Today':'Today'):'Scheduled')+'</div></div>'+
+          '<div class="min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-black">'+esc(code||'—')+'</span><span class="text-sm font-extrabold text-slate-900 truncate">'+esc(name||r.notes||'Class')+'</span></div><div class="text-[11px] text-slate-500 mt-1">'+esc(r.room||'Room not set')+'</div></div>'+
+          '<div class="text-[11px] font-bold text-slate-500 sm:text-right">'+esc(index===0&&isToday?'Review schedule':'Class '+(index+1))+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
   }
-  const days=[...byDay.keys()].sort((a,b)=>order.indexOf(a)-order.indexOf(b));
-  if(!days.length){ box.innerHTML='<div class="text-sm text-slate-500">No timetable rows found for '+esc(assignedSection)+'.</div>'; return; }
-  const today=new Date().toLocaleDateString('en-US',{weekday:'long'});
-  box.innerHTML=days.map(day=>{
-    const rows=byDay.get(day).sort((a,b)=>String(a.start_time||'').localeCompare(String(b.start_time||'')));
-    const isToday=day===today;
-    return '<div class="rounded-xl border '+(isToday?'border-blue-300 bg-blue-50/50':'border-slate-200 bg-slate-50')+' p-3">'+
-      '<div class="flex items-center justify-between gap-3 mb-2"><div class="font-extrabold text-sm">'+esc(day)+'</div>'+(isToday?'<span class="text-[10px] font-bold text-blue-700">TODAY</span>':'')+'</div>'+
-      '<div class="space-y-2">'+rows.map(r=>{
-        const subject=r.subjects||{};
-        const name=Array.isArray(subject)?subject[0]?.name:subject.name;
-        const code=Array.isArray(subject)?subject[0]?.code:subject.code;
-        return '<div class="flex items-center gap-3 rounded-lg bg-white border border-slate-200 px-3 py-2"><div class="w-28 shrink-0 text-[11px] font-bold text-slate-500">'+esc(formatTime(r.start_time))+' – '+esc(formatTime(r.end_time))+'</div><div class="min-w-0 flex-1"><div class="text-sm font-bold truncate">'+esc(name||r.notes||'Class')+'</div><div class="text-[11px] text-slate-500 mt-0.5">'+esc(code||'')+(r.room?' • '+esc(r.room):'')+'</div></div></div>';
-      }).join('')+'</div></div>';
-  }).join('');
+
   document.getElementById('timetableMeta').textContent=sharedTimetableRows.length+' timetable entries • '+assignedSection+' • live from Supabase';
   renderTodaySummary();
 }
+function bindTeacherTimetableControls(){
+  const dateInput=document.getElementById('teacherTimetableDate');
+  const daySelect=document.getElementById('teacherTimetableDay');
+  const todayBtn=document.getElementById('teacherTimetableToday');
+
+  if(!dateInput||!daySelect||!todayBtn) return;
+
+  dateInput.onchange=()=>{
+    teacherSelectedDate=dateInput.value||teacherLocalDate();
+    teacherSelectedDay=teacherDayFromDate(teacherSelectedDate);
+    renderSharedTimetable();
+  };
+
+  daySelect.onchange=()=>{
+    teacherSelectedDay=daySelect.value;
+    teacherSelectedDate=teacherDateForDay(teacherSelectedDay);
+    renderSharedTimetable();
+  };
+
+  todayBtn.onclick=()=>{
+    teacherSelectedDate=teacherLocalDate();
+    teacherSelectedDay=teacherDayFromDate(teacherSelectedDate);
+    renderSharedTimetable();
+  };
+}
+
 function renderTodaySummary(){
   const list=document.getElementById('todayClasses');
   const next=document.getElementById('nextClass');
@@ -316,6 +428,7 @@ async function loadSharedData(){
     document.getElementById('sharedTimetable').innerHTML='<div class="text-sm text-red-600">Timetable could not be loaded: '+esc(timetableRes.error.message)+'</div>';
   } else {
     sharedTimetableRows=(timetableRes.data||[]);
+    bindTeacherTimetableControls();
     renderSharedTimetable();
   }
   const now=Date.now();
