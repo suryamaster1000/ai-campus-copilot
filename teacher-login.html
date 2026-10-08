@@ -40,7 +40,10 @@ body{font-family:Inter,sans-serif}.display{font-family:'Plus Jakarta Sans',sans-
           placeholder="teacher account email">
       </div>
       <div>
-        <label class="block text-xs font-bold text-slate-700 mb-1.5">Password</label>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="block text-xs font-bold text-slate-700">Password</label>
+          <button id="togglePassword" type="button" class="text-[11px] font-bold text-blue-700 hover:text-blue-900">Show password</button>
+        </div>
         <input id="password" type="password" required autocomplete="current-password"
           class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 outline-none focus:border-blue-600"
           placeholder="••••••••">
@@ -57,10 +60,13 @@ body{font-family:Inter,sans-serif}.display{font-family:'Plus Jakarta Sans',sans-
     </div>
 
     <div class="flex items-center gap-3 my-6">
-      <div class="h-px bg-slate-200 flex-1"></div><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Demo-ready access</span><div class="h-px bg-slate-200 flex-1"></div>
+      <div class="h-px bg-slate-200 flex-1"></div><span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Dedicated workspace</span><div class="h-px bg-slate-200 flex-1"></div>
     </div>
 
-    <div class="text-center text-xs text-slate-400 mt-6">Teacher Portal is a separate workspace. Use the dedicated teacher portal URL.</div>
+    <div class="text-center text-xs text-slate-400 mt-4">Teacher Portal is a separate workspace controlled by Supabase.</div>
+    <div class="mt-4 text-center">
+      <a href="login.html" class="text-xs font-bold text-blue-700 hover:text-blue-900">← Student Login</a>
+    </div>
 </section>
 
   <p class="text-center text-xs text-blue-100/70 mt-5">AI Campus Copilot • Teacher access is controlled by Supabase</p>
@@ -73,6 +79,13 @@ const OWNER_USER_ID = '53d68054-50f2-41b5-a666-5789db48ae02';
 const form = document.getElementById('form');
 const btn = document.getElementById('btn');
 const msg = document.getElementById('msg');
+const passwordInput = document.getElementById('password');
+const togglePassword = document.getElementById('togglePassword');
+togglePassword.addEventListener('click', () => {
+  const visible = passwordInput.type === 'text';
+  passwordInput.type = visible ? 'password' : 'text';
+  togglePassword.textContent = visible ? 'Show password' : 'Hide password';
+});
 const loginError = new URLSearchParams(window.location.search).get('error');
 if (loginError === 'no-section') message('Your teacher account needs an assigned section before the portal can be opened.');
 
