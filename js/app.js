@@ -807,8 +807,10 @@ function initReportFeature() {
 }
 
 function updateSidebarBadges() {
-  const unreadNotices = campusData.notices.filter(n => !n.read).length;
-  const pendingTasks = campusData.tasks.filter(t => t.status !== 'completed').length;
+  const safeNotices = Array.isArray(campusData.notices) ? campusData.notices : [];
+  const safeTasks = Array.isArray(campusData.tasks) ? campusData.tasks : [];
+  const unreadNotices = safeNotices.filter(n => !n.read).length;
+  const pendingTasks = safeTasks.filter(t => t.status !== 'completed').length;
 
   document.querySelectorAll('.sidebar-notices-badge').forEach(badge => {
     badge.textContent = unreadNotices;
