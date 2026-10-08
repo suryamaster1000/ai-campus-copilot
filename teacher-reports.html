@@ -122,7 +122,8 @@ async function loadReports(){
   render();
 }
 async function start(){
-  const {data:{user}={}}=await timeout(supabase.auth.getUser());
+  const authResult=await timeout(supabase.auth.getUser());
+  const user=authResult?.data?.user;
   if(!user){location.href='teacher-login.html';return;}
   const {data:access,error}=await timeout(supabase.from('admin_users').select('role,assigned_section').eq('user_id',user.id).maybeSingle());
   const role=String(access?.role||'').toLowerCase();
