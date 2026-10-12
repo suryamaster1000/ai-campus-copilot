@@ -343,7 +343,16 @@ export function renderStudyAssistant(container) {
             difficulty
           }
         });
-        if (error || data?.error) throw new Error(data?.error || error?.message || 'The study set could not be generated.');
+        if (error || data?.error) {
+          let message = data?.error || '';
+          if (!message && error?.context?.json) {
+            try {
+              const errorBody = await error.context.json();
+              message = errorBody?.error || '';
+            } catch { /* Use the SDK error message below. */ }
+          }
+          throw new Error(message || error?.message || 'The study set could not be generated.');
+        }
         renderGeneratedStudySet(resultHost, data, mode);
         const generatedCount = mode === 'code'
           ? (Array.isArray(data.exercises) ? data.exercises.length : 0)
@@ -469,6 +478,7 @@ export function renderStudyAssistant(container) {
       exercises.forEach((exercise, index) => {
         const card = el('article', 'rounded-xl border border-surface-container-high p-4 space-y-3');
         card.appendChild(el('h4', 'font-semibold text-sm text-on-surface', (index + 1) + '. ' + (exercise.title || exercise.topic || 'Python exercise')));
+        if (exercise.difficulty) card.appendChild(el('span', 'inline-flex rounded-full bg-secondary-fixed px-2 py-1 text-[10px] font-bold text-on-secondary-fixed', 'Difficulty: ' + exercise.difficulty));
         card.appendChild(el('p', 'text-sm text-on-surface-variant whitespace-pre-wrap', exercise.prompt || exercise.question || ''));
         if (exercise.starterCode) {
           card.appendChild(el('div', 'text-xs font-bold text-on-surface-variant', 'Starter code'));
@@ -505,6 +515,7 @@ export function renderStudyAssistant(container) {
       card.dataset.questionIndex = String(index);
       card.appendChild(el('div', 'flex items-center justify-between gap-2', 'Question ' + (index + 1)));
       if (question.topic) card.appendChild(el('p', 'text-[11px] font-semibold text-primary', question.topic));
+      if (question.difficulty) card.appendChild(el('span', 'inline-flex rounded-full bg-secondary-fixed px-2 py-1 text-[10px] font-bold text-on-secondary-fixed', 'Difficulty: ' + question.difficulty));
       card.appendChild(el('p', 'text-sm font-semibold text-on-surface whitespace-pre-wrap', question.question || ''));
       if (mode === 'practice' && Array.isArray(question.options)) {
         const options = el('div', 'space-y-2');
