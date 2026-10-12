@@ -335,7 +335,7 @@ export function renderStudyAssistant(container) {
         const { data, error } = await supabase.functions.invoke('generate-study-set', {
           body: {
             documentId: syllabusDocumentId,
-            subjectNumber: subjectMatch ? Number(subjectMatch[1]) : null,
+            subjectNumber: Number(course.syllabusSubjectNumber) || (subjectMatch ? Number(subjectMatch[1]) : null),
             subjectName: course.name,
             unit,
             mode,
@@ -638,6 +638,7 @@ export function renderStudyAssistant(container) {
         if (title) units.push({ title: `Unit ${roman}: ${title}`, status: 'From published syllabus' });
       }
       return {
+        syllabusSubjectNumber: number,
         code: `SUB-${String(number).padStart(2, '0')}`,
         name,
         faculty: 'Not assigned in syllabus',
@@ -660,6 +661,21 @@ export function renderStudyAssistant(container) {
       }
     }
     const modules = Array.from(moduleMap.values());
+
+    // Preserve the real subject codes from Supabase where the names match the syllabus.
+    // Keep the source document's subject number separately for syllabus extraction.
+    const catalogModules = Array.isArray(campusData.studyModules) ? campusData.studyModules : [];
+    const normalizeName = (value) => String(value || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '');
+    for (const module of modules) {
+      const targetName = normalizeName(module.name);
+      const catalogMatch = catalogModules.find((item) => normalizeName(item.name) === targetName);
+      if (catalogMatch) {
+        module.code = catalogMatch.code || module.code;
+        module.faculty = catalogMatch.faculty || module.faculty;
+        if (catalogMatch.credits !== undefined && catalogMatch.credits !== null) module.credits = catalogMatch.credits;
+        if (catalogMatch.id) module.subjectId = catalogMatch.id;
+      }
+    }
 
     if (!modules.length) {
       console.warn('Published syllabus was found but no subject/unit headings could be parsed.');
