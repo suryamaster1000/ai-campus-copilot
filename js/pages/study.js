@@ -76,7 +76,7 @@ export function renderStudyAssistant(container) {
             <label class="block text-xs font-semibold text-on-surface-variant">
               Number of questions
               <input id="studyQuestionCount" type="number" min="1" max="15" step="1" value="5" required class="mt-1.5 w-full h-11 px-3 rounded-xl border border-surface-container-high bg-surface text-sm text-on-surface"/>
-              <span class="block text-[10px] font-normal mt-1">Choose 1–15 questions</span>
+              <span id="studyQuestionCountHint" class="block text-[10px] font-normal mt-1">Choose 1–15 questions</span>
             </label>
             <label class="block text-xs font-semibold text-on-surface-variant">
               Difficulty
@@ -286,6 +286,21 @@ export function renderStudyAssistant(container) {
       container.querySelector('#studySetBuilder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       container.querySelector('#studySetType')?.focus({ preventScroll: true });
     });
+
+    // Coding exercises include starter code and solutions, so cap them at five per set.
+    const studySetTypeSelect = container.querySelector('#studySetType');
+    const questionCountInput = container.querySelector('#studyQuestionCount');
+    const questionCountHint = container.querySelector('#studyQuestionCountHint');
+    const syncQuestionLimit = () => {
+      const max = studySetTypeSelect?.value === 'code' ? 5 : 15;
+      if (questionCountInput) {
+        questionCountInput.max = String(max);
+        if (Number(questionCountInput.value) > max) questionCountInput.value = String(max);
+      }
+      if (questionCountHint) questionCountHint.textContent = 'Choose 1–' + max + ' ' + (max === 5 ? 'coding exercises' : 'questions');
+    };
+    studySetTypeSelect?.addEventListener('change', syncQuestionLimit);
+    syncQuestionLimit();
 
     // Generate through the authenticated Supabase Edge Function.
     const studySetForm = container.querySelector('#studySetForm');
