@@ -355,7 +355,7 @@ export function renderStudyAssistant(container) {
     if (!syllabus.trim()) return;
 
     const subjectBlocks = syllabus.split(/(?=Subject\s+\d+\s*:)/i).filter((block) => /^Subject\s+\d+\s*:/i.test(block.trim()));
-    const modules = subjectBlocks.map((block) => {
+    const parsedModules = subjectBlocks.map((block) => {
       const heading = block.match(/^Subject\s+(\d+)\s*:\s*([^\n]+)/i);
       if (!heading) return null;
       const number = Number(heading[1]);
@@ -377,7 +377,21 @@ export function renderStudyAssistant(container) {
         units,
         aiTools: ['Explain a syllabus topic', 'Generate practice quiz', 'Create theory questions']
       };
-    }).filter((module) => module && module.name && module.units.length);
+    });
+    // The uploaded DOCX extraction contains a repeated fragment; merge by subject number
+    // and de-duplicate units so students see each syllabus subject only once.
+    const moduleMap = new Map();
+    for (const module of parsedModules.filter((item) => item && item.name && item.units.length)) {
+      const existing = moduleMap.get(module.code);
+      if (!existing) {
+        moduleMap.set(module.code, module);
+        continue;
+      }
+      for (const unit of module.units) {
+        if (!existing.units.some((item) => item.title === unit.title)) existing.units.push(unit);
+      }
+    }
+    const modules = Array.from(moduleMap.values());
 
     if (!modules.length) {
       console.warn('Published syllabus was found but no subject/unit headings could be parsed.');
