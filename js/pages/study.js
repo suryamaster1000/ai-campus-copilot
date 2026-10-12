@@ -308,7 +308,88 @@ export function renderStudyAssistant(container) {
   }
 
   render();
+  loadSyllabusModules().catch((error) => {
+    console.error('Syllabus modules failed:', error);
+  });
   loadSubjectNotes().catch((error) => console.error('Subject notes failed:', error));
+
+  async function loadSyllabusModules() {
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    const user = authData?.user;
+    if (!user) return;
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('section')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (profileError) throw profileError;
+
+    const section = String(profile?.section || '').trim().toUpperCase();
+    if (!section) return;
+
+    const { data: documents, error: documentError } = await supabase
+      .from('knowledge_documents')
+      .select('id,title,section,created_at')
+      .eq('section', section)
+      .eq('published', true)
+      .ilike('title', '%SYLLABUS%')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (documentError) throw documentError;
+
+    const document = Array.isArray(documents) ? documents[0] : null;
+    if (!document) return;
+
+    const { data: chunks, error: chunksError } = await supabase
+      .from('knowledge_chunks')
+      .select('content,chunk_index')
+      .eq('document_id', document.id)
+      .order('chunk_index', { ascending: true });
+    if (chunksError) throw chunksError;
+
+    const syllabus = (Array.isArray(chunks) ? chunks : [])
+      .map((chunk) => String(chunk.content || ''))
+      .join('\n');
+    if (!syllabus.trim()) return;
+
+    const subjectBlocks = syllabus.split(/(?=Subject\s+\d+\s*:)/i).filter((block) => /^Subject\s+\d+\s*:/i.test(block.trim()));
+    const modules = subjectBlocks.map((block) => {
+      const heading = block.match(/^Subject\s+(\d+)\s*:\s*([^\n]+)/i);
+      if (!heading) return null;
+      const number = Number(heading[1]);
+      const name = heading[2].replace(/\s*[-–—]\s*$/, '').trim();
+      const units = [];
+      const unitPattern = /UNIT\s+(I{1,3}|IV)\s*:\s*([\s\S]*?)(?=UNIT\s+(?:I{1,3}|IV)\s*:|$)/gi;
+      let match;
+      while ((match = unitPattern.exec(block)) !== null) {
+        const roman = match[1].toUpperCase();
+        const raw = match[2].trim();
+        const title = raw.split(/\s+-\s+|\n/)[0].replace(/\s+/g, ' ').trim().replace(/[–—-]+$/, '');
+        if (title) units.push({ title: `Unit ${roman}: ${title}`, status: 'From published syllabus' });
+      }
+      return {
+        code: `SUB-${String(number).padStart(2, '0')}`,
+        name,
+        faculty: 'Not assigned in syllabus',
+        progress: 0,
+        units,
+        aiTools: ['Explain a syllabus topic', 'Generate practice quiz', 'Create theory questions']
+      };
+    }).filter((module) => module && module.name && module.units.length);
+
+    if (!modules.length) {
+      console.warn('Published syllabus was found but no subject/unit headings could be parsed.');
+      return;
+    }
+
+    campusData.studyModules = modules;
+    if (!selectedCourseCode || !modules.some((module) => module.code === selectedCourseCode)) {
+      selectedCourseCode = modules[0].code;
+    }
+    render();
+  }
 
   async function loadSubjectNotes() {
     const { data: { user } } = await supabase.auth.getUser();
