@@ -6,6 +6,7 @@ import { supabase } from '../supabase.js';
 export function renderStudyAssistant(container) {
   const studyModules = Array.isArray(campusData.studyModules) ? campusData.studyModules : [];
   let selectedCourseCode = studyModules[0]?.code || '';
+  let syllabusDocumentId = null;
 
   function render() {
     const liveModules = Array.isArray(campusData.studyModules) ? campusData.studyModules : [];
@@ -49,6 +50,59 @@ export function renderStudyAssistant(container) {
             ${liveModules.map(m => `<option value="${m.code}" ${m.code === selectedCourseCode ? 'selected' : ''}>${m.code} — ${m.name}</option>`).join('')}
           </select>
         </div>
+
+        <!-- User-configurable study-set builder -->
+        <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg shadow-sm border border-primary/20" id="studySetBuilder">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[22px]">tune</span>
+                <h2 class="font-headline-md text-lg font-bold text-on-surface">Build Your Practice Set</h2>
+              </div>
+              <p class="text-xs text-on-surface-variant mt-1">Choose the question count, difficulty, question type, and syllabus unit.</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[11px] font-bold">Syllabus-based</span>
+          </div>
+          <form id="studySetForm" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <label class="block text-xs font-semibold text-on-surface-variant">
+              Question type
+              <select id="studySetType" class="mt-1.5 w-full h-11 px-3 rounded-xl border border-surface-container-high bg-surface text-sm text-on-surface">
+                <option value="practice">Multiple choice (MCQ)</option>
+                <option value="theory">Theory questions with answers</option>
+                <option value="short">Short-answer Q&amp;A</option>
+                <option value="code">Python coding exercises</option>
+              </select>
+            </label>
+            <label class="block text-xs font-semibold text-on-surface-variant">
+              Number of questions
+              <input id="studyQuestionCount" type="number" min="1" max="15" step="1" value="5" required class="mt-1.5 w-full h-11 px-3 rounded-xl border border-surface-container-high bg-surface text-sm text-on-surface"/>
+              <span class="block text-[10px] font-normal mt-1">Choose 1–15 questions</span>
+            </label>
+            <label class="block text-xs font-semibold text-on-surface-variant">
+              Difficulty
+              <select id="studySetDifficulty" class="mt-1.5 w-full h-11 px-3 rounded-xl border border-surface-container-high bg-surface text-sm text-on-surface">
+                <option value="mixed">Mixed difficulty</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </label>
+            <label class="block text-xs font-semibold text-on-surface-variant">
+              Syllabus unit
+              <select id="studySetUnit" class="mt-1.5 w-full h-11 px-3 rounded-xl border border-surface-container-high bg-surface text-sm text-on-surface">
+                <option value="all">All units in this subject</option>
+              </select>
+            </label>
+            <div class="sm:col-span-2 xl:col-span-4 flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+              <button id="generateStudySetBtn" type="submit" class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-primary text-on-primary hover:bg-tertiary-container rounded-xl text-sm font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                Generate Practice Set
+              </button>
+              <p id="studySetStatus" role="status" aria-live="polite" class="text-xs text-on-surface-variant">Your selections will be used to generate questions from the published syllabus.</p>
+            </div>
+          </form>
+          <div id="studySetResults" class="mt-4 space-y-3"></div>
+        </section>
 
         <!-- Main Content Area -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md">
@@ -213,6 +267,83 @@ export function renderStudyAssistant(container) {
     // Course selector
     container.querySelector('#courseSelect')?.addEventListener('change', (event) => { selectedCourseCode = event.target.value; render(); });
 
+    // Populate unit choices from the selected course's published syllabus headings.
+    const unitSelect = container.querySelector('#studySetUnit');
+    if (unitSelect) {
+      const unitTitles = Array.isArray(course.units) ? course.units : [];
+      unitTitles.forEach((unit) => {
+        const roman = String(unit.title || '').match(/^Unit\s+(IV|III|II|I)\b/i)?.[1]?.toUpperCase();
+        if (!roman) return;
+        const option = document.createElement('option');
+        option.value = roman;
+        option.textContent = unit.title;
+        unitSelect.appendChild(option);
+      });
+    }
+
+    // Bring the configurable builder into view instead of launching a fixed generic quiz.
+    container.querySelector('#studyQuizBtn')?.addEventListener('click', () => {
+      container.querySelector('#studySetBuilder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      container.querySelector('#studySetType')?.focus({ preventScroll: true });
+    });
+
+    // Generate through the authenticated Supabase Edge Function.
+    const studySetForm = container.querySelector('#studySetForm');
+    studySetForm?.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const status = container.querySelector('#studySetStatus');
+      const button = container.querySelector('#generateStudySetBtn');
+      const resultHost = container.querySelector('#studySetResults');
+      const mode = container.querySelector('#studySetType')?.value || 'practice';
+      const count = Number(container.querySelector('#studyQuestionCount')?.value || 5);
+      const difficulty = container.querySelector('#studySetDifficulty')?.value || 'mixed';
+      const unit = container.querySelector('#studySetUnit')?.value || 'all';
+
+      if (!Number.isInteger(count) || count < 1 || count > 15) {
+        status.textContent = 'Enter a whole number from 1 to 15.';
+        showToast('Choose between 1 and 15 questions.', 'warning');
+        return;
+      }
+      if (!syllabusDocumentId) {
+        status.textContent = 'The published syllabus is still loading. Please wait a moment and try again.';
+        showToast('Syllabus is not ready yet. Please try again.', 'warning');
+        return;
+      }
+
+      button.disabled = true;
+      button.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">progress_activity</span> Generating…';
+      status.textContent = 'Generating your questions from the published syllabus…';
+      resultHost.replaceChildren();
+
+      try {
+        const subjectMatch = String(course.code || '').match(/SUB-(\d+)/i);
+        const { data, error } = await supabase.functions.invoke('generate-study-set', {
+          body: {
+            documentId: syllabusDocumentId,
+            subjectNumber: subjectMatch ? Number(subjectMatch[1]) : null,
+            subjectName: course.name,
+            unit,
+            mode,
+            count,
+            difficulty
+          }
+        });
+        if (error || data?.error) throw new Error(data?.error || error?.message || 'The study set could not be generated.');
+        renderGeneratedStudySet(resultHost, data, mode);
+        const generatedCount = mode === 'code'
+          ? (Array.isArray(data.exercises) ? data.exercises.length : 0)
+          : (Array.isArray(data.questions) ? data.questions.length : 0);
+        status.textContent = 'Generated ' + generatedCount + ' item(s) for ' + course.name + '.';
+      } catch (error) {
+        console.error('Study set generation failed:', error);
+        status.textContent = error?.message || 'The study set could not be generated. Please try again.';
+        showToast(status.textContent, 'error');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<span class="material-symbols-outlined text-[18px]">auto_awesome</span> Generate Practice Set';
+      }
+    });
+
     // Explain unit button
     container.querySelectorAll('.study-explain-unit-btn').forEach(btn => {
       btn.onclick = () => {
@@ -269,16 +400,7 @@ export function renderStudyAssistant(container) {
     const submitQuizBtn = document.getElementById('submitQuizBtn');
     const quizResult = document.getElementById('quizResult');
 
-    if (quizBtn) {
-      quizBtn.onclick = () => {
-        window.location.hash = '#ai-assistant';
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('campus:askAi', {
-            detail: { query: `Create a 5-question practice quiz for ${course.code} (${course.name}) using only my connected campus course data. Do not invent syllabus topics.` }
-          }));
-        }, 50);
-      };
-    }
+    if (quizBtn) quizBtn.onclick = () => container.querySelector('#studySetBuilder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     if (closeQuizBtn && quizModal) {
       closeQuizBtn.onclick = () => {
@@ -313,6 +435,125 @@ export function renderStudyAssistant(container) {
   });
   loadSubjectNotes().catch((error) => console.error('Subject notes failed:', error));
 
+  function renderGeneratedStudySet(host, payload, mode) {
+    host.replaceChildren();
+    const el = (tag, className, text) => {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined && text !== null) node.textContent = String(text);
+      return node;
+    };
+    const heading = el('div', 'rounded-xl bg-surface-container-low p-4');
+    heading.appendChild(el('h3', 'font-headline-md text-base font-bold text-on-surface', payload.title || 'Your practice set'));
+    if (payload.summary) heading.appendChild(el('p', 'text-xs text-on-surface-variant mt-1', payload.summary));
+    host.appendChild(heading);
+
+    if (mode === 'code') {
+      const exercises = Array.isArray(payload.exercises) ? payload.exercises : (payload.prompt ? [payload] : []);
+      if (!exercises.length) throw new Error('The generated response did not contain coding exercises. Please retry.');
+      exercises.forEach((exercise, index) => {
+        const card = el('article', 'rounded-xl border border-surface-container-high p-4 space-y-3');
+        card.appendChild(el('h4', 'font-semibold text-sm text-on-surface', (index + 1) + '. ' + (exercise.title || exercise.topic || 'Python exercise')));
+        card.appendChild(el('p', 'text-sm text-on-surface-variant whitespace-pre-wrap', exercise.prompt || exercise.question || ''));
+        if (exercise.starterCode) {
+          card.appendChild(el('div', 'text-xs font-bold text-on-surface-variant', 'Starter code'));
+          card.appendChild(el('pre', 'overflow-x-auto whitespace-pre rounded-lg bg-surface-container-low p-3 text-xs text-on-surface', exercise.starterCode));
+        }
+        if (Array.isArray(exercise.tests) && exercise.tests.length) {
+          card.appendChild(el('p', 'text-xs text-on-surface-variant', 'Practice checks: ' + exercise.tests.length + ' test cases are supplied with this exercise.'));
+        }
+        if (Array.isArray(exercise.hints) && exercise.hints.length) {
+          const hints = el('div', 'hidden rounded-lg bg-surface-container-low p-3 text-xs whitespace-pre-wrap');
+          hints.textContent = exercise.hints.map((hint, i) => (i + 1) + '. ' + hint).join('\n');
+          const hintBtn = el('button', 'px-3 py-2 rounded-lg bg-surface-container text-xs font-semibold', 'Show hints');
+          hintBtn.type = 'button';
+          hintBtn.addEventListener('click', () => { hints.classList.toggle('hidden'); hintBtn.textContent = hints.classList.contains('hidden') ? 'Show hints' : 'Hide hints'; });
+          card.append(hintBtn, hints);
+        }
+        if (exercise.solution) {
+          const solution = el('pre', 'hidden overflow-x-auto whitespace-pre rounded-lg bg-surface-container-low p-3 text-xs text-on-surface', exercise.solution);
+          const solutionBtn = el('button', 'px-3 py-2 rounded-lg bg-primary-fixed text-on-primary-fixed text-xs font-semibold', 'Reveal solution');
+          solutionBtn.type = 'button';
+          solutionBtn.addEventListener('click', () => { solution.classList.toggle('hidden'); solutionBtn.textContent = solution.classList.contains('hidden') ? 'Reveal solution' : 'Hide solution'; });
+          card.append(solutionBtn, solution);
+        }
+        host.appendChild(card);
+      });
+      return;
+    }
+
+    const questions = Array.isArray(payload.questions) ? payload.questions : [];
+    if (!questions.length) throw new Error('The generated response did not contain questions. Please retry.');
+    const cards = [];
+    questions.forEach((question, index) => {
+      const card = el('article', 'rounded-xl border border-surface-container-high p-4 space-y-3');
+      card.dataset.questionIndex = String(index);
+      card.appendChild(el('div', 'flex items-center justify-between gap-2', 'Question ' + (index + 1)));
+      if (question.topic) card.appendChild(el('p', 'text-[11px] font-semibold text-primary', question.topic));
+      card.appendChild(el('p', 'text-sm font-semibold text-on-surface whitespace-pre-wrap', question.question || ''));
+      if (mode === 'practice' && Array.isArray(question.options)) {
+        const options = el('div', 'space-y-2');
+        question.options.forEach((option, optionIndex) => {
+          const label = el('label', 'flex items-start gap-2 p-3 rounded-lg bg-surface-container-low text-sm cursor-pointer');
+          const input = document.createElement('input');
+          input.type = 'radio';
+          input.name = 'study-answer-' + index;
+          input.value = String(optionIndex);
+          input.className = 'mt-1 accent-current';
+          label.append(input, el('span', 'text-on-surface', option));
+          options.appendChild(label);
+        });
+        card.dataset.correctIndex = String(Number(question.answerIndex));
+        card.appendChild(options);
+        card.appendChild(el('div', 'hidden rounded-lg p-3 text-xs study-question-feedback'));
+      } else {
+        const answerInput = document.createElement('textarea');
+        answerInput.rows = 2;
+        answerInput.placeholder = 'Try writing your answer here (optional)…';
+        answerInput.className = 'w-full rounded-lg border border-surface-container-high bg-surface p-3 text-sm';
+        card.appendChild(answerInput);
+        const reveal = el('button', 'px-3 py-2 rounded-lg bg-primary-fixed text-on-primary-fixed text-xs font-semibold', 'Show suggested answer');
+        reveal.type = 'button';
+        const answerBox = el('div', 'hidden rounded-lg bg-surface-container-low p-3 space-y-2');
+        answerBox.appendChild(el('p', 'text-sm whitespace-pre-wrap', 'Answer: ' + (question.answer || 'No answer supplied.')));
+        if (question.explanation) answerBox.appendChild(el('p', 'text-xs text-on-surface-variant whitespace-pre-wrap', 'Explanation: ' + question.explanation));
+        reveal.addEventListener('click', () => { answerBox.classList.toggle('hidden'); reveal.textContent = answerBox.classList.contains('hidden') ? 'Show suggested answer' : 'Hide suggested answer'; });
+        card.append(reveal, answerBox);
+      }
+      cards.push(card);
+      host.appendChild(card);
+    });
+
+    if (mode === 'practice') {
+      const score = el('p', 'text-sm font-semibold text-on-surface', '');
+      const checkBtn = el('button', 'px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold', 'Check answers');
+      checkBtn.type = 'button';
+      checkBtn.addEventListener('click', () => {
+        let answered = 0;
+        let correct = 0;
+        cards.forEach((card, index) => {
+          const selected = card.querySelector('input[type="radio"]:checked');
+          const feedback = card.querySelector('.study-question-feedback');
+          feedback.classList.remove('hidden');
+          if (!selected) {
+            feedback.className = 'rounded-lg p-3 text-xs study-question-feedback bg-amber-50 text-amber-900';
+            feedback.textContent = 'Choose an answer to check this question.';
+            return;
+          }
+          answered++;
+          const isCorrect = Number(selected.value) === Number(card.dataset.correctIndex);
+          if (isCorrect) correct++;
+          const question = questions[index];
+          feedback.className = 'rounded-lg p-3 text-xs study-question-feedback ' + (isCorrect ? 'bg-emerald-50 text-emerald-900' : 'bg-amber-50 text-amber-900');
+          const answerText = Array.isArray(question.options) ? question.options[Number(question.answerIndex)] : '';
+          feedback.textContent = (isCorrect ? 'Correct. ' : 'Not quite. Correct answer: ' + answerText + '. ') + (question.explanation || '');
+        });
+        score.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + answered + ' answered)';
+      });
+      host.append(checkBtn, score);
+    }
+  }
+
   async function loadSyllabusModules() {
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError) throw authError;
@@ -341,6 +582,7 @@ export function renderStudyAssistant(container) {
 
     const document = Array.isArray(documents) ? documents[0] : null;
     if (!document) return;
+    syllabusDocumentId = document.id;
 
     const { data: chunks, error: chunksError } = await supabase
       .from('knowledge_chunks')
