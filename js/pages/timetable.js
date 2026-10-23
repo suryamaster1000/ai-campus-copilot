@@ -13,7 +13,7 @@ function getLocalDateInputValue(date = new Date()) {
 }
 
 function formatDisplayDate(dateValue) {
-  const date = new Date(`${dateValue}T00:00:00`);
+  const date = new Date(`${auditEscapeHtml(dateValue)}T00:00:00`);
   if (Number.isNaN(date.getTime())) return dateValue;
   return date.toLocaleDateString([], {
     day: '2-digit',
@@ -23,7 +23,7 @@ function formatDisplayDate(dateValue) {
 }
 
 function getDayFromDate(dateValue) {
-  const date = new Date(`${dateValue}T00:00:00`);
+  const date = new Date(`${auditEscapeHtml(dateValue)}T00:00:00`);
   return Number.isNaN(date.getTime()) ? DAY_NAMES[new Date().getDay()] : DAY_NAMES[date.getDay()];
 }
 
@@ -63,6 +63,10 @@ function getClassStatus(cls, selectedDate, selectedDay) {
   if (currentMinutes >= start && currentMinutes < end) return 'current';
   if (currentMinutes >= end) return 'completed';
   return 'upcoming';
+}
+
+function auditEscapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
 export function renderTimetable(container) {
@@ -138,7 +142,7 @@ export function renderTimetable(container) {
               <div class="relative">
                 <input id="timetableDatePicker"
                   type="date"
-                  value="${selectedDate}"
+                  value="${auditEscapeHtml(selectedDate)}"
                   class="w-full h-11 px-3 pr-10 bg-surface-container-low border border-surface-container-high rounded-xl text-sm font-semibold text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"/>
               </div>
             </label>
@@ -151,7 +155,7 @@ export function renderTimetable(container) {
               <div class="relative">
                 <select id="timetableDaySelect"
                   class="w-full h-11 px-3 pr-10 bg-surface-container-low border border-surface-container-high rounded-xl text-sm font-semibold text-on-surface outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none">
-                  ${WEEKDAY_NAMES.map(day => `<option value="${day}" ${day === selectedDay ? 'selected' : ''}>${day}${day === todayDay ? ' • Today' : ''}</option>`).join('')}
+                  ${WEEKDAY_NAMES.map(day => `<option value="${auditEscapeHtml(day)}" ${day === selectedDay ? 'selected' : ''}>${auditEscapeHtml(day)}${day === todayDay ? ' • Today' : ''}</option>`).join('')}
                 </select>
                 <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-outline pointer-events-none">expand_more</span>
               </div>
@@ -167,7 +171,7 @@ export function renderTimetable(container) {
           <div class="mt-3 max-w-sm">
             <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1.5">Class Type Filter</label>
             <select id="timetableFilterSelect" class="w-full h-10 px-3 rounded-xl border border-surface-container-high bg-surface-container-lowest text-xs font-bold text-on-surface outline-none focus:border-primary">
-              ${['All', 'Lecture', 'Lab', 'Tutorial'].map(filter => `<option value="${filter}" ${activeFilter === filter ? 'selected' : ''}>${filter}</option>`).join('')}
+              ${['All', 'Lecture', 'Lab', 'Tutorial'].map(filter => `<option value="${auditEscapeHtml(filter)}" ${activeFilter === filter ? 'selected' : ''}>${auditEscapeHtml(filter)}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -185,7 +189,7 @@ export function renderTimetable(container) {
                   </div>
                   <div>
                     <div class="flex items-center gap-2 flex-wrap">
-                      <h2 class="text-lg lg:text-xl font-bold text-on-surface">${selectedDay}, ${formatDisplayDate(selectedDate)}</h2>
+                      <h2 class="text-lg lg:text-xl font-bold text-on-surface">${auditEscapeHtml(selectedDay)}, ${auditEscapeHtml(formatDisplayDate(selectedDate))}</h2>
                       ${isToday ? '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">Today</span>' : ''}
                     </div>
                     <p class="text-xs text-on-surface-variant mt-0.5">Class Schedule</p>
@@ -199,7 +203,7 @@ export function renderTimetable(container) {
               <div class="p-12 text-center">
                 <span class="material-symbols-outlined text-outline text-[44px]">event_busy</span>
                 <p class="font-body-md text-sm text-on-surface font-semibold mt-3">No classes scheduled</p>
-                <p class="text-xs text-on-surface-variant mt-1">There is no ${activeFilter.toLowerCase() !== 'all' ? activeFilter.toLowerCase() + ' ' : ''}timetable available for ${selectedDay}, ${formatDisplayDate(selectedDate)}.</p>
+                <p class="text-xs text-on-surface-variant mt-1">There is no ${auditEscapeHtml(activeFilter.toLowerCase() !== 'all' ? activeFilter.toLowerCase() + ' ' : '')}timetable available for ${auditEscapeHtml(selectedDay)}, ${auditEscapeHtml(formatDisplayDate(selectedDate))}.</p>
               </div>
             ` : `
               <div class="overflow-x-auto">
@@ -213,25 +217,25 @@ export function renderTimetable(container) {
                   ${filteredClasses.map(cls => `
                     <div class="grid grid-cols-[150px_minmax(0,1fr)_115px_130px] items-center px-space-md lg:px-space-lg py-4 border-b last:border-b-0 border-surface-container-high ${cls.displayStatus === 'current' ? 'bg-primary-fixed/30' : ''}">
                       <div>
-                        <div class="text-sm font-bold text-on-surface">${cls.time}</div>
+                        <div class="text-sm font-bold text-on-surface">${auditEscapeHtml(cls.time)}</div>
                         <div class="text-[11px] text-on-surface-variant mt-0.5">${cls.displayStatus === 'current' ? 'Happening now' : cls.displayStatus === 'completed' ? 'Completed' : 'Upcoming'}</div>
                       </div>
 
                       <div class="flex items-center gap-3 pr-3">
                         <div class="w-9 h-9 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center text-[11px] font-black flex-shrink-0">
-                          ${cls.code || '—'}
+                          ${auditEscapeHtml(cls.code || '—')}
                         </div>
                         <div class="min-w-0">
-                          <div class="text-sm font-bold text-on-surface truncate">${cls.name}</div>
+                          <div class="text-sm font-bold text-on-surface truncate">${auditEscapeHtml(cls.name)}</div>
                           <div class="flex items-center gap-2 flex-wrap mt-0.5 text-[11px] text-on-surface-variant">
-                            <span>${cls.type || 'Lecture'}</span>
+                            <span>${auditEscapeHtml(cls.type || 'Lecture')}</span>
                             <span>•</span>
-                            <span>${cls.faculty || 'Faculty not assigned'}</span>
+                            <span>${auditEscapeHtml(cls.faculty || 'Faculty not assigned')}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div class="text-xs font-semibold text-on-surface-variant">${cls.room || 'Room not assigned'}</div>
+                      <div class="text-xs font-semibold text-on-surface-variant">${auditEscapeHtml(cls.room || 'Room not assigned')}</div>
 
                       <div>
                         ${cls.displayStatus === 'current'
@@ -257,7 +261,7 @@ export function renderTimetable(container) {
 
               <div class="rounded-xl bg-surface-container-low p-3 mb-3">
                 <div class="text-[11px] text-outline font-semibold uppercase tracking-wide">${isToday ? 'Today' : 'Viewing'}</div>
-                <div class="text-sm font-bold text-on-surface mt-1">${selectedDay}, ${formatDisplayDate(selectedDate)}</div>
+                <div class="text-sm font-bold text-on-surface mt-1">${auditEscapeHtml(selectedDay)}, ${auditEscapeHtml(formatDisplayDate(selectedDate))}</div>
                 <div class="text-xs text-on-surface-variant mt-1">${allClasses.length} scheduled ${allClasses.length === 1 ? 'class' : 'classes'}</div>
               </div>
 
@@ -269,9 +273,9 @@ export function renderTimetable(container) {
                       Current Class
                     </div>
                     <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                      <div class="text-sm font-bold text-on-surface">${currentClass.name}</div>
-                      <div class="text-xs text-on-surface-variant mt-1">${currentClass.time}</div>
-                      <div class="text-[11px] text-on-surface-variant mt-1">${currentClass.room}</div>
+                      <div class="text-sm font-bold text-on-surface">${auditEscapeHtml(currentClass.name)}</div>
+                      <div class="text-xs text-on-surface-variant mt-1">${auditEscapeHtml(currentClass.time)}</div>
+                      <div class="text-[11px] text-on-surface-variant mt-1">${auditEscapeHtml(currentClass.room)}</div>
                     </div>
                   </div>
                 ` : ''}
@@ -283,9 +287,9 @@ export function renderTimetable(container) {
                       Next Class
                     </div>
                     <div class="p-3 rounded-xl bg-blue-50 border border-blue-200">
-                      <div class="text-sm font-bold text-on-surface">${nextClass.name}</div>
-                      <div class="text-xs text-on-surface-variant mt-1">${nextClass.time}</div>
-                      <div class="text-[11px] text-on-surface-variant mt-1">${nextClass.room}</div>
+                      <div class="text-sm font-bold text-on-surface">${auditEscapeHtml(nextClass.name)}</div>
+                      <div class="text-xs text-on-surface-variant mt-1">${auditEscapeHtml(nextClass.time)}</div>
+                      <div class="text-[11px] text-on-surface-variant mt-1">${auditEscapeHtml(nextClass.room)}</div>
                     </div>
                   </div>
                 ` : isToday ? `
@@ -335,7 +339,7 @@ export function renderTimetable(container) {
             <div>
               <h4 class="font-label-md text-sm font-bold text-on-surface">Official Academic Rules</h4>
               <p class="text-xs text-on-surface-variant">
-                ${campusData.academicRules?.length ? `${campusData.academicRules[0].title}: ${campusData.academicRules[0].content}` : 'No academic rule has been published for your current term.'}
+                ${campusData.academicRules?.length ? `${auditEscapeHtml(campusData.academicRules[0].title)}: ${auditEscapeHtml(campusData.academicRules[0].content)}` : 'No academic rule has been published for your current term.'}
               </p>
             </div>
           </div>
@@ -424,7 +428,7 @@ export function renderTimetable(container) {
       askAiBtn.onclick = () => {
         window.location.hash = '#ai-assistant';
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `What are my classes on ${selectedDay}, ${formatDisplayDate(selectedDate)}?` } }));
+          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `What are my classes on ${auditEscapeHtml(selectedDay)}, ${auditEscapeHtml(formatDisplayDate(selectedDate))}?` } }));
         }, 50);
       };
     }
@@ -433,7 +437,7 @@ export function renderTimetable(container) {
       btn.onclick = () => {
         const room = btn.getAttribute('data-room');
         window.location.hash = '#campus-guide';
-        showToast(`Route mapped to: ${room}`, 'info');
+        showToast(`Route mapped to: ${auditEscapeHtml(room)}`, 'info');
       };
     });
 
@@ -443,7 +447,7 @@ export function renderTimetable(container) {
         const name = btn.getAttribute('data-name');
         window.location.hash = '#ai-assistant';
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `What topics are covered in ${code} (${name})?` } }));
+          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `What topics are covered in ${auditEscapeHtml(code)} (${auditEscapeHtml(name)})?` } }));
         }, 50);
       };
     });
