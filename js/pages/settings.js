@@ -3,6 +3,12 @@ import { campusData } from '../data.js';
 import { supabase } from '../supabase.js';
 import { showToast } from '../components/toast.js';
 
+function auditEscapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
 export function renderSettings(container) {
   container.innerHTML = `
     <div class="max-w-[1720px] mx-auto py-space-sm space-y-space-md animate-fade-in">
@@ -29,8 +35,8 @@ export function renderSettings(container) {
             <div class="flex items-center gap-3 border-b border-surface-container pb-3">
               <img src="assets/avatars/student.svg" alt="Student" class="w-16 h-16 rounded-full object-cover ring-2 ring-primary"/>
               <div>
-                <h2 class="font-headline-md text-lg font-bold text-on-surface">${campusData.student.name}</h2>
-                <p class="text-xs text-on-surface-variant">${campusData.student.program} • ${campusData.student.id}</p>
+                <h2 class="font-headline-md text-lg font-bold text-on-surface">${auditEscapeHtml(campusData.student.name)}</h2>
+                <p class="text-xs text-on-surface-variant">${auditEscapeHtml(campusData.student.program)} • ${auditEscapeHtml(campusData.student.id)}</p>
                 <span class="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold mt-0.5">
                   <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Student profile from Supabase
                 </span>
@@ -40,31 +46,31 @@ export function renderSettings(container) {
             <form id="profileForm" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block text-xs font-semibold text-on-surface mb-1">Full Name</label>
-                <input id="profNameInput" class="w-full px-3 py-2 bg-surface-container-low rounded-xl text-xs text-on-surface outline-none border border-surface-container-high focus:border-primary" value="${campusData.student.name}" type="text"/>
+                <input id="profNameInput" class="w-full px-3 py-2 bg-surface-container-low rounded-xl text-xs text-on-surface outline-none border border-surface-container-high focus:border-primary" value="${auditEscapeHtml(campusData.student.name)}" type="text"/>
               </div>
               <div>
                 <label class="block text-xs font-semibold text-on-surface mb-1">Student ID #</label>
-                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${campusData.student.id}" disabled type="text"/>
+                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${auditEscapeHtml(campusData.student.id)}" disabled type="text"/>
               </div>
               <div>
                 <label class="block text-xs font-semibold text-on-surface mb-1">Campus Email</label>
-                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${campusData.student.email}" disabled type="text"/>
+                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${auditEscapeHtml(campusData.student.email)}" disabled type="text"/>
               </div>
               <div>
                 <label class="block text-xs font-semibold text-on-surface mb-1">Hostel Room</label>
-                <input id="profHostelInput" class="w-full px-3 py-2 bg-surface-container-low rounded-xl text-xs text-on-surface outline-none border border-surface-container-high focus:border-primary" value="${campusData.student.hostel}" type="text"/>
+                <input id="profHostelInput" class="w-full px-3 py-2 bg-surface-container-low rounded-xl text-xs text-on-surface outline-none border border-surface-container-high focus:border-primary" value="${auditEscapeHtml(campusData.student.hostel)}" type="text"/>
               </div>
               <div>
                 <label class="block text-xs font-semibold text-on-surface mb-1">Academic Advisor</label>
-                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${campusData.student.academicAdvisor}" disabled type="text"/>
+                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${auditEscapeHtml(campusData.student.academicAdvisor)}" disabled type="text"/>
               </div>
               <div>
                 <label class="block text-xs font-semibold text-on-surface mb-1">Current Term</label>
-                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${campusData.student.term}" disabled type="text"/>
+                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${auditEscapeHtml(campusData.student.term)}" disabled type="text"/>
               </div>
               <div>
                 <label class="block text-xs font-semibold text-on-surface mb-1">Section</label>
-                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${campusData.student.section || "Not assigned"}" disabled type="text"/>
+                <input class="w-full px-3 py-2 bg-surface-container rounded-xl text-xs text-outline outline-none cursor-not-allowed" value="${auditEscapeHtml(campusData.student.section || "Not assigned")}" disabled type="text"/>
               </div>
 
               <div class="sm:col-span-2 pt-2">
