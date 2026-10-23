@@ -2,6 +2,12 @@
 import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 
+function auditEscapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
 export function renderNotices(container) {
   let activeCategory = "All";
   let searchQuery = "";
@@ -76,23 +82,23 @@ export function renderNotices(container) {
               <div class="space-y-2">
                 <div class="flex items-center justify-between gap-2 flex-wrap">
                   <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded text-[11px] font-bold ${n.badgeClass}">${n.category}</span>
+                    <span class="px-2 py-0.5 rounded text-[11px] font-bold ${auditEscapeHtml(n.badgeClass)}">${auditEscapeHtml(n.category)}</span>
                     ${n.urgent ? '<span class="px-2 py-0.5 rounded bg-error text-white text-[10px] font-extrabold uppercase tracking-wide">URGENT</span>' : ''}
                     ${!n.read ? '<span class="w-2 h-2 rounded-full bg-primary" title="Unread Notice"></span>' : ''}
                   </div>
-                  <span class="text-xs text-outline font-medium">${n.date}</span>
+                  <span class="text-xs text-outline font-medium">${auditEscapeHtml(n.date)}</span>
                 </div>
 
                 <div>
-                  <h3 class="font-headline-md text-base lg:text-lg font-bold text-on-surface">${n.title}</h3>
+                  <h3 class="font-headline-md text-base lg:text-lg font-bold text-on-surface">${auditEscapeHtml(n.title)}</h3>
                   <p class="text-xs text-outline font-medium mt-0.5 flex items-center gap-1">
                     <span class="material-symbols-outlined text-[15px]">corporate_fare</span>
-                    ${n.author || 'Office of Academic Affairs'}
+                    ${auditEscapeHtml(n.author || 'Office of Academic Affairs')}
                   </p>
                 </div>
 
                 <p class="font-body-md text-sm text-on-surface-variant leading-relaxed">
-                  ${n.summary}
+                  ${auditEscapeHtml(n.summary)}
                 </p>
 
                 ${n.attachment ? `
@@ -102,11 +108,11 @@ export function renderNotices(container) {
                         <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                       </div>
                       <div>
-                        <span class="font-label-sm text-xs font-bold text-on-surface block">${n.attachment}</span>
-                        <span class="text-[10px] text-outline">Official PDF document • ${n.fileSize}</span>
+                        <span class="font-label-sm text-xs font-bold text-on-surface block">${auditEscapeHtml(n.attachment)}</span>
+                        <span class="text-[10px] text-outline">Official PDF document • ${auditEscapeHtml(n.fileSize)}</span>
                       </div>
                     </div>
-                    <button class="download-doc-btn px-3 py-1.5 bg-surface-container-high hover:bg-secondary-container text-on-secondary-container text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 self-start sm:self-center" data-file="${n.attachment}">
+                    <button class="download-doc-btn px-3 py-1.5 bg-surface-container-high hover:bg-secondary-container text-on-secondary-container text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 self-start sm:self-center" data-file="${auditEscapeHtml(n.attachment)}" data-url="${auditEscapeHtml(n.sourceUrl || '')}">
                       <span class="material-symbols-outlined text-[16px]">download</span>
                       <span>Download</span>
                     </button>
@@ -116,9 +122,9 @@ export function renderNotices(container) {
 
               <!-- Bottom Action Bar -->
               <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs">
-                <span class="text-outline">Notice Ref: ${n.id}</span>
+                <span class="text-outline">Notice Ref: ${auditEscapeHtml(n.id)}</span>
                 <div class="flex items-center gap-2">
-                  <button class="notice-query-ai-btn text-primary font-bold hover:underline flex items-center gap-1" data-query="Explain notice: ${n.title}">
+                  <button class="notice-query-ai-btn text-primary font-bold hover:underline flex items-center gap-1" data-query="Explain notice: ${auditEscapeHtml(n.title)}">
                     <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
                     Ask Copilot to explain
                   </button>
@@ -174,7 +180,13 @@ export function renderNotices(container) {
     container.querySelectorAll('.download-doc-btn').forEach(btn => {
       btn.onclick = () => {
         const file = btn.getAttribute('data-file');
-        showToast(`Downloading: ${file}`, 'success');
+        const url = btn.getAttribute('data-url') || '';
+        if (!url) { showToast('No document URL is attached to this notice; nothing was downloaded.', 'info'); return; }
+        try {
+          const parsed = new URL(url, window.location.href);
+          if (!['https:', 'http:'].includes(parsed.protocol)) throw new Error('Unsupported document URL.');
+          window.open(parsed.href, '_blank', 'noopener,noreferrer');
+        } catch { showToast('This notice has an invalid document URL.', 'error'); }
       };
     });
 
