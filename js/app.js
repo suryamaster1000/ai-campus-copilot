@@ -843,6 +843,12 @@ function initHeaderActions() {
   }
 }
 
+function auditEscapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
 function initNotificationsDropdown() {
   const notifBtn = document.getElementById('headerNotifBtn');
   let dropdown = document.getElementById('notifDropdown');
@@ -865,13 +871,13 @@ function initNotificationsDropdown() {
         </div>
         <div class="space-y-2 max-h-72 overflow-y-auto custom-scrollbar" id="notifList">
           ${campusData.notices.slice(0, 3).map(n => `
-            <div class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer notif-item" data-id="${n.id}">
+            <div class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer notif-item" data-id="${auditEscapeHtml(n.id)}">
               <div class="flex items-center justify-between text-[11px] mb-1">
-                <span class="font-bold ${n.badgeClass} px-1.5 py-0.2 rounded">${n.category}</span>
-                <span class="text-outline">${n.date}</span>
+                <span class="font-bold ${auditEscapeHtml(n.badgeClass)} px-1.5 py-0.2 rounded">${auditEscapeHtml(n.category)}</span>
+                <span class="text-outline">${auditEscapeHtml(n.date)}</span>
               </div>
-              <h5 class="font-label-md text-xs font-bold text-on-surface line-clamp-1">${n.title}</h5>
-              <p class="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">${n.summary}</p>
+              <h5 class="font-label-md text-xs font-bold text-on-surface line-clamp-1">${auditEscapeHtml(n.title)}</h5>
+              <p class="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">${auditEscapeHtml(n.summary)}</p>
             </div>
           `).join('')}
         </div>
