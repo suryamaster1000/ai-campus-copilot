@@ -160,7 +160,7 @@ export function renderNotices(container) {
     if (markAllBtn) {
       markAllBtn.onclick = () => {
         campusData.notices.forEach(n => n.read = true);
-        showToast("All notices marked as read", "success");
+        showToast("Notices marked as read for this session.", "success");
         render();
       };
     }
