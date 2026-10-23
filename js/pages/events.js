@@ -2,6 +2,12 @@
 import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 
+function auditEscapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
 export function renderEvents(container) {
   let activeFilter = "All";
   // Track registered events in session
@@ -59,7 +65,7 @@ export function renderEvents(container) {
               <div class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg shadow-sm border border-surface-container-high flex flex-col justify-between gap-space-md hover:shadow-md transition-all">
                 <div class="space-y-3">
                   <div class="flex items-center justify-between gap-2 flex-wrap">
-                    <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold">${event.category || event.type || 'Campus Event'}</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold">${auditEscapeHtml(event.category || event.type || 'Campus Event')}</span>
                     <span class="text-xs text-outline font-semibold flex items-center gap-1">
                       <span class="material-symbols-outlined text-[16px]">group</span>
                       ${Number(event.attendees || 0) + (isReg ? 1 : 0)} Attending
@@ -67,36 +73,36 @@ export function renderEvents(container) {
                   </div>
 
                   <div>
-                    <h3 class="font-headline-md text-lg font-bold text-on-surface leading-snug">${event.title}</h3>
+                    <h3 class="font-headline-md text-lg font-bold text-on-surface leading-snug">${auditEscapeHtml(event.title)}</h3>
                     <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">
-                      ${event.description}
+                      ${auditEscapeHtml(event.description)}
                     </p>
                   </div>
 
                   <div class="p-3 bg-surface-container-low rounded-xl space-y-1.5 text-xs">
                     <div class="flex items-center gap-2 text-on-surface font-semibold">
                       <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
-                      <span>${event.date || 'Date not assigned'} • ${event.time || 'Time not assigned'}</span>
+                      <span>${auditEscapeHtml(event.date || 'Date not assigned')} • ${auditEscapeHtml(event.time || 'Time not assigned')}</span>
                     </div>
                     <div class="flex items-center gap-2 text-on-surface-variant">
                       <span class="material-symbols-outlined text-[16px] text-outline">location_on</span>
-                      <span>${event.venue}</span>
+                      <span>${auditEscapeHtml(event.venue)}</span>
                     </div>
                   </div>
 
                   <div class="flex flex-wrap gap-1.5 pt-1">
                     ${(event.tags || []).map(t => `
-                      <span class="text-[10px] font-semibold bg-surface-container px-2 py-0.5 rounded-md text-outline">#${t}</span>
+                      <span class="text-[10px] font-semibold bg-surface-container px-2 py-0.5 rounded-md text-outline">#${auditEscapeHtml(t)}</span>
                     `).join('')}
                   </div>
                 </div>
 
                 <div class="flex items-center justify-between pt-3 border-t border-surface-container">
-                  <button class="event-cal-btn text-xs font-semibold text-outline hover:text-on-surface flex items-center gap-1" data-id="${event.id}">
+                  <button class="event-cal-btn text-xs font-semibold text-outline hover:text-on-surface flex items-center gap-1" data-id="${auditEscapeHtml(event.id)}">
                     <span class="material-symbols-outlined text-[16px]">event_repeat</span>
                     <span>Sync to Calendar</span>
                   </button>
-                  <button class="event-reg-btn px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${isReg ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-primary text-on-primary hover:bg-tertiary-container'}" data-id="${event.id}">
+                  <button class="event-reg-btn px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${isReg ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-primary text-on-primary hover:bg-tertiary-container'}" data-id="${auditEscapeHtml(event.id)}">
                     <span class="material-symbols-outlined text-[16px]">${isReg ? 'check_circle' : 'how_to_reg'}</span>
                     <span>${isReg ? 'Registered' : 'Register Now'}</span>
                   </button>
@@ -115,30 +121,49 @@ export function renderEvents(container) {
     // Register button clicks
     container.querySelectorAll('.event-reg-btn').forEach(btn => {
       btn.onclick = () => {
-        const id = btn.getAttribute('data-id');
-        const ev = campusData.events.find(e => e.id === id);
-        if (window._registeredEvents.has(id)) {
-          window._registeredEvents.delete(id);
-          showToast(`Canceled registration for: ${ev.title}`, 'info');
-        } else {
-          window._registeredEvents.add(id);
-          showToast(`🎉 Successfully registered for: ${ev.title}! Pass added to SIS.`, 'success');
-        }
-        render();
+        showToast('Event registration is not connected to a campus registration service yet. No registration was saved.', 'info');
       };
     });
 
     // Calendar sync
     container.querySelectorAll('.event-cal-btn').forEach(btn => {
       btn.onclick = () => {
-        showToast("Event exported to campus Google Calendar!", "success");
+        const id = btn.getAttribute('data-id');
+        const ev = campusData.events.find(item => String(item.id) === String(id));
+        if (!ev?.startsAt) {
+          showToast('This event has no start date, so a calendar file cannot be created.', 'error');
+          return;
+        }
+        const toIcsDate = (value) => new Date(value).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+        const escapeIcs = (value) => String(value || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+        const start = new Date(ev.startsAt);
+        const end = ev.endsAt ? new Date(ev.endsAt) : new Date(start.getTime() + 60 * 60 * 1000);
+        const ics = [
+          'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AI Campus Copilot//Events//EN',
+          'CALSCALE:GREGORIAN','BEGIN:VEVENT',
+          'UID:' + escapeIcs(ev.id || crypto.randomUUID()) + '@ai-campus-copilot',
+          'DTSTAMP:' + toIcsDate(new Date()),
+          'DTSTART:' + toIcsDate(start),'DTEND:' + toIcsDate(end),
+          'SUMMARY:' + escapeIcs(ev.title),'DESCRIPTION:' + escapeIcs(ev.description),
+          'LOCATION:' + escapeIcs(ev.venue),'END:VEVENT','END:VCALENDAR'
+        ].join('\r\n');
+        const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+        const href = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = href;
+        link.download = (String(ev.title || 'campus-event').replace(/[^a-z0-9_-]+/gi, '-').replace(/^-|-$/g, '') || 'campus-event') + '.ics';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(href);
+        showToast('Calendar file downloaded. Import the .ics file into your calendar app.', 'success');
       };
     });
 
     const submitEventBtn = document.getElementById('submitEventBtn');
     if (submitEventBtn) {
       submitEventBtn.onclick = () => {
-        showToast("Student Club event proposal form opened.", "info");
+        showToast("Event proposal submission is not connected yet. No proposal was sent.", "info");
       };
     }
   }
