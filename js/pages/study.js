@@ -132,7 +132,7 @@ export function renderStudyAssistant(container) {
                     <span class="font-headline-md text-sm font-bold text-primary block">${auditEscapeHtml(course.progress)}% Completed</span>
                   </div>
                   <div class="w-16 bg-surface-container h-2 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" style="width: ${auditEscapeHtml(course.progress)}%"></div>
+                    <div class="bg-primary h-full rounded-full" style="width: ${Math.min(100, Math.max(0, Number(course.progress) || 0))}%"></div>
                   </div>
                 </div>
               </div>
@@ -380,7 +380,7 @@ export function renderStudyAssistant(container) {
         const unit = btn.getAttribute('data-unit');
         window.location.hash = '#ai-assistant';
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `Explain ${auditEscapeHtml(unit)} from ${auditEscapeHtml(selectedCourseCode)} with practical examples.` } }));
+          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `Explain ${unit} from ${selectedCourseCode} with practical examples.` } }));
         }, 50);
       };
     });
@@ -391,7 +391,7 @@ export function renderStudyAssistant(container) {
         const tool = btn.getAttribute('data-tool');
         window.location.hash = '#ai-assistant';
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `${auditEscapeHtml(tool)} for ${auditEscapeHtml(selectedCourseCode)}` } }));
+          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `${tool} for ${selectedCourseCode}` } }));
         }, 50);
       };
     });
@@ -402,7 +402,7 @@ export function renderStudyAssistant(container) {
         const topic = btn.getAttribute('data-topic');
         window.location.hash = '#ai-assistant';
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `Summarize lecture notes for ${auditEscapeHtml(topic)}` } }));
+          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `Summarize lecture notes for ${topic}` } }));
         }, 50);
       };
     });
@@ -411,7 +411,7 @@ export function renderStudyAssistant(container) {
     container.querySelectorAll('.study-dl-pdf-btn').forEach(btn => {
       btn.onclick = () => {
         const name = btn.getAttribute('data-name');
-        showToast(`Downloaded: ${auditEscapeHtml(name)}`, 'success');
+        showToast('This study item has no attached PDF file yet. Nothing was downloaded.', 'info');
       };
     });
 
@@ -641,7 +641,7 @@ export function renderStudyAssistant(container) {
         const roman = match[1].toUpperCase();
         const raw = match[2].trim();
         const title = raw.split(/\s+-\s+|\n/)[0].replace(/\s+/g, ' ').trim().replace(/[–—-]+$/, '');
-        if (title) units.push({ title: `Unit ${auditEscapeHtml(roman)}: ${auditEscapeHtml(title)}`, status: 'From published syllabus' });
+        if (title) units.push({ title: `Unit ${roman}: ${title}`, status: 'From published syllabus' });
       }
       return {
         syllabusSubjectNumber: number,
