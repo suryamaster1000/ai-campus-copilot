@@ -3,6 +3,12 @@ import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 import { addTaskToSupabase, deleteTaskFromSupabase, toggleTaskInSupabase } from '../app.js';
 
+function auditEscapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
 export function renderTasks(container) {
   let activeTab = "All"; // "All", "todo", "in-progress", "completed"
 
@@ -63,25 +69,25 @@ export function renderTasks(container) {
             return `
               <div class="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm border border-surface-container-high flex items-center justify-between gap-space-md hover:border-primary/40 transition-all ${isCompleted ? 'opacity-70 bg-surface-container-low/40' : ''}">
                 <div class="flex items-start gap-3 min-w-0">
-                  <input type="checkbox" class="task-chk-toggle mt-1 h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer" data-id="${task.id}" ${isCompleted ? 'checked' : ''}/>
+                  <input type="checkbox" class="task-chk-toggle mt-1 h-4 w-4 rounded text-primary focus:ring-primary cursor-pointer" data-id="${auditEscapeHtml(task.id)}" ${isCompleted ? 'checked' : ''}/>
                   <div class="space-y-1 min-w-0">
-                    <h3 class="font-headline-md text-sm font-semibold text-on-surface truncate ${isCompleted ? 'line-through text-outline' : ''}">${task.title}</h3>
+                    <h3 class="font-headline-md text-sm font-semibold text-on-surface truncate ${isCompleted ? 'line-through text-outline' : ''}">${auditEscapeHtml(task.title)}</h3>
                     <div class="flex items-center gap-3 text-xs text-on-surface-variant flex-wrap">
-                      <span class="font-medium px-2 py-0.5 rounded bg-surface-container text-[11px]">${task.course}</span>
+                      <span class="font-medium px-2 py-0.5 rounded bg-surface-container text-[11px]">${auditEscapeHtml(task.course)}</span>
                       <span class="flex items-center gap-1 text-outline">
                         <span class="material-symbols-outlined text-[14px]">event</span>
-                        Due ${task.dueDate}
+                        Due ${auditEscapeHtml(task.dueDate)}
                       </span>
-                      <span class="px-2 py-0.5 rounded text-[10px] font-bold ${task.priorityClass}">${task.priority} Priority</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold ${auditEscapeHtml(task.priorityClass)}">${auditEscapeHtml(task.priority)} Priority</span>
                     </div>
                   </div>
                 </div>
 
                 <div class="flex items-center gap-2 flex-shrink-0">
-                  <button class="task-ai-assist-btn p-2 text-outline hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Ask AI for help on this task" data-title="${task.title}">
+                  <button class="task-ai-assist-btn p-2 text-outline hover:text-primary hover:bg-surface-container rounded-lg transition-colors" title="Ask AI for help on this task" data-title="${auditEscapeHtml(task.title)}">
                     <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
                   </button>
-                  <button class="task-delete-btn p-2 text-outline hover:text-error hover:bg-surface-container rounded-lg transition-colors" title="Delete task" data-id="${task.id}">
+                  <button class="task-delete-btn p-2 text-outline hover:text-error hover:bg-surface-container rounded-lg transition-colors" title="Delete task" data-id="${auditEscapeHtml(task.id)}">
                     <span class="material-symbols-outlined text-[18px]">delete</span>
                   </button>
                 </div>
