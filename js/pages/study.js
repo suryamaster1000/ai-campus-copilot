@@ -3,6 +3,12 @@ import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 import { supabase } from '../supabase.js';
 
+function auditEscapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+
 export function renderStudyAssistant(container) {
   const studyModules = Array.isArray(campusData.studyModules) ? campusData.studyModules : [];
   let selectedCourseCode = studyModules[0]?.code || '';
@@ -47,7 +53,7 @@ export function renderStudyAssistant(container) {
         <div class="max-w-xl">
           <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1.5">Select Course</label>
           <select id="courseSelect" class="w-full h-11 px-3 rounded-xl border border-surface-container-high bg-surface-container-lowest text-sm font-bold text-on-surface outline-none focus:border-primary">
-            ${liveModules.map(m => `<option value="${m.code}" ${m.code === selectedCourseCode ? 'selected' : ''}>${m.code} — ${m.name}</option>`).join('')}
+            ${liveModules.map(m => `<option value="${auditEscapeHtml(m.code)}" ${m.code === selectedCourseCode ? 'selected' : ''}>${auditEscapeHtml(m.code)} — ${auditEscapeHtml(m.name)}</option>`).join('')}
           </select>
         </div>
 
@@ -115,18 +121,18 @@ export function renderStudyAssistant(container) {
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-space-md pb-space-sm border-b border-surface-container">
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed text-xs font-bold">${course.code}</span>
-                    <h2 class="font-headline-md text-lg font-bold text-on-surface">${course.name}</h2>
+                    <span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed text-xs font-bold">${auditEscapeHtml(course.code)}</span>
+                    <h2 class="font-headline-md text-lg font-bold text-on-surface">${auditEscapeHtml(course.name)}</h2>
                   </div>
-                  <p class="text-xs text-on-surface-variant mt-1">Instructor: ${course.faculty} • 4 Credits</p>
+                  <p class="text-xs text-on-surface-variant mt-1">Instructor: ${auditEscapeHtml(course.faculty)} • 4 Credits</p>
                 </div>
                 <div class="flex items-center gap-3">
                   <div class="text-right">
                     <span class="text-xs text-outline font-semibold">Syllabus Progress</span>
-                    <span class="font-headline-md text-sm font-bold text-primary block">${course.progress}% Completed</span>
+                    <span class="font-headline-md text-sm font-bold text-primary block">${auditEscapeHtml(course.progress)}% Completed</span>
                   </div>
                   <div class="w-16 bg-surface-container h-2 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" style="width: ${course.progress}%"></div>
+                    <div class="bg-primary h-full rounded-full" style="width: ${auditEscapeHtml(course.progress)}%"></div>
                   </div>
                 </div>
               </div>
@@ -142,11 +148,11 @@ export function renderStudyAssistant(container) {
                           ${String(unit.status || '') === 'Completed' ? '<span class="material-symbols-outlined text-[18px]">check</span>' : idx + 1}
                         </div>
                         <div>
-                          <h4 class="font-label-md text-sm font-semibold text-on-surface">${unit.title}</h4>
-                          <span class="text-xs ${String(unit.status || '').includes('Current') ? 'text-primary font-bold' : 'text-outline'}">${unit.status}</span>
+                          <h4 class="font-label-md text-sm font-semibold text-on-surface">${auditEscapeHtml(unit.title)}</h4>
+                          <span class="text-xs ${String(unit.status || '').includes('Current') ? 'text-primary font-bold' : 'text-outline'}">${auditEscapeHtml(unit.status)}</span>
                         </div>
                       </div>
-                      <button class="study-explain-unit-btn px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold rounded-lg transition-colors flex items-center gap-1" data-unit="${unit.title}">
+                      <button class="study-explain-unit-btn px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold rounded-lg transition-colors flex items-center gap-1" data-unit="${auditEscapeHtml(unit.title)}">
                         <span class="material-symbols-outlined text-[15px] text-primary">auto_awesome</span>
                         <span>Explain</span>
                       </button>
@@ -176,8 +182,8 @@ export function renderStudyAssistant(container) {
               </div>
               <div class="space-y-2">
                 ${(Array.isArray(course.aiTools) && course.aiTools.length ? course.aiTools : ['Ask AI about this course', 'Generate practice quiz']).map(tool => `
-                  <button class="ai-tool-action-btn w-full p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container rounded-xl text-left transition-all flex items-center justify-between group" data-tool="${tool}">
-                    <span class="text-xs font-semibold text-on-surface group-hover:text-on-secondary-container">${tool}</span>
+                  <button class="ai-tool-action-btn w-full p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container rounded-xl text-left transition-all flex items-center justify-between group" data-tool="${auditEscapeHtml(tool)}">
+                    <span class="text-xs font-semibold text-on-surface group-hover:text-on-secondary-container">${auditEscapeHtml(tool)}</span>
                     <span class="material-symbols-outlined text-primary group-hover:text-on-secondary-container text-[18px]">arrow_forward</span>
                   </button>
                 `).join('')}
@@ -195,11 +201,11 @@ export function renderStudyAssistant(container) {
                   <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-error text-[20px]">picture_as_pdf</span>
                     <div>
-                      <span class="text-xs font-bold text-on-surface block">${course.code}_Syllabus.pdf</span>
+                      <span class="text-xs font-bold text-on-surface block">${auditEscapeHtml(course.code)}_Syllabus.pdf</span>
                       <span class="text-[10px] text-outline">Official syllabus version</span>
                     </div>
                   </div>
-                  <button class="study-dl-pdf-btn p-1.5 text-outline hover:text-primary transition-colors" data-name="${course.code}_Syllabus.pdf">
+                  <button class="study-dl-pdf-btn p-1.5 text-outline hover:text-primary transition-colors" data-name="${auditEscapeHtml(course.code)}_Syllabus.pdf">
                     <span class="material-symbols-outlined text-[18px]">download</span>
                   </button>
                 </div>
@@ -208,11 +214,11 @@ export function renderStudyAssistant(container) {
                   <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-error text-[20px]">picture_as_pdf</span>
                     <div>
-                      <span class="text-xs font-bold text-on-surface block">${course.code}_Formula_CheatSheet.pdf</span>
+                      <span class="text-xs font-bold text-on-surface block">${auditEscapeHtml(course.code)}_Formula_CheatSheet.pdf</span>
                       <span class="text-[10px] text-outline">Big-O &amp; Complexity Tables</span>
                     </div>
                   </div>
-                  <button class="study-dl-pdf-btn p-1.5 text-outline hover:text-primary transition-colors" data-name="${course.code}_Formula_CheatSheet.pdf">
+                  <button class="study-dl-pdf-btn p-1.5 text-outline hover:text-primary transition-colors" data-name="${auditEscapeHtml(course.code)}_Formula_CheatSheet.pdf">
                     <span class="material-symbols-outlined text-[18px]">download</span>
                   </button>
                 </div>
@@ -374,7 +380,7 @@ export function renderStudyAssistant(container) {
         const unit = btn.getAttribute('data-unit');
         window.location.hash = '#ai-assistant';
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `Explain ${unit} from ${selectedCourseCode} with practical examples.` } }));
+          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `Explain ${auditEscapeHtml(unit)} from ${auditEscapeHtml(selectedCourseCode)} with practical examples.` } }));
         }, 50);
       };
     });
@@ -385,7 +391,7 @@ export function renderStudyAssistant(container) {
         const tool = btn.getAttribute('data-tool');
         window.location.hash = '#ai-assistant';
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `${tool} for ${selectedCourseCode}` } }));
+          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `${auditEscapeHtml(tool)} for ${auditEscapeHtml(selectedCourseCode)}` } }));
         }, 50);
       };
     });
@@ -396,7 +402,7 @@ export function renderStudyAssistant(container) {
         const topic = btn.getAttribute('data-topic');
         window.location.hash = '#ai-assistant';
         setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `Summarize lecture notes for ${topic}` } }));
+          window.dispatchEvent(new CustomEvent('campus:askAi', { detail: { query: `Summarize lecture notes for ${auditEscapeHtml(topic)}` } }));
         }, 50);
       };
     });
@@ -405,7 +411,7 @@ export function renderStudyAssistant(container) {
     container.querySelectorAll('.study-dl-pdf-btn').forEach(btn => {
       btn.onclick = () => {
         const name = btn.getAttribute('data-name');
-        showToast(`Downloaded: ${name}`, 'success');
+        showToast(`Downloaded: ${auditEscapeHtml(name)}`, 'success');
       };
     });
 
@@ -413,7 +419,7 @@ export function renderStudyAssistant(container) {
     const uploadNotesBtn = document.getElementById('uploadNotesBtn');
     if (uploadNotesBtn) {
       uploadNotesBtn.onclick = () => {
-        showToast("Select a PDF or image file to upload for AI summarization.", "info");
+        showToast("Notes upload is not connected yet. No file was uploaded.", "info");
       };
     }
 
@@ -635,7 +641,7 @@ export function renderStudyAssistant(container) {
         const roman = match[1].toUpperCase();
         const raw = match[2].trim();
         const title = raw.split(/\s+-\s+|\n/)[0].replace(/\s+/g, ' ').trim().replace(/[–—-]+$/, '');
-        if (title) units.push({ title: `Unit ${roman}: ${title}`, status: 'From published syllabus' });
+        if (title) units.push({ title: `Unit ${auditEscapeHtml(roman)}: ${auditEscapeHtml(title)}`, status: 'From published syllabus' });
       }
       return {
         syllabusSubjectNumber: number,
