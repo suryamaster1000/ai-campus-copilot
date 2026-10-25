@@ -33,6 +33,23 @@
     <div class="bg-white rounded-2xl border border-amber-200 p-4"><div class="text-[11px] uppercase tracking-wider font-bold text-amber-700">Pending</div><div id="summaryPending" class="text-2xl font-extrabold mt-1 text-amber-700">—</div><div class="text-[11px] text-slate-400 mt-1">Awaiting approval</div></div>
     <div class="bg-white rounded-2xl border border-slate-200 p-4"><div class="text-[11px] uppercase tracking-wider font-bold text-slate-500">Teachers</div><div id="summaryTeachers" class="text-2xl font-extrabold mt-1">—</div><div class="text-[11px] text-slate-400 mt-1">In your section</div></div>
   </section>
+  <section class="bg-white rounded-2xl border border-blue-200 p-5">
+    <div class="flex items-center gap-2">
+      <span class="text-blue-700 font-extrabold">＋</span>
+      <h2 class="font-extrabold">Direct Add Student</h2>
+      <span class="px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold">ASSIGNED SECTION ONLY</span>
+    </div>
+    <p class="text-xs text-slate-500 mt-1">Use only for a genuine student missing from the directory. Verify institutional records first. This creates an audited pending exception and does not modify the official admission directory.</p>
+    <form id="directAddStudentForm" class="mt-4 grid sm:grid-cols-2 gap-3">
+      <input id="directAddAdmissionNo" required maxlength="80" autocomplete="off" placeholder="Official admission number" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm">
+      <input id="directAddStudentName" required maxlength="120" autocomplete="name" placeholder="Student full name" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm">
+      <input id="directAddStudentEmail" required type="email" maxlength="254" autocomplete="email" placeholder="Student email address" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm">
+      <div class="flex items-center px-3 py-2.5 rounded-xl bg-slate-100 border border-slate-200 text-sm font-bold text-slate-700">Assigned section: <span id="directAddSectionLabel" class="ml-1">Loading...</span></div>
+      <div class="sm:col-span-2">
+        <button id="directAddStudentSubmit" type="submit" class="px-5 py-2.5 rounded-xl bg-blue-700 text-white text-sm font-bold">Add Student for Review</button>
+      </div>
+    </form>
+  </section>
   <section class="grid lg:grid-cols-2 gap-5">
     <div class="bg-white rounded-2xl border border-slate-200 p-5">
       <div class="flex items-center justify-between gap-3">
@@ -97,6 +114,8 @@ async function start(){
   section=String(access?.assigned_section||'').trim();
   if(user.id!==OWNER&&!section){location.href='teacher-login.html?error=no-section';return;}
   $('scope').textContent='Assigned section: '+(section||'All Sections')+' • Teacher-only management';
+  $('directAddSectionLabel').textContent=section||'Not assigned';
+  $('directAddStudentForm').hidden=!section;
   await Promise.allSettled([loadSubjects(),loadStudents(),loadPending(),loadTeachers()]);
 }
 async function loadSubjects(){
@@ -156,6 +175,28 @@ function renderTeacherList(){
   box.querySelector('[data-remove-teacher]')?.addEventListener('click',async()=>{if(!confirm('Remove this teacher account?'))return;const b=box.querySelector('[data-remove-teacher]');b.disabled=true;b.textContent='Removing...';try{const r=await functionTimeout(supabase.functions.invoke('remove-teacher-account',{body:{teacher_id:t.user_id}}),15000,'Teacher removal');if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Could not remove teacher.');msg('Teacher removed successfully.',true);await loadTeachers();}catch(e){msg(e?.message||'Could not remove teacher.');}finally{b.disabled=false;b.textContent='Remove Teacher';}});
   };
 }
+$('directAddSectionLabel').textContent='Loading...';
+$('directAddStudentForm').onsubmit=async e=>{
+  e.preventDefault();
+  const b=$('directAddStudentSubmit');b.disabled=true;b.textContent='Adding...';
+  const payload={
+    admission_no:$('directAddAdmissionNo').value.trim(),
+    student_name:$('directAddStudentName').value.trim(),
+    email:$('directAddStudentEmail').value.trim(),
+    section
+  };
+  try{
+    if(!section)throw new Error('Your assigned section could not be verified.');
+    if(!payload.admission_no||!payload.student_name||!payload.email)throw new Error('Complete all student fields.');
+    if(!confirm('Add '+payload.student_name+' ('+payload.admission_no+') as a pending exception for '+section+'? Verify the official admission details first.'))return;
+    const r=await functionTimeout(supabase.functions.invoke('direct-add-student',{body:payload}),15000,'Direct add student');
+    if(r.error||r.data?.error)throw new Error(r.data?.error||r.error?.message||'Direct add failed.');
+    msg('Student added as a pending exception. Review and approve it in Pending Approvals.',true);
+    e.target.reset();
+    await Promise.allSettled([loadPending(),loadStudents()]);
+  }catch(error){msg(error?.message||'Direct add failed.');}
+  finally{b.disabled=false;b.textContent='Add Student for Review';}
+};
 $('teacherForm').onsubmit=async e=>{
   e.preventDefault();
   const b=$('addTeacherBtn');b.disabled=true;b.textContent='Creating...';
