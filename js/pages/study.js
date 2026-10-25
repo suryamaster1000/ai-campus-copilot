@@ -3,6 +3,12 @@ import { campusData } from '../data.js';
 import { showToast } from '../components/toast.js';
 import { supabase } from '../supabase.js';
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
+
 export function renderStudyAssistant(container) {
   const studyModules = Array.isArray(campusData.studyModules) ? campusData.studyModules : [];
   let selectedCourseCode = studyModules[0]?.code || '';
@@ -47,7 +53,7 @@ export function renderStudyAssistant(container) {
         <div class="max-w-xl">
           <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1.5">Select Course</label>
           <select id="courseSelect" class="w-full h-11 px-3 rounded-xl border border-surface-container-high bg-surface-container-lowest text-sm font-bold text-on-surface outline-none focus:border-primary">
-            ${liveModules.map(m => `<option value="${m.code}" ${m.code === selectedCourseCode ? 'selected' : ''}>${m.code} — ${m.name}</option>`).join('')}
+            ${liveModules.map(m => `<option value="${escapeHtml(m.code)}" ${m.code === selectedCourseCode ? 'selected' : ''}>${escapeHtml(m.code)} — ${escapeHtml(m.name)}</option>`).join('')}
           </select>
         </div>
 
@@ -115,18 +121,18 @@ export function renderStudyAssistant(container) {
               <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-space-md pb-space-sm border-b border-surface-container">
                 <div>
                   <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed text-xs font-bold">${course.code}</span>
-                    <h2 class="font-headline-md text-lg font-bold text-on-surface">${course.name}</h2>
+                    <span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed text-xs font-bold">${escapeHtml(course.code)}</span>
+                    <h2 class="font-headline-md text-lg font-bold text-on-surface">${escapeHtml(course.name)}</h2>
                   </div>
-                  <p class="text-xs text-on-surface-variant mt-1">Instructor: ${course.faculty} • 4 Credits</p>
+                  <p class="text-xs text-on-surface-variant mt-1">Instructor: ${escapeHtml(course.faculty)} • 4 Credits</p>
                 </div>
                 <div class="flex items-center gap-3">
                   <div class="text-right">
                     <span class="text-xs text-outline font-semibold">Syllabus Progress</span>
-                    <span class="font-headline-md text-sm font-bold text-primary block">${course.progress}% Completed</span>
+                    <span class="font-headline-md text-sm font-bold text-primary block">${Math.round(Math.min(100, Math.max(0, Number(course.progress) || 0)))}% Completed</span>
                   </div>
                   <div class="w-16 bg-surface-container h-2 rounded-full overflow-hidden">
-                    <div class="bg-primary h-full rounded-full" style="width: ${course.progress}%"></div>
+                    <div class="bg-primary h-full rounded-full" style="width: ${Math.round(Math.min(100, Math.max(0, Number(course.progress) || 0)))}%"></div>
                   </div>
                 </div>
               </div>
@@ -142,11 +148,11 @@ export function renderStudyAssistant(container) {
                           ${String(unit.status || '') === 'Completed' ? '<span class="material-symbols-outlined text-[18px]">check</span>' : idx + 1}
                         </div>
                         <div>
-                          <h4 class="font-label-md text-sm font-semibold text-on-surface">${unit.title}</h4>
-                          <span class="text-xs ${String(unit.status || '').includes('Current') ? 'text-primary font-bold' : 'text-outline'}">${unit.status}</span>
+                          <h4 class="font-label-md text-sm font-semibold text-on-surface">${escapeHtml(unit.title)}</h4>
+                          <span class="text-xs ${String(unit.status || '').includes('Current') ? 'text-primary font-bold' : 'text-outline'}">${escapeHtml(unit.status)}</span>
                         </div>
                       </div>
-                      <button class="study-explain-unit-btn px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold rounded-lg transition-colors flex items-center gap-1" data-unit="${unit.title}">
+                      <button class="study-explain-unit-btn px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold rounded-lg transition-colors flex items-center gap-1" data-unit="${escapeHtml(unit.title)}">
                         <span class="material-symbols-outlined text-[15px] text-primary">auto_awesome</span>
                         <span>Explain</span>
                       </button>
@@ -176,8 +182,8 @@ export function renderStudyAssistant(container) {
               </div>
               <div class="space-y-2">
                 ${(Array.isArray(course.aiTools) && course.aiTools.length ? course.aiTools : ['Ask AI about this course', 'Generate practice quiz']).map(tool => `
-                  <button class="ai-tool-action-btn w-full p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container rounded-xl text-left transition-all flex items-center justify-between group" data-tool="${tool}">
-                    <span class="text-xs font-semibold text-on-surface group-hover:text-on-secondary-container">${tool}</span>
+                  <button class="ai-tool-action-btn w-full p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container rounded-xl text-left transition-all flex items-center justify-between group" data-tool="${escapeHtml(tool)}">
+                    <span class="text-xs font-semibold text-on-surface group-hover:text-on-secondary-container">${escapeHtml(tool)}</span>
                     <span class="material-symbols-outlined text-primary group-hover:text-on-secondary-container text-[18px]">arrow_forward</span>
                   </button>
                 `).join('')}
@@ -195,11 +201,11 @@ export function renderStudyAssistant(container) {
                   <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-error text-[20px]">picture_as_pdf</span>
                     <div>
-                      <span class="text-xs font-bold text-on-surface block">${course.code}_Syllabus.pdf</span>
+                      <span class="text-xs font-bold text-on-surface block">${escapeHtml(course.code)}_Syllabus.pdf</span>
                       <span class="text-[10px] text-outline">Official syllabus version</span>
                     </div>
                   </div>
-                  <button class="study-dl-pdf-btn p-1.5 text-outline hover:text-primary transition-colors" data-name="${course.code}_Syllabus.pdf">
+                  <button class="study-dl-pdf-btn p-1.5 text-outline hover:text-primary transition-colors" data-name="${escapeHtml(course.code)}_Syllabus.pdf">
                     <span class="material-symbols-outlined text-[18px]">download</span>
                   </button>
                 </div>
@@ -208,11 +214,11 @@ export function renderStudyAssistant(container) {
                   <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-error text-[20px]">picture_as_pdf</span>
                     <div>
-                      <span class="text-xs font-bold text-on-surface block">${course.code}_Formula_CheatSheet.pdf</span>
+                      <span class="text-xs font-bold text-on-surface block">${escapeHtml(course.code)}_Formula_CheatSheet.pdf</span>
                       <span class="text-[10px] text-outline">Big-O &amp; Complexity Tables</span>
                     </div>
                   </div>
-                  <button class="study-dl-pdf-btn p-1.5 text-outline hover:text-primary transition-colors" data-name="${course.code}_Formula_CheatSheet.pdf">
+                  <button class="study-dl-pdf-btn p-1.5 text-outline hover:text-primary transition-colors" data-name="${escapeHtml(course.code)}_Formula_CheatSheet.pdf">
                     <span class="material-symbols-outlined text-[18px]">download</span>
                   </button>
                 </div>
