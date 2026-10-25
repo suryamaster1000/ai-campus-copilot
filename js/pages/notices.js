@@ -1,5 +1,11 @@
 // Notices Page - Official Campus Bulletins & Circulars
 import { campusData } from '../data.js';
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
 import { showToast } from '../components/toast.js';
 
 export function renderNotices(container) {
@@ -60,7 +66,7 @@ export function renderNotices(container) {
           <!-- Search Input -->
           <div class="relative min-w-[240px]">
             <span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
-            <input id="noticeSearchInput" class="w-full pl-9 pr-4 py-2 bg-surface-container-lowest border border-surface-container-high rounded-xl text-xs font-body-sm text-on-surface placeholder:text-outline outline-none focus:border-primary" placeholder="Search notices, circulars..." value="${searchQuery}" type="text"/>
+            <input id="noticeSearchInput" class="w-full pl-9 pr-4 py-2 bg-surface-container-lowest border border-surface-container-high rounded-xl text-xs font-body-sm text-on-surface placeholder:text-outline outline-none focus:border-primary" placeholder="Search notices, circulars..." value="${escapeHtml(searchQuery)}" type="text"/>
           </div>
         </div>
 
@@ -76,23 +82,23 @@ export function renderNotices(container) {
               <div class="space-y-2">
                 <div class="flex items-center justify-between gap-2 flex-wrap">
                   <div class="flex items-center gap-2">
-                    <span class="px-2 py-0.5 rounded text-[11px] font-bold ${n.badgeClass}">${n.category}</span>
+                    <span class="px-2 py-0.5 rounded text-[11px] font-bold ${n.badgeClass}">${escapeHtml(n.category)}</span>
                     ${n.urgent ? '<span class="px-2 py-0.5 rounded bg-error text-white text-[10px] font-extrabold uppercase tracking-wide">URGENT</span>' : ''}
                     ${!n.read ? '<span class="w-2 h-2 rounded-full bg-primary" title="Unread Notice"></span>' : ''}
                   </div>
-                  <span class="text-xs text-outline font-medium">${n.date}</span>
+                  <span class="text-xs text-outline font-medium">${escapeHtml(n.date)}</span>
                 </div>
 
                 <div>
-                  <h3 class="font-headline-md text-base lg:text-lg font-bold text-on-surface">${n.title}</h3>
+                  <h3 class="font-headline-md text-base lg:text-lg font-bold text-on-surface">${escapeHtml(n.title)}</h3>
                   <p class="text-xs text-outline font-medium mt-0.5 flex items-center gap-1">
                     <span class="material-symbols-outlined text-[15px]">corporate_fare</span>
-                    ${n.author || 'Office of Academic Affairs'}
+                    ${escapeHtml(n.author || 'Office of Academic Affairs')}
                   </p>
                 </div>
 
                 <p class="font-body-md text-sm text-on-surface-variant leading-relaxed">
-                  ${n.summary}
+                  ${escapeHtml(n.summary)}
                 </p>
 
                 ${n.attachment ? `
@@ -102,11 +108,11 @@ export function renderNotices(container) {
                         <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                       </div>
                       <div>
-                        <span class="font-label-sm text-xs font-bold text-on-surface block">${n.attachment}</span>
-                        <span class="text-[10px] text-outline">Official PDF document • ${n.fileSize}</span>
+                        <span class="font-label-sm text-xs font-bold text-on-surface block">${escapeHtml(n.attachment)}</span>
+                        <span class="text-[10px] text-outline">Official PDF document • ${escapeHtml(n.fileSize)}</span>
                       </div>
                     </div>
-                    <button class="download-doc-btn px-3 py-1.5 bg-surface-container-high hover:bg-secondary-container text-on-secondary-container text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 self-start sm:self-center" data-file="${n.attachment}">
+                    <button class="download-doc-btn px-3 py-1.5 bg-surface-container-high hover:bg-secondary-container text-on-secondary-container text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 self-start sm:self-center" data-file="${escapeHtml(n.attachment)}">
                       <span class="material-symbols-outlined text-[16px]">download</span>
                       <span>Download</span>
                     </button>
@@ -116,9 +122,9 @@ export function renderNotices(container) {
 
               <!-- Bottom Action Bar -->
               <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs">
-                <span class="text-outline">Notice Ref: ${n.id}</span>
+                <span class="text-outline">Notice Ref: ${escapeHtml(n.id)}</span>
                 <div class="flex items-center gap-2">
-                  <button class="notice-query-ai-btn text-primary font-bold hover:underline flex items-center gap-1" data-query="Explain notice: ${n.title}">
+                  <button class="notice-query-ai-btn text-primary font-bold hover:underline flex items-center gap-1" data-query="Explain notice: ${escapeHtml(n.title)}">
                     <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
                     Ask Copilot to explain
                   </button>
