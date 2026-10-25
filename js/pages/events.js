@@ -1,5 +1,11 @@
 // Events Page - Campus Happenings, Hackathons & Tech Talks
 import { campusData } from '../data.js';
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
 import { showToast } from '../components/toast.js';
 
 export function renderEvents(container) {
@@ -59,7 +65,7 @@ export function renderEvents(container) {
               <div class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg shadow-sm border border-surface-container-high flex flex-col justify-between gap-space-md hover:shadow-md transition-all">
                 <div class="space-y-3">
                   <div class="flex items-center justify-between gap-2 flex-wrap">
-                    <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold">${event.category || event.type || 'Campus Event'}</span>
+                    <span class="px-2.5 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-bold">${escapeHtml(event.category || event.type || 'Campus Event')}</span>
                     <span class="text-xs text-outline font-semibold flex items-center gap-1">
                       <span class="material-symbols-outlined text-[16px]">group</span>
                       ${Number(event.attendees || 0) + (isReg ? 1 : 0)} Attending
@@ -67,36 +73,36 @@ export function renderEvents(container) {
                   </div>
 
                   <div>
-                    <h3 class="font-headline-md text-lg font-bold text-on-surface leading-snug">${event.title}</h3>
+                    <h3 class="font-headline-md text-lg font-bold text-on-surface leading-snug">${escapeHtml(event.title)}</h3>
                     <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">
-                      ${event.description}
+                      ${escapeHtml(event.description)}
                     </p>
                   </div>
 
                   <div class="p-3 bg-surface-container-low rounded-xl space-y-1.5 text-xs">
                     <div class="flex items-center gap-2 text-on-surface font-semibold">
                       <span class="material-symbols-outlined text-[16px] text-primary">calendar_today</span>
-                      <span>${event.date || 'Date not assigned'} • ${event.time || 'Time not assigned'}</span>
+                      <span>${escapeHtml(event.date || 'Date not assigned')} • ${escapeHtml(event.time || 'Time not assigned')}</span>
                     </div>
                     <div class="flex items-center gap-2 text-on-surface-variant">
                       <span class="material-symbols-outlined text-[16px] text-outline">location_on</span>
-                      <span>${event.venue}</span>
+                      <span>${escapeHtml(event.venue)}</span>
                     </div>
                   </div>
 
                   <div class="flex flex-wrap gap-1.5 pt-1">
                     ${(event.tags || []).map(t => `
-                      <span class="text-[10px] font-semibold bg-surface-container px-2 py-0.5 rounded-md text-outline">#${t}</span>
+                      <span class="text-[10px] font-semibold bg-surface-container px-2 py-0.5 rounded-md text-outline">#${escapeHtml(t)}</span>
                     `).join('')}
                   </div>
                 </div>
 
                 <div class="flex items-center justify-between pt-3 border-t border-surface-container">
-                  <button class="event-cal-btn text-xs font-semibold text-outline hover:text-on-surface flex items-center gap-1" data-id="${event.id}">
+                  <button class="event-cal-btn text-xs font-semibold text-outline hover:text-on-surface flex items-center gap-1" data-id="${escapeHtml(event.id)}">
                     <span class="material-symbols-outlined text-[16px]">event_repeat</span>
                     <span>Sync to Calendar</span>
                   </button>
-                  <button class="event-reg-btn px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${isReg ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-primary text-on-primary hover:bg-tertiary-container'}" data-id="${event.id}">
+                  <button class="event-reg-btn px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 ${isReg ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-primary text-on-primary hover:bg-tertiary-container'}" data-id="${escapeHtml(event.id)}">
                     <span class="material-symbols-outlined text-[16px]">${isReg ? 'check_circle' : 'how_to_reg'}</span>
                     <span>${isReg ? 'Registered' : 'Register Now'}</span>
                   </button>
