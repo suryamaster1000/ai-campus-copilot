@@ -1,5 +1,11 @@
 // Global ⌘K Command Palette and Campus Search Modal
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
+
 export function initCommandPalette(onNavigate, onAiQuery) {
   let modal = document.getElementById('command-palette-modal');
   if (!modal) {
@@ -65,9 +71,9 @@ export function initCommandPalette(onNavigate, onAiQuery) {
     if (filtered.length === 0) {
       resultsContainer.innerHTML = `
         <div class="p-6 text-center text-outline">
-          <p class="font-body-md text-sm">No exact matches found for "${query}"</p>
+          <p class="font-body-md text-sm">No exact matches found for "${escapeHtml(query)}"</p>
           <button class="mt-3 px-3 py-1.5 bg-primary text-on-primary rounded-xl font-label-md text-xs hover:bg-tertiary-container transition-colors" id="ask-ai-search-btn">
-            Ask Copilot: "${query}"
+            Ask Copilot: "${escapeHtml(query)}"
           </button>
         </div>
       `;
@@ -86,17 +92,17 @@ export function initCommandPalette(onNavigate, onAiQuery) {
     filtered.forEach((item, index) => {
       if (item.category !== currentCat) {
         currentCat = item.category;
-        html += `<div class="px-3 py-1.5 text-[11px] font-label-sm font-semibold uppercase text-outline tracking-wider">${currentCat}</div>`;
+        html += `<div class="px-3 py-1.5 text-[11px] font-label-sm font-semibold uppercase text-outline tracking-wider">${escapeHtml(currentCat)}</div>`;
       }
       html += `
         <div class="palette-item p-2.5 rounded-xl hover:bg-surface-container flex items-center justify-between cursor-pointer transition-colors group" data-index="${index}">
           <div class="flex items-center gap-3">
             <div class="w-8 h-8 rounded-lg bg-surface-container-high text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-on-primary transition-colors">
-              <span class="material-symbols-outlined text-[18px]">${item.icon}</span>
+              <span class="material-symbols-outlined text-[18px]">${escapeHtml(item.icon)}</span>
             </div>
             <div>
-              <div class="font-label-md text-on-surface font-semibold text-sm">${item.title}</div>
-              <div class="font-body-sm text-xs text-on-surface-variant">${item.desc}</div>
+              <div class="font-label-md text-on-surface font-semibold text-sm">${escapeHtml(item.title)}</div>
+              <div class="font-body-sm text-xs text-on-surface-variant">${escapeHtml(item.desc)}</div>
             </div>
           </div>
           <span class="material-symbols-outlined text-outline text-[16px] group-hover:text-primary">arrow_forward</span>
