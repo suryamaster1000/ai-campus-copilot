@@ -308,7 +308,7 @@ export function renderAdminPanel(container) {
     }
 
     if (!window.confirm(
-      'Approve and accept all ' + pending.length + ' pending student registrations?\\n\\n' +
+      'Approve and accept all ' + pending.length + ' pending student registrations?\n\n' +
       'This will create their student accounts and mark the registrations as linked. ' +
       'The action will process students one by one.'
     )) return;
