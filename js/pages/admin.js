@@ -49,7 +49,7 @@ export function renderAdminPanel(container) {
           <h2 class="font-headline-md text-base font-bold text-on-surface">Direct Add Student</h2>
           <span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">STAFF</span>
         </div>
-        <p class="text-xs text-on-surface-variant mt-1">For a genuine student missing from the directory. Verify admission details before adding. This creates a pending registration; the student account is created only when staff approve it.</p>
+        <p class="text-xs text-on-surface-variant mt-1">For a genuine student missing from the directory. Verify institutional records before adding. This creates an audited pending exception and does not change the official admission directory; staff approval is still required.</p>
         <form id="directAddStudentForm" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
           <label class="text-xs font-semibold text-on-surface-variant">Admission number
             <input id="directAddAdmissionNo" required maxlength="80" autocomplete="off" class="mt-1 w-full px-3 py-2 rounded-lg border border-surface-container-high bg-white text-sm" placeholder="Enter official admission number">
