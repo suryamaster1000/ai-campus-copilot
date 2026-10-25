@@ -1,5 +1,11 @@
 // Dashboard Page - Student Academic Hub
 import { campusData } from '../data.js';
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
 import { showToast } from '../components/toast.js';
 
 export function renderDashboard(container) {
@@ -63,14 +69,14 @@ export function renderDashboard(container) {
             </span>
           </div>
           <div class="my-2">
-            <h3 class="font-headline-md text-lg font-bold text-on-surface">${currentClass ? `${currentClass.code} - ${currentClass.name}` : 'No timetable data yet'}</h3>
+            <h3 class="font-headline-md text-lg font-bold text-on-surface">${currentClass ? `${escapeHtml(currentClass.code)} - ${escapeHtml(currentClass.name)}` : 'No timetable data yet'}</h3>
             <p class="text-xs text-on-surface-variant flex items-center gap-1 mt-1">
               <span class="material-symbols-outlined text-[16px] text-outline">room</span>
-              ${currentClass?.room || 'Add timetable data'}
+              ${escapeHtml(currentClass?.room || 'Add timetable data')}
             </p>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs">
-            <span class="text-on-surface-variant font-medium">${currentClass?.faculty || 'Not assigned'}</span>
+            <span class="text-on-surface-variant font-medium">${escapeHtml(currentClass?.faculty || 'Not assigned')}</span>
             <button class="text-primary font-bold hover:underline flex items-center gap-0.5" onclick="window.location.hash='#timetable'">
               Timetable <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
             </button>
@@ -85,7 +91,7 @@ export function renderDashboard(container) {
           </div>
           <div class="my-2">
             <div class="flex items-baseline gap-2">
-              <span class="font-headline-lg text-3xl font-extrabold text-on-surface">${campusData.student.attendanceOverall || '—'}</span>
+              <span class="font-headline-lg text-3xl font-extrabold text-on-surface">${escapeHtml(campusData.student.attendanceOverall || '—')}</span>
               <span class="text-xs text-outline font-medium">min 75% required</span>
             </div>
             <div class="w-full bg-surface-container h-2 rounded-full mt-2 overflow-hidden">
@@ -131,11 +137,11 @@ export function renderDashboard(container) {
           </div>
           <div class="my-2">
             <div class="flex items-baseline gap-2">
-              <span class="font-headline-lg text-3xl font-extrabold text-on-surface">${campusData.student?.cgpa || '—'}</span>
+              <span class="font-headline-lg text-3xl font-extrabold text-on-surface">${escapeHtml(campusData.student?.cgpa || '—')}</span>
               <span class="text-xs text-outline font-medium">Current scale</span>
             </div>
             <p class="text-xs text-on-surface-variant mt-2">
-              ${campusData.student?.creditsCompleted || 0} of ${campusData.student?.totalCredits || 0} credits completed
+              ${escapeHtml(campusData.student?.creditsCompleted || 0)} of ${escapeHtml(campusData.student?.totalCredits || 0)} credits completed
             </p>
           </div>
           <div class="flex items-center justify-between pt-2 border-t border-surface-container text-xs text-outline">
@@ -169,28 +175,28 @@ export function renderDashboard(container) {
                 <div class="p-3.5 rounded-xl border ${cls.isCurrent ? 'bg-primary-fixed/20 border-primary shadow-sm ring-1 ring-primary/30' : 'bg-surface-container-low border-surface-container-high'} flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div class="flex items-start gap-3">
                     <div class="w-12 h-12 rounded-xl ${cls.isCurrent ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface'} flex flex-col items-center justify-center flex-shrink-0 font-bold">
-                      <span class="text-[11px] uppercase">${cls.time.split(' ')[0]}</span>
-                      <span class="text-[9px] opacity-80">${cls.type}</span>
+                      <span class="text-[11px] uppercase">${escapeHtml(String(cls.time || '').split(' ')[0])}</span>
+                      <span class="text-[9px] opacity-80">${escapeHtml(cls.type)}</span>
                     </div>
                     <div>
                       <div class="flex items-center gap-2">
-                        <span class="px-1.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold">${cls.code}</span>
-                        <h4 class="font-headline-md font-bold text-sm text-on-surface">${cls.name}</h4>
+                        <span class="px-1.5 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed text-[10px] font-bold">${escapeHtml(cls.code)}</span>
+                        <h4 class="font-headline-md font-bold text-sm text-on-surface">${escapeHtml(cls.name)}</h4>
                         ${cls.isCurrent ? '<span class="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full font-bold">LIVE NOW</span>' : ''}
                       </div>
                       <p class="text-xs text-on-surface-variant mt-1 flex items-center gap-2">
-                        <span>📍 ${cls.room}</span>
+                        <span>📍 ${escapeHtml(cls.room)}</span>
                         <span>•</span>
-                        <span>👤 ${cls.faculty}</span>
+                        <span>👤 ${escapeHtml(cls.faculty)}</span>
                       </p>
                     </div>
                   </div>
                   <div class="flex items-center gap-2 self-start sm:self-center">
-                    <button class="dash-route-btn px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold rounded-lg transition-colors flex items-center gap-1" data-room="${cls.room}">
+                    <button class="dash-route-btn px-3 py-1.5 bg-surface-container hover:bg-surface-container-high text-on-surface text-xs font-semibold rounded-lg transition-colors flex items-center gap-1" data-room="${escapeHtml(cls.room)}">
                       <span class="material-symbols-outlined text-[15px] text-primary">navigation</span>
                       <span>Route</span>
                     </button>
-                    <button class="dash-ask-class-btn px-3 py-1.5 bg-primary-container hover:bg-primary text-on-primary-container hover:text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1" data-query="Explain syllabus topics for ${cls.code}">
+                    <button class="dash-ask-class-btn px-3 py-1.5 bg-primary-container hover:bg-primary text-on-primary-container hover:text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1" data-query="Explain syllabus topics for ${escapeHtml(cls.code)}">
                       <span class="material-symbols-outlined text-[15px]">smart_toy</span>
                       <span>Ask AI</span>
                     </button>
@@ -220,7 +226,7 @@ export function renderDashboard(container) {
                 </div>
               </button>
 
-              <button class="dash-quick-query p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container text-left rounded-xl transition-all group flex items-start gap-3" data-query="What is my attendance percentage in ${primarySubject?.code || "my subjects"}?">
+              <button class="dash-quick-query p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container text-left rounded-xl transition-all group flex items-start gap-3" data-query="What is my attendance percentage in ${escapeHtml(primarySubject?.code || "my subjects")}?">
                 <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-emerald-600 flex-shrink-0 group-hover:scale-105 transition-transform">
                   <span class="material-symbols-outlined text-[18px]">percent</span>
                 </div>
@@ -236,11 +242,11 @@ export function renderDashboard(container) {
                 </div>
                 <div>
                   <h4 class="font-label-md font-bold text-xs text-on-surface group-hover:text-on-secondary-container">Midterm Schedule</h4>
-                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">${nextExam ? `Next: ${nextExam.exam_type || "Exam"} on ${nextExam.exam_date}` : "No exam data loaded"}</p>
+                  <p class="text-[11px] text-on-surface-variant group-hover:text-on-secondary-container/80 mt-0.5">${nextExam ? `Next: ${escapeHtml(nextExam.exam_type || "Exam")} on ${escapeHtml(nextExam.exam_date)}` : "No exam data loaded"}</p>
                 </div>
               </button>
 
-              <button class="dash-quick-query p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container text-left rounded-xl transition-all group flex items-start gap-3" data-query="Summarize the notes for ${primarySubject?.code || "my current subject"}">
+              <button class="dash-quick-query p-3 bg-surface-container-low hover:bg-secondary-container hover:text-on-secondary-container text-left rounded-xl transition-all group flex items-start gap-3" data-query="Summarize the notes for ${escapeHtml(primarySubject?.code || "my current subject")}">
                 <div class="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-secondary flex-shrink-0 group-hover:scale-105 transition-transform">
                   <span class="material-symbols-outlined text-[18px]">auto_stories</span>
                 </div>
@@ -268,11 +274,11 @@ export function renderDashboard(container) {
                 <div class="p-3 bg-surface-container-low rounded-xl flex items-start justify-between gap-3 hover:bg-surface-container transition-colors cursor-pointer notice-card-link" onclick="window.location.hash='#notices'">
                   <div class="space-y-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
-                      <span class="px-2 py-0.5 rounded text-[10px] font-bold ${n.badgeClass}">${n.category}</span>
-                      <span class="text-xs text-outline font-medium">${n.date}</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold ${n.badgeClass}">${escapeHtml(n.category)}</span>
+                      <span class="text-xs text-outline font-medium">${escapeHtml(n.date)}</span>
                     </div>
-                    <h4 class="font-label-md font-bold text-sm text-on-surface truncate">${n.title}</h4>
-                    <p class="text-xs text-on-surface-variant line-clamp-1">${n.summary}</p>
+                    <h4 class="font-label-md font-bold text-sm text-on-surface truncate">${escapeHtml(n.title)}</h4>
+                    <p class="text-xs text-on-surface-variant line-clamp-1">${escapeHtml(n.summary)}</p>
                   </div>
                   <span class="material-symbols-outlined text-outline text-[18px] flex-shrink-0 mt-1">arrow_forward</span>
                 </div>
@@ -299,11 +305,11 @@ export function renderDashboard(container) {
             <div class="space-y-2" id="dashTasksList">
               ${upcomingTasks.map(task => `
                 <div class="p-2.5 bg-surface-container-low rounded-xl flex items-start gap-2.5">
-                  <input type="checkbox" class="mt-1 rounded text-primary focus:ring-primary h-4 w-4 dash-task-chk" data-id="${task.id}" ${task.status === 'completed' ? 'checked' : ''}/>
+                  <input type="checkbox" class="mt-1 rounded text-primary focus:ring-primary h-4 w-4 dash-task-chk" data-id="${escapeHtml(task.id)}" ${task.status === 'completed' ? 'checked' : ''}/>
                   <div class="min-w-0 flex-1">
-                    <p class="text-xs font-semibold text-on-surface leading-tight ${task.status === 'completed' ? 'line-through text-outline' : ''}">${task.title}</p>
+                    <p class="text-xs font-semibold text-on-surface leading-tight ${task.status === 'completed' ? 'line-through text-outline' : ''}">${escapeHtml(task.title)}</p>
                     <div class="flex items-center gap-2 mt-1">
-                      <span class="text-[10px] text-outline">${task.course}</span>
+                      <span class="text-[10px] text-outline">${escapeHtml(task.course)}</span>
                       <span class="text-[10px] font-bold px-1.5 py-0.2 rounded ${task.priorityClass}">${task.dueBadge}</span>
                     </div>
                   </div>
@@ -320,7 +326,7 @@ export function renderDashboard(container) {
             </div>
             <div class="p-3 bg-surface-container-low rounded-xl">
               <p class="text-xs font-semibold text-on-surface">${campusData.exams?.length ? `${campusData.exams.length} exam record(s) connected for your term.` : "No exam dates are currently connected."}</p>
-              ${campusData.exams?.[0] ? `<p class="text-[11px] text-on-surface-variant mt-1">Next connected exam: ${campusData.exams[0].exam_type || "Examination"} on ${campusData.exams[0].exam_date || "date not assigned"}${campusData.exams[0].room ? " • " + campusData.exams[0].room : ""}</p>` : ""}
+              ${campusData.exams?.[0] ? `<p class="text-[11px] text-on-surface-variant mt-1">Next connected exam: ${escapeHtml(campusData.exams[0].exam_type || "Examination")} on ${escapeHtml(campusData.exams[0].exam_date || "date not assigned")}${campusData.exams[0].room ? " • " + escapeHtml(campusData.exams[0].room) : ""}</p>` : ""}
             </div>
           </div>
 
