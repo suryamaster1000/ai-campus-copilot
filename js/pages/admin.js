@@ -43,6 +43,38 @@ export function renderAdminPanel(container) {
 
       <div id="ownerControlCenter" class="space-y-space-md"></div>
 
+      <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-primary/30 shadow-sm">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary">person_add</span>
+          <h2 class="font-headline-md text-base font-bold text-on-surface">Direct Add Student</h2>
+          <span class="px-2 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] font-bold">STAFF</span>
+        </div>
+        <p class="text-xs text-on-surface-variant mt-1">For a genuine student missing from the directory. Verify admission details before adding. This creates a pending registration; the student account is created only when staff approve it.</p>
+        <form id="directAddStudentForm" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label class="text-xs font-semibold text-on-surface-variant">Admission number
+            <input id="directAddAdmissionNo" required maxlength="80" autocomplete="off" class="mt-1 w-full px-3 py-2 rounded-lg border border-surface-container-high bg-white text-sm" placeholder="Enter official admission number">
+          </label>
+          <label class="text-xs font-semibold text-on-surface-variant">Student full name
+            <input id="directAddStudentName" required maxlength="120" autocomplete="name" class="mt-1 w-full px-3 py-2 rounded-lg border border-surface-container-high bg-white text-sm" placeholder="Enter verified name">
+          </label>
+          <label class="text-xs font-semibold text-on-surface-variant">Student email
+            <input id="directAddStudentEmail" required type="email" maxlength="254" autocomplete="email" class="mt-1 w-full px-3 py-2 rounded-lg border border-surface-container-high bg-white text-sm" placeholder="student@example.com">
+          </label>
+          <label class="text-xs font-semibold text-on-surface-variant">Section
+            <select id="directAddStudentSection" required class="mt-1 w-full px-3 py-2 rounded-lg border border-surface-container-high bg-white text-sm">
+              <option value="">Select section</option>
+              ${OWNER_SECTIONS.map(section => `<option value="${section}">${section}</option>`).join('')}
+            </select>
+          </label>
+          <div class="md:col-span-2 flex flex-wrap items-center gap-3">
+            <button id="directAddStudentSubmit" type="submit" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-bold">
+              <span class="material-symbols-outlined text-[18px]">person_add</span> Add Student
+            </button>
+            <span class="text-[11px] text-on-surface-variant">Teachers can add only to their assigned section. Admins can select CSM1–CSM8.</span>
+          </div>
+        </form>
+      </section>
+
       <section class="bg-surface-container-lowest rounded-2xl p-space-md lg:p-space-lg border border-surface-container-high shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="flex items-center gap-2">
@@ -1109,6 +1141,37 @@ export function renderAdminPanel(container) {
       }
     });
   }
+
+  const directAddStudentForm = document.getElementById('directAddStudentForm');
+  directAddStudentForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const submit = document.getElementById('directAddStudentSubmit');
+    const admissionNo = document.getElementById('directAddAdmissionNo')?.value.trim();
+    const studentName = document.getElementById('directAddStudentName')?.value.trim();
+    const email = document.getElementById('directAddStudentEmail')?.value.trim();
+    const section = document.getElementById('directAddStudentSection')?.value;
+    if (!admissionNo || !studentName || !email || !section) {
+      showToast('Complete all direct-add fields.', 'error');
+      return;
+    }
+    if (!confirm('Add ' + studentName + ' (' + admissionNo + ') to ' + section + '? Verify the admission details before continuing.')) return;
+    if (submit) { submit.disabled = true; submit.textContent = 'Adding student...'; }
+    try {
+      const { data, error } = await supabase.functions.invoke('direct-add-student', {
+        body: { admission_no: admissionNo, student_name: studentName, email, section }
+      });
+      if (error || data?.error || !data?.ok) {
+        throw new Error(data?.error || error?.message || 'Direct add failed.');
+      }
+      showToast('Student added. Review the pending registration below to create the account.', 'success');
+      directAddStudentForm.reset();
+      await loadStudentRegistrations();
+    } catch (error) {
+      showToast(error?.message || 'Unable to add student.', 'error');
+    } finally {
+      if (submit) { submit.disabled = false; submit.innerHTML = '<span class="material-symbols-outlined text-[18px]">person_add</span> Add Student'; }
+    }
+  });
 
   const adminAiForm = document.getElementById('adminAiForm');
   const adminAiInput = document.getElementById('adminAiInput');
