@@ -4,7 +4,13 @@ import { supabase } from '../supabase.js';
 import { showToast } from '../components/toast.js';
 
 function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>\"']/g, (ch) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '\"':'&quot;', \"'\":'&#39;' }[ch]));
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[ch]));
 }
 
 export function renderSettings(container) {
