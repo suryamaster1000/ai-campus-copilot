@@ -1,5 +1,11 @@
 // Timetable Page - Date + Day based academic schedule
 import { campusData } from '../data.js';
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
 import { showToast } from '../components/toast.js';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -213,25 +219,25 @@ export function renderTimetable(container) {
                   ${filteredClasses.map(cls => `
                     <div class="grid grid-cols-[150px_minmax(0,1fr)_115px_130px] items-center px-space-md lg:px-space-lg py-4 border-b last:border-b-0 border-surface-container-high ${cls.displayStatus === 'current' ? 'bg-primary-fixed/30' : ''}">
                       <div>
-                        <div class="text-sm font-bold text-on-surface">${cls.time}</div>
+                        <div class="text-sm font-bold text-on-surface">${escapeHtml(cls.time)}</div>
                         <div class="text-[11px] text-on-surface-variant mt-0.5">${cls.displayStatus === 'current' ? 'Happening now' : cls.displayStatus === 'completed' ? 'Completed' : 'Upcoming'}</div>
                       </div>
 
                       <div class="flex items-center gap-3 pr-3">
                         <div class="w-9 h-9 rounded-xl bg-primary-fixed text-on-primary-fixed flex items-center justify-center text-[11px] font-black flex-shrink-0">
-                          ${cls.code || '—'}
+                          ${escapeHtml(cls.code || '—')}
                         </div>
                         <div class="min-w-0">
-                          <div class="text-sm font-bold text-on-surface truncate">${cls.name}</div>
+                          <div class="text-sm font-bold text-on-surface truncate">${escapeHtml(cls.name)}</div>
                           <div class="flex items-center gap-2 flex-wrap mt-0.5 text-[11px] text-on-surface-variant">
-                            <span>${cls.type || 'Lecture'}</span>
+                            <span>${escapeHtml(cls.type || 'Lecture')}</span>
                             <span>•</span>
-                            <span>${cls.faculty || 'Faculty not assigned'}</span>
+                            <span>${escapeHtml(cls.faculty || 'Faculty not assigned')}</span>
                           </div>
                         </div>
                       </div>
 
-                      <div class="text-xs font-semibold text-on-surface-variant">${cls.room || 'Room not assigned'}</div>
+                      <div class="text-xs font-semibold text-on-surface-variant">${escapeHtml(cls.room || 'Room not assigned')}</div>
 
                       <div>
                         ${cls.displayStatus === 'current'
@@ -269,9 +275,9 @@ export function renderTimetable(container) {
                       Current Class
                     </div>
                     <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                      <div class="text-sm font-bold text-on-surface">${currentClass.name}</div>
-                      <div class="text-xs text-on-surface-variant mt-1">${currentClass.time}</div>
-                      <div class="text-[11px] text-on-surface-variant mt-1">${currentClass.room}</div>
+                      <div class="text-sm font-bold text-on-surface">${escapeHtml(currentClass.name)}</div>
+                      <div class="text-xs text-on-surface-variant mt-1">${escapeHtml(currentClass.time)}</div>
+                      <div class="text-[11px] text-on-surface-variant mt-1">${escapeHtml(currentClass.room)}</div>
                     </div>
                   </div>
                 ` : ''}
@@ -283,9 +289,9 @@ export function renderTimetable(container) {
                       Next Class
                     </div>
                     <div class="p-3 rounded-xl bg-blue-50 border border-blue-200">
-                      <div class="text-sm font-bold text-on-surface">${nextClass.name}</div>
-                      <div class="text-xs text-on-surface-variant mt-1">${nextClass.time}</div>
-                      <div class="text-[11px] text-on-surface-variant mt-1">${nextClass.room}</div>
+                      <div class="text-sm font-bold text-on-surface">${escapeHtml(nextClass.name)}</div>
+                      <div class="text-xs text-on-surface-variant mt-1">${escapeHtml(nextClass.time)}</div>
+                      <div class="text-[11px] text-on-surface-variant mt-1">${escapeHtml(nextClass.room)}</div>
                     </div>
                   </div>
                 ` : isToday ? `
@@ -335,7 +341,7 @@ export function renderTimetable(container) {
             <div>
               <h4 class="font-label-md text-sm font-bold text-on-surface">Official Academic Rules</h4>
               <p class="text-xs text-on-surface-variant">
-                ${campusData.academicRules?.length ? `${campusData.academicRules[0].title}: ${campusData.academicRules[0].content}` : 'No academic rule has been published for your current term.'}
+                ${campusData.academicRules?.length ? `${escapeHtml(campusData.academicRules[0].title)}: ${escapeHtml(campusData.academicRules[0].content)}` : 'No academic rule has been published for your current term.'}
               </p>
             </div>
           </div>
