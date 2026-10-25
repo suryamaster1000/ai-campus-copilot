@@ -5,6 +5,12 @@ import { initCommandPalette } from './components/command-palette.js?v=20261025-a
 import { showToast } from './components/toast.js?v=20261003-live1';
 import { initErrorReportUI } from './error-reporter.js?v=20261008-error1';
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[ch]));
+}
+
 // ─── Supabase Auth Guard ───────────────────────────────────────────────────
 let currentUser = null;
 let authReady = false;
@@ -865,13 +871,13 @@ function initNotificationsDropdown() {
         </div>
         <div class="space-y-2 max-h-72 overflow-y-auto custom-scrollbar" id="notifList">
           ${campusData.notices.slice(0, 3).map(n => `
-            <div class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer notif-item" data-id="${n.id}">
+            <div class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer notif-item" data-id="${escapeHtml(n.id)}">
               <div class="flex items-center justify-between text-[11px] mb-1">
-                <span class="font-bold ${n.badgeClass} px-1.5 py-0.2 rounded">${n.category}</span>
-                <span class="text-outline">${n.date}</span>
+                <span class="font-bold ${n.badgeClass} px-1.5 py-0.2 rounded">${escapeHtml(n.category)}</span>
+                <span class="text-outline">${escapeHtml(n.date)}</span>
               </div>
-              <h5 class="font-label-md text-xs font-bold text-on-surface line-clamp-1">${n.title}</h5>
-              <p class="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">${n.summary}</p>
+              <h5 class="font-label-md text-xs font-bold text-on-surface line-clamp-1">${escapeHtml(n.title)}</h5>
+              <p class="text-[11px] text-on-surface-variant line-clamp-1 mt-0.5">${escapeHtml(n.summary)}</p>
             </div>
           `).join('')}
         </div>
