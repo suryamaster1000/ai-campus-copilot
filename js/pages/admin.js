@@ -443,10 +443,10 @@ export function renderAdminPanel(container) {
       const rowOwner = a.user_id === OWNER_USER_ID || a.role === 'owner';
       return `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-surface-container-low border border-surface-container-high">
         <div class="min-w-0">
-          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] ${rowOwner ? 'text-primary' : 'text-emerald-600'}">${rowOwner ? 'verified_user' : 'admin_panel_settings'}</span><span class="text-sm font-bold truncate">${p.name || 'Authorized account'}</span><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${rowOwner ? 'bg-primary-fixed text-on-primary-fixed' : 'bg-emerald-100 text-emerald-800'}">${rowOwner ? 'OWNER' : 'ADMIN'}</span></div>
-          <p class="text-[11px] text-on-surface-variant mt-0.5 ml-6 truncate">${p.email || a.user_id}</p>
+          <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] ${rowOwner ? 'text-primary' : 'text-emerald-600'}">${rowOwner ? 'verified_user' : 'admin_panel_settings'}</span><span class="text-sm font-bold truncate">${escReportValue(p.name || 'Authorized account')}</span><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${rowOwner ? 'bg-primary-fixed text-on-primary-fixed' : 'bg-emerald-100 text-emerald-800'}">${rowOwner ? 'OWNER' : 'ADMIN'}</span></div>
+          <p class="text-[11px] text-on-surface-variant mt-0.5 ml-6 truncate">${escReportValue(p.email || a.user_id)}</p>
         </div>
-        ${owner && !rowOwner ? `<button data-revoke="${a.user_id}" class="px-3 py-2 rounded-lg bg-error-container text-on-error-container text-xs font-bold">Revoke Admin</button>` : ''}
+        ${owner && !rowOwner ? `<button data-revoke="${escReportValue(a.user_id)}" class="px-3 py-2 rounded-lg bg-error-container text-on-error-container text-xs font-bold">Revoke Admin</button>` : ''}
       </div>`;
     }).join('');
 
@@ -466,7 +466,7 @@ export function renderAdminPanel(container) {
             <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
               <select id="authorizeAdminStudentSelect" class="w-full px-3 py-2.5 rounded-xl border border-surface-container-high bg-white text-xs outline-none focus:border-primary">
                 <option value="">Select a student to authorize as admin...</option>
-                ${candidates.map(p => `<option value="${p.id}">${p.name || 'Student'} — ${p.email || 'No email'}${p.section ? ' • ' + p.section : ''}</option>`).join('')}
+                ${candidates.map(p => `<option value="${p.id}">${escReportValue(p.name || 'Student')} — ${escReportValue(p.email || 'No email')}${p.section ? ' • ' + escReportValue(p.section) : ''}</option>`).join('')}
               </select>
               <button id="authorizeSelectedAdminBtn" type="button" class="px-4 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold">Authorize Admin</button>
             </div>
@@ -1010,8 +1010,8 @@ export function renderAdminPanel(container) {
           <label class="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">Select student to approve</label>
           <select id="approveStudentSelect" class="w-full px-3 py-3 rounded-xl border border-surface-container-high bg-white text-sm outline-none focus:border-primary">
             <option value="">Select a pending student...</option>
-            ${pendingRegistrations.map(r => `<option value="${r.id}">
-              ${r.student_name || 'Student'} — ${r.admission_no || 'No admission no.'} • ${r.section || 'No section'}
+            ${pendingRegistrations.map(r => `<option value="${escReportValue(r.id)}">
+              ${escReportValue(r.student_name || 'Student')} — ${escReportValue(r.admission_no || 'No admission no.')} • ${escReportValue(r.section || 'No section')}
             </option>`).join('')}
           </select>
           <div class="mt-2 text-[11px] text-on-surface-variant">Use the dropdown to switch between students without scrolling through the entire registration list.</div>
@@ -1040,14 +1040,14 @@ export function renderAdminPanel(container) {
         detailBox.innerHTML = `
           <div class="p-4 rounded-2xl border border-primary/20 bg-surface-container-low">
             <div class="flex flex-wrap items-center gap-2">
-              <span class="text-sm font-bold">${student.student_name || 'Student'}</span>
+              <span class="text-sm font-bold">${escReportValue(student.student_name || 'Student')}</span>
               <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">PENDING</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 mt-3 text-[11px]">
-              <div><span class="font-bold">Admission No:</span> ${student.admission_no || '—'}</div>
-              <div><span class="font-bold">Email:</span> ${student.email || '—'}</div>
-              <div><span class="font-bold">Section:</span> ${student.section || '—'}</div>
-              <div><span class="font-bold">Phone:</span> ${student.phone || '—'}</div>
+              <div><span class="font-bold">Admission No:</span> ${escReportValue(student.admission_no || '—')}</div>
+              <div><span class="font-bold">Email:</span> ${escReportValue(student.email || '—')}</div>
+              <div><span class="font-bold">Section:</span> ${escReportValue(student.section || '—')}</div>
+              <div><span class="font-bold">Phone:</span> ${escReportValue(student.phone || '—')}</div>
             </div>
           </div>`;
       }
@@ -1127,7 +1127,7 @@ export function renderAdminPanel(container) {
           'success'
         );
         await loadStudentRegistrations();
-        const row = document.querySelector(`[data-registration-id="${registrationId}"]`);
+        const row = document.querySelector(`[data-registration-id="${escReportValue(registrationId)}"]`);
         if (row) {
           const linkBox = document.createElement('div');
           linkBox.className = 'mt-3 p-3 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-900';
